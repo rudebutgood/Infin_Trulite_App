@@ -8,163 +8,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/deviceManager.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/markdown.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/planningMode.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/.metadata" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/README.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/analysis_options.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/build.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/debug/AndroidManifest.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/MainActivity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/drawable-v21/launch_background.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/drawable/ic_launcher_foreground.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/drawable/launch_background.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/mipmap-hdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/mipmap-mdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/values-night/styles.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/values/colors.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/values/strings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/values/styles.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/profile/AndroidManifest.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/build.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/build/reports/problems/problems-report.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/gradle.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/settings.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/devices_log.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/install_log.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Flutter/AppFrameworkInfo.plist" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Flutter/Debug.xcconfig" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Flutter/Release.xcconfig" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner.xcodeproj/project.pbxproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner.xcworkspace/contents.xcworkspacedata" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/AppDelegate.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Base.lproj/LaunchScreen.storyboard" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Base.lproj/Main.storyboard" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Info.plist" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/Runner-Bridging-Header.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/Runner/SceneDelegate.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/ios/RunnerTests/RunnerTests.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/models/fii_dii_data.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/models/index_data.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/models/nav_item.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/fii_dii_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/index_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/portfolio_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/flutter/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/flutter/generated_plugin_registrant.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/flutter/generated_plugins.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/runner/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/runner/main.cc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/runner/my_application.cc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/linux/runner/my_application.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Flutter/Flutter-Debug.xcconfig" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Flutter/Flutter-Release.xcconfig" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner.xcodeproj/project.pbxproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner.xcworkspace/contents.xcworkspacedata" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/AppDelegate.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Base.lproj/MainMenu.xib" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Configs/AppInfo.xcconfig" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Configs/Debug.xcconfig" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Configs/Release.xcconfig" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Configs/Warnings.xcconfig" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/DebugProfile.entitlements" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Info.plist" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/MainFlutterWindow.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/Runner/Release.entitlements" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/macos/RunnerTests/RunnerTests.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/pubspec.lock" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/pubspec.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/scratch/analyze_xlsx.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/scratch/test_excel.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/test/widget_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/web/favicon.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/web/icons/Icon-192.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/web/icons/Icon-512.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/web/icons/Icon-maskable-192.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/web/icons/Icon-maskable-512.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/web/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/web/manifest.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/flutter/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/flutter/generated_plugin_registrant.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/flutter/generated_plugins.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/Runner.rc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/flutter_window.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/flutter_window.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/main.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/resource.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/resources/app_icon.ico" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/runner.exe.manifest" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/utils.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/utils.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/win32_window.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/windows/runner/win32_window.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pid_log.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ssl_log.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -182,18 +27,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "rudebutgood"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;rudebutgood&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/rudebutgood/Infin_Trulite_App.git",
-    "accountId": "e8baab2f-605b-4246-bf82-369bd46c3788"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/rudebutgood/Infin_Trulite_App.git&quot;,
+    &quot;accountId&quot;: &quot;e8baab2f-605b-4246-bf82-369bd46c3788&quot;
   }
-}]]></component>
+}</component>
   <component name="LlamatikProjectState">
     <option name="selectedSessionId" value="12760f6a-3170-40e6-9551-dfb2bd8abd3c" />
     <option name="sessions">
@@ -292,27 +137,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "copilot.chat.legacySessionMetadata.migrated": "true",
-    "copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Pub/Cache/hosted/pub_dev": "true",
-    "copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Pub/Cache/hosted/pub_dev/file_picker-11_0_3/android/src/main": "true",
-    "copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Temp": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "master",
-    "kotlin-language-version-configured": "true",
-    "settings.editor.selected.configurable": "tools.preferences.codegpt.telemetry",
-    "show.migrate.to.gradle.popup": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
+    &quot;copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Pub/Cache/hosted/pub_dev&quot;: &quot;true&quot;,
+    &quot;copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Pub/Cache/hosted/pub_dev/file_picker-11_0_3/android/src/main&quot;: &quot;true&quot;,
+    &quot;copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Temp&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;tools.preferences.codegpt.telemetry&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
       <option name="filePath" value="$PROJECT_DIR$/amfi_flutter/lib/main.dart" />
