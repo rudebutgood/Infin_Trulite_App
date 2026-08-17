@@ -1,0 +1,38 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Background Circle (Matches App Theme exactly) -->
+    <path
+        android:fillColor="#1A237E"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+
+    <!-- Stylish "In" (Zoomed out significantly, centered in safe zone) -->
+    <!-- "I" -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M44,45 L44,68" />
+
+    <!-- "n" -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M54,68 L54,52 Q57,44 68,44 L68,68" />
+
+    <!-- Dot for the "i" -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,34m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+
+    <!-- Underline Stroke -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M35,76 Q54,82 73,76" />
+</vector>

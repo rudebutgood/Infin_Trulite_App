@@ -1,0 +1,833 @@
+--------- beginning of main
+08-12 03:19:54.920  1376  1376 W TracingMuxer: type=1400 audit(0.0:2952): avc:  denied  { write } for  name="traced_producer" dev="tmpfs" ino=1598 scontext=u:r:gxp_logging:s0 tcontext=u:object_r:traced_producer_socket:s0 tclass=sock_file permissive=0
+08-12 03:19:55.081  1120  1346 I CHRE    : @ 1900.235: [ImuCal] [GYRO_RPS] (s0, c0) Offset | Temp [C] | Quality: -.000388, -.000430, 0.001346 | 37.18 | 4
+08-12 03:19:55.081  1120  1346 I CHRE    : @ 1900.235: [ImuCal] [GYRO_RPS] (s0) Temp Sensitivity: 0.000050, -.000004, -.000025
+08-12 03:19:55.081  1120  1346 I CHRE    : @ 1900.235: [ImuCal] [GYRO_RPS] (s0) Temp Intercept: -.002280, -.000264, 0.002303
+08-12 03:19:55.877  2856  2938 D IwlanDataService: onCapabilitiesChanged: 100 [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=1265Kbps LinkDnBandwidth>=35700Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, IP: /192.168.1.4, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11n, RSSI: -47, Link speed: 78Mbps, Tx Link speed: 78Mbps, Max Supported Tx Link speed: 300Mbps, Rx Link speed: 130Mbps, Max Supported Rx Link speed: 300Mbps, Frequency: 2432MHz, Net ID: -1, Metered hint: false, score: 0, isUsable: false, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none><none>MLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>> SignalStrength: -47 AdminUids: [1000] SSID: "dmkair" UnderlyingNetworks: Null]
+08-12 03:19:55.877  2856  2938 D IwlanDataService: Network 100 connected using transport WIFI
+08-12 03:19:55.878  2856  3002 D IwlanNetworkService: onCapabilitiesChanged: 100
+08-12 03:19:55.879  2921  3009 D IwlanNetworkStatusTracker: onCapabilitiesChanged: 100
+08-12 03:19:55.879  2921  3009 D IwlanNetworkStatusTracker: OnCapability : Wifi Available already true
+08-12 03:19:55.880  1931  2270 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+08-12 03:19:55.883  2656  3450 W SHANNON_IMS: 3721 [CONN] NetworkSpecifier and TransportInfo are not valid (DefaultNetworkCallback%updateSubscriptionId:89)
+08-12 03:19:55.883  2656  3450 I SHANNON_IMS: 3722 [CONN] network:100 WIFI connected, subId: -1 [SLID:0] (DefaultNetworkCallback%onCapabilitiesChanged:71)
+08-12 03:19:55.888  3355  3448 D DeviceStateHelper: Wifi freq: 2432
+08-12 03:19:55.892  3355  3475 I WifiSignalInfo: onCapabilitiesChanged: rssi:-47
+08-12 03:19:55.893  3355  3451 D ImsPreconditionCheck: {subId=3} handleMessage: { when=-1ms what=16 target=eij }
+08-12 03:19:55.893  3355  3451 D ImsPreconditionCheck: {subId=3} onWifiCapabilitiesChanged: wifiNetworkValidated: true
+08-12 03:19:55.901  2619  3713 D SHANNON_RCS: 0413 [0][PROX][TELE] onCapabilitiesChanged, Network: 100, NetworkCapabilities: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=1265Kbps LinkDnBandwidth>=35700Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, IP: /192.168.1.4, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11n, RSSI: -47, Link speed: 78Mbps, Tx Link speed: 78Mbps, Max Supported Tx Link speed: 300Mbps, Rx Link speed: 130Mbps, Max Supported Rx Link speed: 300Mbps, Frequency: 2432MHz, Net ID: -1, Metered hint: false, score: 0, isUsable: false, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none><none>MLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>> SignalStrength: -47 UnderlyingNetworks: Null] (DefaultNetworkCallback%onCapabilitiesChanged:76)
+08-12 03:19:55.905  2964  5216 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+08-12 03:19:55.906  2964  5216 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+08-12 03:19:55.906  4727  6432 I PlayCore: UID: [10243]  PID: [4727] AppUpdateService : requestUpdateInfo(com.hdfcbank.payzapp)
+08-12 03:19:55.906  4727  6432 I PlayCore: UID: [10243]  PID: [4727] AppUpdateService : requestUpdateInfo(com.hdfcbank.payzapp)
+08-12 03:19:55.906  4727  5928 I PlayCore: UID: [10243]  PID: [4727] AppUpdateService : Already connected to the service.
+08-12 03:19:55.906  4727  5928 I PlayCore: UID: [10243]  PID: [4727] AppUpdateService : Waiting to bind to the service.
+08-12 03:19:55.906  4727  5928 I PlayCore: UID: [10243]  PID: [4727] AppUpdateService : Already connected to the service.
+08-12 03:19:55.906  4727  5928 I PlayCore: UID: [10243]  PID: [4727] AppUpdateService : Waiting to bind to the service.
+08-12 03:19:55.916 31287 31388 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[4f5240b9-9d68]>Handler" thread_id=109 ]
+08-12 03:19:55.917 31287 31353 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=105 ]
+08-12 03:19:55.920  3366  3088 I CobaltLoggerImpl: (REDACTED) Logging Cobalt occurrence for metric %d-%d-%d, with count %d and event vector %s, for caller: %s
+08-12 03:19:55.920  3366  3088 I CobaltLoggerImpl: (REDACTED) Loaded Cobalt registry contains metric: %d-%d-%d
+08-12 03:19:55.934  1120  1346 D CHRE    : @ 1901.086: Parsed nanoapp message from host: app ID 0x476f6f676c00100b endpoint 0x4 msgType 112 payload size 14
+08-12 03:19:55.934  1120  1346 I CHRE    : @ 1901.086: [NanoMinion] received MSG Type 0x70, Version 1, 10 bytes
+08-12 03:19:55.934  1120  1346 I CHRE    : @ 1901.086: [AR] context-signal: has_bt=0, bt=0, has_wifi=1, wifi=1
+08-12 03:19:56.114  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC:39.9446 raw data: VIRTUAL-SKIN-CHARGE-WLC:39944.6 disp_therm:37827 skin_therm2:41914 usb_pwr_therm2:37960 
+08-12 03:19:56.134  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC power_budget=444.305 err=-0.944618 s_power=2000 time_elapsed_ms=7038 p=-755.695 i=-800 d=-0 budget transient=0 control target=2
+08-12 03:19:56.134  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC power budget=0 after (PARTIAL_SYSTEM_POWER: 854.79 mW, cdev_weight: 0.800000) is excluded
+08-12 03:19:56.134  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC binded power rails: (PARTIAL_SYSTEM_POWER: 854.79 mW, cdev_weight: 0.800000)
+08-12 03:19:56.138  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU:37.6701 raw data: VIRTUAL-NEU-QUT-SKIN1-SKIN2-USB-USB2-GNSS-1:36592.1 VIRTUAL-NEU-QUT-SKIN1-SKIN2-USB-USB2-GNSS-4:35699.9 VIRTUAL-QUT-SKIN2-USB-GNSS-3:37670.1 VIRTUAL-QUT-SKIN2-USB-USB2-2:37359.5 VIRTUAL-SKIN:37670.1 VIRTUAL-SKIN-CPU:37670.1 gnss_tcxo_therm:38584 neutral_therm:38561 quiet_therm:36847 skin_therm1:37871 skin_therm2:41914 usb_pwr_therm:37782 usb_pwr_therm2:37960 
+08-12 03:19:56.138  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU power_budget=2366.95 err=3.32988 s_power=800 time_elapsed_ms=7038 p=1331.95 i=235.004 d=-0 budget transient=0 control target=3
+08-12 03:19:56.138  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU power budget=2333.37 after (VSYS_PWR_MODEM: 111.95 mW, cdev_weight: 0.300000) is excluded
+08-12 03:19:56.138  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU binded power rails: (VSYS_PWR_MODEM: 111.95 mW, cdev_weight: 0.300000)(S4M_VDD_CPUCL0: 67.15 mW)(S2M_VDD_CPUCL2: 0.95 mW)(S3M_VDD_CPUCL1: 7.67 mW)
+08-12 03:19:56.138  1656  1660 I pixel-thermal: VIRTUAL-SKIN:37.6701 raw data: VIRTUAL-SKIN:37670.1 
+08-12 03:19:56.138  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE:37.6701 raw data: VIRTUAL-SKIN:37670.1 VIRTUAL-SKIN-CHARGE:37670.1 
+08-12 03:19:56.139  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE power_budget=1833.4 err=1.32988 s_power=1200 time_elapsed_ms=7038 p=930.913 i=-297.514 d=-0 budget transient=0 control target=2
+08-12 03:19:56.139  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE power budget=1149.56 after (PARTIAL_SYSTEM_POWER: 854.79 mW, cdev_weight: 0.800000) is excluded
+08-12 03:19:56.139  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE binded power rails: (PARTIAL_SYSTEM_POWER: 854.79 mW, cdev_weight: 0.800000)
+08-12 03:19:56.139  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU:37.6701 raw data: VIRTUAL-SKIN:37670.1 VIRTUAL-SKIN-CPU-GPU:37670.1 
+08-12 03:19:56.139  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU power_budget=2998.96 err=7.32988 s_power=800 time_elapsed_ms=7038 p=2198.96 i=0 d=-0 budget transient=0 control target=3
+08-12 03:19:56.139  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU binded power rails: (S4M_VDD_CPUCL0: 67.15 mW)(S2M_VDD_CPUCL2: 0.95 mW)(S3M_VDD_CPUCL1: 7.67 mW)(S2S_VDD_G3D: 0.98 mW)
+08-12 03:19:56.140  1656  1660 I pixel-thermal: VIRTUAL-SKIN-HINT:37.6701 raw data: VIRTUAL-SKIN:37670.1 VIRTUAL-SKIN-HINT:37670.1 
+08-12 03:19:56.140  1656  1660 I pixel-thermal: cellular-emergency:37.6701 raw data: VIRTUAL-SKIN:37670.1 cellular-emergency:37670.1 
+08-12 03:19:56.141  1656  1660 I pixel-thermal: skin_therm1:37.871 raw data: skin_therm1:37871 
+--------- beginning of system
+08-12 03:19:56.292  1931  2001 I PowerGroup: Powering off display group due to timeout (groupId= 0, uid= 1000, millisSinceLastUserActivity=30001, lastUserActivityEvent=touch)...
+08-12 03:19:56.292  1931  2001 I PowerManagerService: Going to sleep due to timeout (uid 1000, screenOffTimeout=30000, activityTimeoutWM=-1, maxDimRatio=0.20000005, maxDimDur=7000)...
+08-12 03:19:56.306  4132  4132 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2186 
+08-12 03:19:56.309  4132  4132 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():103 repeatCheckTimes = 0, locked = false
+08-12 03:19:56.323  1931  2916 D BiometricUtils: isEncrypted: false isLockdown: false
+08-12 03:19:56.324  2353  2353 D FpsUnlockTracker: onWaitForAuthenticationStage: stage=WAIT_FOR_AUTHENTICATION
+08-12 03:19:56.324  2353  2353 D KeyguardViewMediator: KeyguardViewMediator queue processing message: NOTIFY_STARTED_GOING_TO_SLEEP
+08-12 03:19:56.326  2353  2353 I KeyguardTransitionRepository: STARTED transition: TransitionStep(from=GONE, to=DOZING, value=0.0, transitionState=STARTED, ownerName=FromGoneTransitionInteractor)
+08-12 03:19:56.329  1931  1931 D BiometricScheduler: [Added] {[31] com.android.server.biometrics.sensors.fingerprint.aidl.FingerprintAuthenticationClient, proto=3, owner=com.android.systemui, cookie=0, requestId=6, userId=0}, new queue size: 1
+08-12 03:19:56.329  1931  1931 D BiometricScheduler: [Polled] {[31] com.android.server.biometrics.sensors.fingerprint.aidl.FingerprintAuthenticationClient, proto=3, owner=com.android.systemui, cookie=0, requestId=6, userId=0}, State: 0
+08-12 03:19:56.329  1931  1931 D GestureAvailabilityTracker: Notifying gesture availability, active=false
+08-12 03:19:56.329  1931  1931 D BiometricScheduler: [Started] {[31] com.android.server.biometrics.sensors.fingerprint.aidl.FingerprintAuthenticationClient, proto=3, owner=com.android.systemui, cookie=0, requestId=6, userId=0}
+08-12 03:19:56.329  1931  1931 D BiometricStateCallback: State updated from 0 to 2, client {[31] com.android.server.biometrics.sensors.fingerprint.aidl.FingerprintAuthenticationClient, proto=3, owner=com.android.systemui, cookie=0, requestId=6, userId=0}
+08-12 03:19:56.330  1931  1931 D Biometrics/AuthenticationClient: Requesting auth for com.android.systemui
+08-12 03:19:56.330  1381  1381 I android.hardware.biometrics.fingerprint-service.goodix: setIgnoreDisplayTouches
+08-12 03:19:56.332  1381  1381 I android.hardware.biometrics.fingerprint-service.goodix: authenticateWithContext
+08-12 03:19:56.332  1381  2035 D FingerprintHal: fingerprint authenticate
+08-12 03:19:56.332  1381  2035 I [GF_HAL][DelmarHalUtils]: [checkModuleVerions] modules(2) version match passed: f84c78c_f84c78c_f84c78c_2023.12.28_11:08:46
+08-12 03:19:56.333  1931  1931 V BiometricSchedulerOperation: started: {[31] com.android.server.biometrics.sensors.fingerprint.aidl.FingerprintAuthenticationClient, proto=3, owner=com.android.systemui, cookie=0, requestId=6, userId=0}, State: 2
+08-12 03:19:56.333  1381  2035 D FpStateTracker: UpdateState: state_:0x200
+08-12 03:19:56.333  1381  2035 W android.hardware.biometrics.fingerprint-service.goodix: Binder 0xb400007a19de89e8 destroyed after setMinSchedulerPolicy before being parceled.
+08-12 03:19:56.333  1381  2035 W android.hardware.biometrics.fingerprint-service.goodix: Binder 0xb400007a19de89e8 destroyed after setMinSchedulerPolicy before being parceled.
+08-12 03:19:56.335  1931  2916 W Sensors : Cannot get virtualdevice_native service
+08-12 03:19:56.338  1139  1659 D usf_sensor_hal: ambient light: Enter Batch. period = 1000000, latency = 0.
+08-12 03:19:56.338  1139  1659 D usf_sensor_hal: ambient light: Enter Activate. Enable = 1.
+08-12 03:19:56.339  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for TMD3719 Ambient Light (active:1).
+08-12 03:19:56.339  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 4763: USF: TMD3719: Last sample too old to send, age:223425ms
+08-12 03:19:56.342  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 2362: USF: TMD3719: Enabled sensors (err:0)
+08-12 03:19:56.344  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 337: USF: TMD3719: StartSampling(type:1 err:0): client_count P/A+fakeA:0/1+0
+08-12 03:19:56.345  1381  2035 D AlsMonitor: Sampling is started.
+08-12 03:19:56.359  2353  2353 I vol.VolumeDialogImpl: mDialog.dismiss() reason: volume_controller from: com.android.systemui.volume.VolumeDialogImpl$7.onDismissRequested:3
+08-12 03:19:56.373  1931  8276 D CoreBackPreview: Window{8d4cf99 u0 UdfpsControllerOverlay}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ba44b0c, mPriority=0, mIsAnimationCallback=false}
+08-12 03:19:56.373  1381  1381 I android.hardware.biometrics.fingerprint-service.goodix: onContextChanged
+08-12 03:19:56.374  1381  1381 I android.hardware.biometrics.fingerprint-service.goodix: setIgnoreDisplayTouches
+08-12 03:19:56.374  2353  2849 E ThemeUtils: View class com.android.systemui.keyguard.ui.view.UdfpsLottieViewWrapper is an AppCompat widget that can only be used with a Theme.AppCompat theme (or descendant).
+08-12 03:19:56.375  2353  2849 E ThemeUtils: View class com.android.systemui.keyguard.ui.view.UdfpsLottieViewWrapper is an AppCompat widget that can only be used with a Theme.AppCompat theme (or descendant).
+08-12 03:19:56.379   538  2886 W gralloc4: Unable to set buffer name VRI[UdfpsControllerOverlay]#62(BLAST Consumer)62: File name too long
+08-12 03:19:56.380  1931  2001 V DisplayPowerController2[0]: Brightness [0.28182408] reason changing to: 'manual [ throttled ]', previous reason: 'manual [ dim throttled ]'.
+08-12 03:19:56.380   538  2886 W gralloc4: Unable to set buffer name VRI[UdfpsControllerOverlay]#62(BLAST Consumer)62: File name too long
+08-12 03:19:56.381   538  2886 W gralloc4: Unable to set buffer name VRI[UdfpsControllerOverlay]#62(BLAST Consumer)62: File name too long
+08-12 03:19:56.381  1931  2001 I DisplayPowerController2[0]: BrightnessEvent: disp=0, physDisp=local:4619827677550801152, displayState=ON, displayPolicy=OFF, brt=0.28182408, initBrt=0.05, rcmdBrt=NaN, preBrt=NaN, lux=0.0, preLux=0.0, hbmMax=0.5, hbmMode=off, rbcStrength=35, thrmMax=1.0, powerFactor=1.0, wasShortTermModelActive=false, flags=, reason=manual [ throttled ], autoBrightness=false, strategy=InvalidBrightnessStrategy, autoBrightnessMode=default
+08-12 03:19:56.382  1931  1971 D DisplayManagerService: Ignore redundant display event 0/4 to 10138/844
+08-12 03:19:56.384  2557  3357 I HbmSvManager: Display onChange info : 
+08-12 03:19:56.384  2557  3357 I HbmSvManager: ; displayInfoIndex : 0
+08-12 03:19:56.384  2557  3357 I HbmSvManager: ; onScreenOn : false
+08-12 03:19:56.384  2557  3357 D HbmSvManager: Display onChange info : 
+08-12 03:19:56.384  2557  3357 D HbmSvManager: ; displayInfoIndex : 0
+08-12 03:19:56.384  2557  3357 D HbmSvManager: ; adjustedBrightness : 0.28182408
+08-12 03:19:56.384   538  2886 W gralloc4: Unable to set buffer name VRI[UdfpsControllerOverlay]#62(BLAST Consumer)62: File name too long
+08-12 03:19:56.395  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 3479: USF: TMD3719: First ALS sample (lux:44.584059), took:50 ms
+08-12 03:19:56.439  2964 32080 I NearbySharing: Network state changed: NetworkState(isRestricted=false, isOnline=true, isCongested=false, isMetered=false, isWifiConnected=true)
+08-12 03:19:56.811  1931  2001 I DisplayPowerController2[0]: Blocking screen off
+08-12 03:19:56.812  1931  2001 I DisplayPowerController2[0]: Unblocked screen off after 1 ms
+08-12 03:19:56.824   540   584 I hwc-display: path=drm, id=0, level=0, nits=0.000000, brightness=-1.000000, DimmingOn=1, Hbm=0, LhbmOn=0, OpRate=0
+08-12 03:19:56.830  1931  2001 D ActivityTaskManager: Top Process State changed to PROCESS_STATE_TOP_SLEEPING
+08-12 03:19:56.836  2353  2353 D CentralSurfaces: !shouldBeKeyguard mStatusBarStateController.isKeyguardRequested() false keyguardForDozing false wakeAndUnlocking false isWakingAndOccluded false
+08-12 03:19:56.836  2353  2353 D CentralSurfaces: hideKeyguardImpl false
+08-12 03:19:56.836  1139  1659 D usf_sensor_hal: device orientation: Enter Activate. Enable = 0.
+08-12 03:19:56.838  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for Device Orientation (active:0).
+08-12 03:19:56.838  1377  1377 D AOC     : A3:MSG: vsc_sensor.cc, 68: VSC: [Device Orientation] disable.
+08-12 03:19:56.838  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 550: VSC: [Device Orientation] stopSensorEvents: sensor 0x10001
+08-12 03:19:56.839  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Accelerometer (active:2).
+08-12 03:19:56.839  1931  2001 I DisplayBrightnessStrategySelector: Changing the DisplayBrightnessStrategy from InvalidBrightnessStrategy to ScreenOffBrightnessStrategy for display 0
+08-12 03:19:56.840  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 0: Enabled 1, odr_index 5, period_ns 20000000.
+08-12 03:19:56.841  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/60/15/7 WM: 6 Intr: 24.
+08-12 03:19:56.841  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 409180ns.
+08-12 03:19:56.841  1931  2001 V DisplayPowerController2[0]: Brightness [0.0] reason changing to: 'screen_off [ throttled ]', previous reason: 'manual [ throttled ]'.
+08-12 03:19:56.842  1931  2001 I DisplayPowerController2[0]: BrightnessEvent: disp=0, physDisp=local:4619827677550801152, displayState=OFF, displayPolicy=OFF, brt=0.0, initBrt=0.28182408, rcmdBrt=NaN, preBrt=NaN, lux=0.0, preLux=0.0, hbmMax=0.5, hbmMode=off, rbcStrength=35, thrmMax=1.0, powerFactor=1.0, wasShortTermModelActive=false, flags=, reason=screen_off [ throttled ], autoBrightness=false, strategy=ScreenOffBrightnessStrategy, autoBrightnessMode=default
+08-12 03:19:56.842   537   537 D SurfaceFlinger: Setting power mode 0 on display 4619827677550801152
+08-12 03:19:56.842  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 550: VSC: [Device Orientation] stopSensorEvents: sensor 0x10004
+08-12 03:19:56.843   540  3094 D hwc-display: setPowerMode:: FBIOBLANK mode(0), blank(4)
+08-12 03:19:56.845  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 4582: USF: TMD3719: dbv:0 leakage:0.000000 refresh_rate:60 status:1 op_hz:120 [1]
+08-12 03:19:56.847  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Gyroscope (active:0).
+08-12 03:19:56.848  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 1: Enabled 0, odr_index 0, period_ns 0.
+08-12 03:19:56.849  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/0/15/7 WM: 3 Intr: 28.
+08-12 03:19:56.850  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 1433105ns.
+08-12 03:19:56.851  1377  1377 D AOC     : A3:MSG: usf_tbn_server.cc, 57: gti: Change bus owner to AOC.
+08-12 03:19:56.851  1931  1971 D DisplayManagerService: Ignore redundant display event 0/4 to 10138/844
+08-12 03:19:56.851  4612  4612 D VRI[MainActivity]: visibilityChanged oldVisibility=true newVisibility=false
+08-12 03:19:56.852  1931  1971 I DisplayDeviceRepository: Display device changed state: "Built-in Screen", OFF
+08-12 03:19:56.852  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 430: USF: Stopping stale sample stream with sampling ID: 496
+08-12 03:19:56.852  1377  1377 D AOC     : A3:MSG: gt9895_device.cc, 579: USF: GT9895: Bus: 1, Host: 0; Enabled: 0.
+08-12 03:19:56.853  1377  1377 D AOC     : A3:MSG: usf_tbn_server.cc, 262: gti: Ack request for AP releases bus
+08-12 03:19:56.854  1931  2001 D BrightnessThermalClamper: Thermal status observer already started
+08-12 03:19:56.854  1931  2001 D BrightnessPowerClamper: Power throttling data is missing for configuration data.
+08-12 03:19:56.855  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Gyroscope (active:-1).
+08-12 03:19:56.855  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 496 not found.
+08-12 03:19:56.855  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Accelerometer (active:3).
+08-12 03:19:56.855  1931  1971 I InputManager-JNI: Viewport [0] to add: local:4619827677550801152, isActive: false
+08-12 03:19:56.856  2557  3357 D HbmSvManager: Display onChange info : 
+08-12 03:19:56.856  2557  3357 D HbmSvManager: ; displayInfoIndex : 0
+08-12 03:19:56.856  2557  3357 D HbmSvManager: ; adjustedBrightness : 0.0
+08-12 03:19:56.856  1114  2901 D audio_hw: adev_set_parameters: enter: screen_state=off
+08-12 03:19:56.857  1931  2139 I InputReader: Reconfiguring input devices, changes=DISPLAY_INFO
+08-12 03:19:56.857  1931  2139 I InputReader: Disabling goodix_ts (device 5) because the associated viewport is not active
+08-12 03:19:56.857  1931  2139 I InputReader: Device reconfigured: id=5, name='goodix_ts', size 1080x2400, orientation 0, mode 0, display id 0
+08-12 03:19:56.857  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 0: Enabled 1, odr_index 5, period_ns 20000000.
+08-12 03:19:56.857  1931  1972 W SurfaceControl: Invalid layer stack -1
+08-12 03:19:56.857  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/0/15/7 WM: 3 Intr: 28.
+08-12 03:19:56.857  1931  1972 I DisplayDevice: [0] Layerstack set to -1 for local:4619827677550801152
+08-12 03:19:56.857  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 366455ns.
+08-12 03:19:56.857  1931  1991 D KernelCpuUidUserSysTimeReader: Removing uids 99019-99019
+08-12 03:19:56.860  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(177)] Scan in shim layer stopped
+08-12 03:19:56.860  2533  2791 I bluetooth: packages/modules/Bluetooth/system/gd/hci/le_address_manager.cc:203 - unregister_client: Client unregistered
+08-12 03:19:56.860  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(357)] SetScanParameters in shim layer
+08-12 03:19:56.860  1931  1991 D KernelCpuUidUserSysTimeReader: Removing uids 10453-10453
+08-12 03:19:56.860  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(177)] Scan in shim layer started
+08-12 03:19:56.860  2964  2964 I NearbyDiscovery: (REDACTED) FastPairDisplayObserver: %s -> %s
+08-12 03:19:56.861  1931  1991 D KernelCpuUidUserSysTimeReader: Removing uids 99020-99020
+08-12 03:19:56.861  2533  2791 I bluetooth: packages/modules/Bluetooth/system/gd/hci/le_scanning_manager.cc:630 - stop_scan: Scanning already stopped, return!
+08-12 03:19:56.861  2533  2791 I bluetooth: packages/modules/Bluetooth/system/gd/hci/le_address_manager.cc:188 - register_client: Client registered
+08-12 03:19:56.863  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Gyroscope (active:1).
+08-12 03:19:56.864  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Temperature (active:4).
+08-12 03:19:56.865  2572  2572 D GRIL-S  : [0133]> UPDATE_DEVICE_STATE DeviceState: Usb:1, Wifi: 1, Wifi AP: 0, Earpiece: 0, Bluetooth: 1, Wireless charging: 0, Screen: 0, Camera: 0, 0, -, -, Motion: 0, Bluetooth tethering: 0, Voice: 0, Wifi 2.4G: 1, Radio: 1, Bluetooth connected: 0, Bluetooth media: 0, Wifi Band: 1, Wifi AP Band: 0, Wifi call: 0, mmWave: 0, mCellBackhaul: 0, mHallSensor: 0, mDozeStatus: 1, mAppClassInfo: 0, mWifiCapSensorStatus: 0, mCellCapSensorStatus: 0, mBesideHeadHandStatus: 0, mSpeakerStatus: 0
+08-12 03:19:56.865  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 2: Enabled 1, odr_index 3, period_ns 66666666.
+08-12 03:19:56.865  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/0/15/7 WM: 82 Intr: 1.
+08-12 03:19:56.865  2964  6779 I NearbyDiscovery: (REDACTED) ApFastPairScanner: isScreenOn=%s, isLocationEnabled=%s, disableLocationRequirement=%s, isDiscoveryScanningEnabled=%s, during24GhzWifiWarmingUpPeriod=%s
+08-12 03:19:56.865  2964  6779 D BluetoothAdapter: isLeEnabled(): ON
+08-12 03:19:56.866  2964  6779 I NearbyDiscovery: (REDACTED) ApFastPairScanner: eventType=%s, intReq=%s, scanning=%s, scanAllowed=%s, bleEnabled=%s, lockScanRate=%s, startScanningByLowPowerMode=%s
+08-12 03:19:56.866  2964  6779 I NearbyDiscovery: (REDACTED) ApFastPairScanner: Stopping scan, %s
+08-12 03:19:56.867  2964  6779 D BluetoothAdapter: isLeEnabled(): ON
+08-12 03:19:56.870  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 631185ns.
+08-12 03:19:56.870  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for MMC56X3X Magnetometer (active:2).
+08-12 03:19:56.870  1377  1377 D AOC     : A3:MSG: mmc56x3x_device.cc, 409: USF: MMC56X3X0: mmc56x3x_enable_measure odr = 10.
+08-12 03:19:56.871  4132  4132 I PkDeviceHelper: PkDeviceHelper.refreshDevices():87 refreshing devices
+08-12 03:19:56.871  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(213)] ScanFilterParamSetup in shim layer
+08-12 03:19:56.871  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(213)] ScanFilterParamSetup in shim layer
+08-12 03:19:56.872  2964 32080 I NearbySharing: Screen is locked
+08-12 03:19:56.873  2964 32080 I NearbySharing: Stopping scanning because the screen is locked.
+08-12 03:19:56.873  2964 32080 I NearbySharing: SendProvider: stopDiscovery called.
+08-12 03:19:56.874  2533  3718 I bt_stack: [INFO:le_scanning_manager.cc(171)] Unregister in shim layer, scanner_id:1
+08-12 03:19:56.885  2964 32080 I NearbySharing: NearbySharing Internal event SendManagerEnd
+08-12 03:19:56.886  2964 32080 I NearbySharing: Scanning has stopped.
+08-12 03:19:56.887  2964 32080 I NearbySharing: Stopping Fast Init advertisement because we're not scanning in the foreground.
+08-12 03:19:56.890  2964  3015 I NearbyConnections: Client 114646821 requested discovery to stop.
+08-12 03:19:56.891  2964  4850 I NearbyMediums: In ScanningCancellationFlag, service-id=NearbySharing is the last scanner to stop scanning. The flag has been cancelled.
+08-12 03:19:56.891  2964 32080 I NearbySharing: Stopping advertising because no high power receive surface is registered and device is visible to HIDDEN.
+08-12 03:19:56.891  2964 32080 I NearbySharing: Stopping FastInitiation scanning because the screen is locked.
+08-12 03:19:56.892  2964  4034 D BluetoothAdapter: isLeEnabled(): ON
+08-12 03:19:56.892  2964 30167 I NearbySharing: [NS_DEBUG] DiscoveryController stopped.
+08-12 03:19:56.894  2964 32080 I NearbySharing: Fast Initiation Scanning has stopped
+08-12 03:19:56.894  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(177)] Scan in shim layer stopped
+08-12 03:19:56.894  2533  2791 I bluetooth: packages/modules/Bluetooth/system/gd/hci/le_address_manager.cc:203 - unregister_client: Client unregistered
+08-12 03:19:56.895  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(213)] ScanFilterParamSetup in shim layer
+08-12 03:19:56.895  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(213)] ScanFilterParamSetup in shim layer
+08-12 03:19:56.895  2533  3105 I bt_stack: [INFO:le_scanning_manager.cc(213)] ScanFilterParamSetup in shim layer
+08-12 03:19:56.895  2964 32080 I NearbySharing: Dismissing HUN as there's no device nearby.
+08-12 03:19:56.896  2533  3718 I bt_stack: [INFO:le_scanning_manager.cc(171)] Unregister in shim layer, scanner_id:2
+08-12 03:19:56.896  2964  4850 I NearbyMediums: Stopped BLE scanning, service-id=NearbySharing
+08-12 03:19:56.897  2964  4850 I NearbyMediums: [WifiAwareManagerHelper] Can't stop WiFi Aware subscribing because it was never started.
+08-12 03:19:56.898  2964  4850 I NearbyMediums: NFC discovery successfully stopped.
+08-12 03:19:56.899  2964  4850 I NearbyConnections: No longer listening to visibility changes for client 114646821
+08-12 03:19:56.904  2964  4850 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:19:56.920  2572  3459 D GRIL-S  : [0133]< UPDATE_DEVICE_STATE 
+08-12 03:19:56.981   537   537 D SurfaceFlinger: Finished setting power mode 0 on display 4619827677550801152
+08-12 03:19:56.981  1139  1878 D usf_sensor_hal: [p0]DISPLAY_POWEROFF
+08-12 03:19:56.981  1139  1918 I suez-nanoapp-clients: Disabling ip_health nanoapp.
+08-12 03:19:56.983  1931  2330 D SurfaceControl: Excessive delay in setPowerMode()
+08-12 03:19:56.985  1931  1971 I DisplayDeviceRepository: Display device changed state: "Built-in Screen", OFF
+08-12 03:19:56.986  1139  1918 I suez-nanoapp-clients: Vendor atom [id = 100046] reported.
+08-12 03:19:56.987  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 4582: USF: TMD3719: dbv:0 leakage:0.000000 refresh_rate:0 status:0 op_hz:120 [1]
+08-12 03:19:56.987  1931  1971 D DisplayManagerService: Ignore redundant display event 0/2 to 10138/844
+08-12 03:19:56.988  1931  2001 D BrightnessThermalClamper: Thermal status observer already started
+08-12 03:19:56.988  1931  2001 D BrightnessPowerClamper: Power throttling data is missing for configuration data.
+08-12 03:19:56.989  1931  2001 I DreamManagerService: Entering dreamland.
+08-12 03:19:56.990  1114  1187 D audio_hw: adev_set_parameters: enter: screen_state=off
+08-12 03:19:56.990  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 4228: USF: TMD3719: [PROX]New PPERS: 1
+08-12 03:19:56.991  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for ICP20100 Pressure Sensor (active:0).
+08-12 03:19:56.992  1377  1377 D AOC     : A3:MSG: icp20100_device.cc, 190: USF: ICP20100: Temperature stops sampling.
+08-12 03:19:56.993  1377  1377 D AOC     : A3:MSG: icp20100_device.cc, 160: USF: ICP20100: Barometer stops sampling.
+08-12 03:19:56.993  1120  1346 D CHRE    : @ 1902.147: Parsed nanoapp message from host: app ID 0x476f6f676c001022 endpoint 0x9022 msgType 2 payload size 0
+08-12 03:19:56.994  1120  1346 I CHRE    : @ 1902.149: [ip] Received message from host endpoint 0x9022 of type 2 and size 0.
+08-12 03:19:56.994  1120  1346 I CHRE    : @ 1902.149: [ip] App disabled by host.
+08-12 03:19:56.998  1931  2001 I PowerManagerService: Dozing...
+08-12 03:19:56.999  1931  1968 I DreamController: Starting dream: name=ComponentInfo{com.android.systemui/com.android.systemui.doze.DozeService}, isPreviewMode=false, canDoze=true, userId=0, reason='power manager request'
+08-12 03:19:57.010  2353  2353 I vol.VolumeDialogImpl: mDialog.dismiss() reason: volume_controller from: com.android.systemui.volume.VolumeDialogImpl$7.onDismissRequested:3
+08-12 03:19:57.014  2353  2353 D DLObserver: add listener: com.android.systemui.doze.DozeTriggers$DockEventListener@2821c70
+08-12 03:19:57.015  2353  2353 D SbStateController: setState: requested state KEYGUARD!= upcomingState: SHADE. This usually means the status bar state transition was interrupted before the upcoming state could be applied.
+08-12 03:19:57.017  2353  2429 D KeyguardViewMediator: updateActivityLockScreenState(false, true)
+08-12 03:19:57.019  2353  2353 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+08-12 03:19:57.025  4223  4234 I AiAiEcho: (REDACTED) Settings changed for uri: %s
+08-12 03:19:57.026  4223  4386 I AiAiEcho: (REDACTED) Predicting[%d]: %s
+08-12 03:19:57.026  4223  4386 I AiAiEcho: (REDACTED) EchoTargets: %s
+08-12 03:19:57.026  4223  4386 I AiAiEcho: Filtered by AiAi flag check: %s
+08-12 03:19:57.027  4223  4386 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+08-12 03:19:57.028  4223  4386 I AiAiEcho: (REDACTED) Predicting[%d]: %s
+08-12 03:19:57.028  4223  4386 I AiAiEcho: (REDACTED) EchoTargets: %s
+08-12 03:19:57.028  4223  4386 I AiAiEcho: Filtered by AiAi flag check: %s
+08-12 03:19:57.028  4223  4386 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+08-12 03:19:57.029  2353  2353 D DLObserver: add listener: com.android.systemui.doze.DozeDockHandler$DockEventListener@ed699d2
+08-12 03:19:57.029  4223  4386 I AiAiEcho: (REDACTED) Predicting[%d]: %s
+08-12 03:19:57.029  1381  1381 I android.hardware.biometrics.fingerprint-service.goodix: onContextChanged
+08-12 03:19:57.029  4223  4386 I AiAiEcho: (REDACTED) EchoTargets: %s
+08-12 03:19:57.029  4223  4386 I AiAiEcho: Filtered by AiAi flag check: %s
+08-12 03:19:57.029  4223  4386 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+08-12 03:19:57.029  1381  1381 I android.hardware.biometrics.fingerprint-service.goodix: setIgnoreDisplayTouches
+08-12 03:19:57.030  4223  4386 I AiAiEcho: (REDACTED) #postPredictionTargets: Sending updates to UISurface %s with targets# %s (types=[%s])
+08-12 03:19:57.030  1139  1659 D usf_sensor_hal: proximity gated single tap: Enter Batch. period = 1000000, latency = 0.
+08-12 03:19:57.031  1139  1659 D usf_sensor_hal: proximity gated single tap: Enter Activate. Enable = 1.
+08-12 03:19:57.031  4223  4386 I AiAiEcho: (REDACTED) #postPredictionTargets: Sending updates to UISurface %s with targets# %s (types=[%s])
+08-12 03:19:57.031  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for Proximity Gated Single Tap Gesture (active:1).
+08-12 03:19:57.031  4223  4386 I AiAiEcho: (REDACTED) #postPredictionTargets: Sending updates to UISurface %s with targets# %s (types=[%s])
+08-12 03:19:57.031  1377  1377 D AOC     : A3:MSG: vsc_sensor.cc, 37: VSC: [Proximity Gated Single Tap Gesture] enable: period 1, latency = 0
+08-12 03:19:57.032  1377  1377 D AOC     : A3:MSG: usf_vsc_log.cc, 44: USF: gti: [STTW] configuring sensor with interval: 1, latency: 0
+08-12 03:19:57.032  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 532: VSC: [Proximity Gated Single Tap Gesture] requestSensorEvents: sensor 0x10008, period=
+08-12 03:19:57.032 14495 14495 D SsBaseTemplateCard: No text view can be set up
+08-12 03:19:57.032  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for TMD3719 Proximity (active:1).
+08-12 03:19:57.032 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:19:57.032 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:19:57.033 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:19:57.033 14495 14495 I SsBaseTemplateCard: Secondary card pane is null
+08-12 03:19:57.033  1931  2001 I DisplayPowerController2[0]: BrightnessEvent: disp=0, physDisp=local:4619827677550801152, displayState=OFF, displayPolicy=DOZE, brt=0.0, initBrt=0.0, rcmdBrt=NaN, preBrt=NaN, lux=0.0, preLux=0.0, hbmMax=0.5, hbmMode=off, rbcStrength=35, thrmMax=1.0, powerFactor=1.0, wasShortTermModelActive=false, flags=, reason=screen_off [ throttled ], autoBrightness=false, strategy=ScreenOffBrightnessStrategy, autoBrightnessMode=default
+08-12 03:19:57.035  1377  1377 D AOC     : A3:MSG: tmd3719_sensor.cc, 327: USF: TMD3719: Report new active state:1
+08-12 03:19:57.035  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 337: USF: TMD3719: StartSampling(type:0 err:0): client_count P/A+fakeA:1/1+0
+08-12 03:19:57.036  1139  1343 I usf_sensor_hal: Received REPORT_SENSOR_ACTIVE_STATE_CHANGES event from 'TMD3719 Proximity' with new state:kActive!
+08-12 03:19:57.036   540   584 D hwc-display: setMinIdleRefreshRate requester 0, fps 60
+08-12 03:19:57.037   540   584 I hwc-display: ExynosPrimaryDisplay::setMinIdleRefreshRate() writes min_vrefresh(60) to the sysfs node
+08-12 03:19:57.037   540   584 I hwc-display: setRefreshRateThrottleNanos() requester(0) set delay to 1000000000ns
+08-12 03:19:57.038   540   584 I hwc-display: setDisplayIdleDelayNanos() writes idle_delay_ms(1000) to the sysfs node (0x0)
+08-12 03:19:57.039  1139  1814 I sensor-suez: Vendor atom [id = 100133] reported.
+08-12 03:19:57.040  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 532: VSC: [Proximity Gated Single Tap Gesture] requestSensorEvents: sensor 0x20006, period=
+08-12 03:19:57.040  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for GT9895 Touch Gesture Sensor (active:1).
+08-12 03:19:57.041  1377  1377 D AOC     : A3:MSG: gt9895_device.cc, 173: USF: GT9895: Host enables sensor, type: 1.
+08-12 03:19:57.041  1377  1377 D AOC     : A3:MSG: gt9895_device.cc, 579: USF: GT9895: Bus: 1, Host: 1; Enabled: 0.
+08-12 03:19:57.041  1377  1377 D AOC     : A3:MSG: gt9895_hw.cc, 479: USF: GT9895: Enter gesture mode
+08-12 03:19:57.046  1139  1659 D usf_sensor_hal: accelerometer: Enter Activate. Enable = 0.
+08-12 03:19:57.048  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Accelerometer (active:0).
+08-12 03:19:57.050  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 0: Enabled 0, odr_index 0, period_ns 0.
+08-12 03:19:57.050  1153  4801 D NfcNciHalWrapper: nfc_set_state 5->11
+08-12 03:19:57.051  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 252: USF: Lsm6dsvDevice: Config sampling too slow. Took 616862ns.
+08-12 03:19:57.051  1139  1659 D usf_sensor_hal: IMU temperature: Enter Activate. Enable = 0.
+08-12 03:19:57.052  4260  4260 W libnfc_nci: nativeNfcTag_doDisconnect: tag already deactivated
+08-12 03:19:57.056  1377  1377 D AOC     : A3:MSG: gt9895_device.cc, 321: USF: GT9895: Device is enabled.
+08-12 03:19:57.056  1377  1377 D AOC     : A3:MSG: gt9895_device.cc, 579: USF: GT9895: Bus: 1, Host: 1; Enabled: 1.
+08-12 03:19:57.056  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Temperature (active:1).
+08-12 03:19:57.057  1931  1931 I PowerManagerService: onFlip(): Face up.
+08-12 03:19:57.057  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Temperature (active:2).
+08-12 03:19:57.058  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 2: Enabled 0, odr_index 0, period_ns 0.
+08-12 03:19:57.058   538  2886 W gralloc4: Unable to set buffer name VRI[NotificationShade]#63(BLAST Consumer)63: File name too long
+08-12 03:19:57.060   538  2886 W gralloc4: Unable to set buffer name VRI[NotificationShade]#63(BLAST Consumer)63: File name too long
+08-12 03:19:57.060  2353  2353 W View    : requestLayout() improperly called by com.android.keyguard.CarrierText{492f656 V.ED..... ......ID 47,0-467,118 #7f0a03ef app:id/keyguard_carrier_text} during layout: running second layout pass
+08-12 03:19:57.062   538  2886 W gralloc4: Unable to set buffer name VRI[NotificationShade]#63(BLAST Consumer)63: File name too long
+08-12 03:19:57.063  2656  3395 I SHANNON_IMS: 3725 [PROX] onReceive: intent= [Intent { act=android.intent.action.SCREEN_OFF flg=0x50200010 }] (ConnectivityBroadcastReceiver%onReceive:91)
+08-12 03:19:57.064   538  2886 W gralloc4: Unable to set buffer name VRI[NotificationShade]#63(BLAST Consumer)63: File name too long
+08-12 03:19:57.064  4298  4298 D PowerManagerDecision: Start apply_action_timer 10000 ms for nr sa connectivity change: NR_SA_CONNECTIVITY_STATE_DETERMINED_LATER
+08-12 03:19:57.073   538  2886 W gralloc4: Unable to set buffer name VRI[UdfpsControllerOverlay]#64(BLAST Consumer)64: File name too long
+08-12 03:19:57.073   538  2886 W gralloc4: Unable to set buffer name VRI[UdfpsControllerOverlay]#64(BLAST Consumer)64: File name too long
+08-12 03:19:57.074   538  2886 W gralloc4: Unable to set buffer name VRI[UdfpsControllerOverlay]#64(BLAST Consumer)64: File name too long
+08-12 03:19:57.075  2353  2353 D DLObserver: onDockEvent mDockState = 0
+08-12 03:19:57.077   538  2886 W gralloc4: Unable to set buffer name VRI[UdfpsControllerOverlay]#64(BLAST Consumer)64: File name too long
+08-12 03:19:57.077  2353  2353 D ZenModeController: Removed callback class com.android.systemui.qs.tiles.DndTile$3
+08-12 03:19:57.077  2353  2353 D DLObserver: onDockEvent mDockState = 0
+08-12 03:19:57.077  2353  2353 D SsMediaDataProvider: Forwarding Smartspace updates []
+08-12 03:19:57.077  2353  2353 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+08-12 03:19:57.078  2353  2353 D KeyguardViewMediator: KeyguardViewMediator queue processing message: NOTIFY_FINISHED_GOING_TO_SLEEP
+08-12 03:19:57.078  2964  6779 I NearbyDiscovery: (REDACTED) FastPairHandler: Received action %s
+08-12 03:19:57.079  2964  6779 I NearbyDiscovery: (REDACTED) ApFastPairScanner: isScreenOn=%s, isLocationEnabled=%s, disableLocationRequirement=%s, isDiscoveryScanningEnabled=%s, during24GhzWifiWarmingUpPeriod=%s
+08-12 03:19:57.079  2964  6779 D BluetoothAdapter: isLeEnabled(): ON
+08-12 03:19:57.079  2964  6779 I NearbyDiscovery: (REDACTED) ApFastPairScanner: eventType=%s, intReq=%s, scanning=%s, scanAllowed=%s, bleEnabled=%s, lockScanRate=%s, startScanningByLowPowerMode=%s
+08-12 03:19:57.079  2964  6779 I NearbyDiscovery: FastPairController: onSystemStateChanged: skip due to flag disabled [CONTEXT service_id=265 ]
+08-12 03:19:57.080  2353  2353 I vol.VolumeDialogImpl: mDialog.dismiss() reason: screen_off from: com.android.systemui.volume.VolumeDialogImpl$7.onScreenOff:4
+08-12 03:19:57.081  2353  2353 D vol.VolumeDialogImpl: dismissH: skipping dismiss because isAnimatingDismiss is true and showingStateInconsistent is false
+08-12 03:19:57.081  3355  3355 D SconeAwareness: Awareness received [android.intent.action.SCREEN_OFF] action and try to relay info
+08-12 03:19:57.081  3355  3355 W JobInfo : Job 'com.google.android.apps.scone/.awareness.AwarenessJobIntentService#188052156' has a deadline with no functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
+08-12 03:19:57.081  1931  1931 I MR2ServiceImpl: Updating composite discovery preference | preference: RouteDiscoveryRequest{ preferredFeatures={}, activeScan=false }, active routers: []
+08-12 03:19:57.082  1931  4779 W JobInfo : Job 'com.google.android.apps.scone/.awareness.AwarenessJobIntentService#188052156' has a deadline with no functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
+08-12 03:19:57.084  1931  1979 D SystemServerTiming: getUserSwitchability-0
+08-12 03:19:57.085  1931  1979 D SystemServerTiming: TM.isInCall
+08-12 03:19:57.085  1931  1979 D SystemServerTiming: hasUserRestriction-DISALLOW_USER_SWITCH
+08-12 03:19:57.085  1931  1979 D SystemServerTiming: getInt-ALLOW_USER_SWITCHING_WHEN_SYSTEM_USER_LOCKED
+08-12 03:19:57.085  1931  1979 D SystemServerTiming: isUserUnlocked-USER_SYSTEM
+08-12 03:19:57.085  1931  2517 D SystemServerTiming: getUserSwitchability-0
+08-12 03:19:57.085  1931  2517 D SystemServerTiming: TM.isInCall
+08-12 03:19:57.085  2921  2921 D QnsTimer: onReceive action=android.intent.action.SCREEN_OFF
+08-12 03:19:57.085  2353  2353 D DLObserver: add listener: com.android.systemui.dock.DockManagerExtensionsKt$retrieveIsDocked$1$callback$1@e143f54
+08-12 03:19:57.085  1931  2517 D SystemServerTiming: hasUserRestriction-DISALLOW_USER_SWITCH
+08-12 03:19:57.085  1931  2517 D SystemServerTiming: getInt-ALLOW_USER_SWITCHING_WHEN_SYSTEM_USER_LOCKED
+08-12 03:19:57.085  1931  2517 D SystemServerTiming: isUserUnlocked-USER_SYSTEM
+08-12 03:19:57.085  2353  2353 D DLObserver: add listener: com.android.systemui.dock.DockManagerExtensionsKt$retrieveIsDocked$1$callback$1@8e2befd
+08-12 03:19:57.086  2964  6267 I ActivityScheduler: nextTriggerTime: 2080543, in 180152ms, detectorType: 0,  alarmWindowMillis: 80000
+08-12 03:19:57.086  2353  2353 D BiometricsRepositoryImpl: currentUser authFlags changed, new value: AuthenticationFlags(userId=0, flag=0)
+08-12 03:19:57.086  2353  2353 D BiometricsRepositoryImpl: currentUser authFlags changed, new value: AuthenticationFlags(userId=0, flag=0)
+08-12 03:19:57.086  2921  3483 D QnsTimer: No timers are pending to run
+08-12 03:19:57.086  2353  2353 D DLObserver: add listener: com.android.systemui.dock.DockManagerExtensionsKt$retrieveIsDocked$1$callback$1@a214df9
+08-12 03:19:57.086  2353  2353 D DLObserver: add listener: com.android.systemui.dock.DockManagerExtensionsKt$retrieveIsDocked$1$callback$1@d86413e
+08-12 03:19:57.087  2353  2353 D BiometricsRepositoryImpl: currentUser authFlags changed, new value: AuthenticationFlags(userId=0, flag=0)
+08-12 03:19:57.087  2353  2353 D BiometricsRepositoryImpl: currentUser authFlags changed, new value: AuthenticationFlags(userId=0, flag=0)
+08-12 03:19:57.087  2353  2353 D DLObserver: add listener: com.android.systemui.dock.DockManagerExtensionsKt$retrieveIsDocked$1$callback$1@a1fd0b5
+08-12 03:19:57.088  2353  2353 D DLObserver: add listener: com.android.systemui.dock.DockManagerExtensionsKt$retrieveIsDocked$1$callback$1@221334a
+08-12 03:19:57.088  2353  2353 D BiometricsRepositoryImpl: currentUser authFlags changed, new value: AuthenticationFlags(userId=0, flag=0)
+08-12 03:19:57.088  2353  2353 D BiometricsRepositoryImpl: currentUser authFlags changed, new value: AuthenticationFlags(userId=0, flag=0)
+08-12 03:19:57.089  4132  3344 I DeviceStatusMonitor: DeviceStatusMonitor.handleBroadcast():138 onReceive() : Action = android.intent.action.SCREEN_OFF
+08-12 03:19:57.089  4132  3344 I DeviceStatusMonitor: DeviceStatusMonitor.updateCountryInfo():154 updateCountryInfo(), notifyAnyway = false
+08-12 03:19:57.090  4132  4132 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():103 repeatCheckTimes = 0, locked = false
+08-12 03:19:57.090  4132  4132 I InputBundle: InputBundle.consumeEvent():1037 Skip consuming an event as imeStatus is INACTIVE
+08-12 03:19:57.092  2353  2353 D ZenModeController: Added callback class com.android.systemui.keyguard.data.quickaffordance.DoNotDisturbQuickAffordanceConfig$lockScreenState$1$callback$1
+08-12 03:19:57.093  2353  2353 D ZenModeController: Added callback class com.android.systemui.keyguard.data.quickaffordance.DoNotDisturbQuickAffordanceConfig$lockScreenState$1$callback$1
+08-12 03:19:57.093  2353  2353 D ZenModeController: Added callback class com.android.systemui.keyguard.data.quickaffordance.DoNotDisturbQuickAffordanceConfig$lockScreenState$1$callback$1
+08-12 03:19:57.098  3355  3435 D SconeAwareness: handleIntent android.intent.action.SCREEN_OFF
+08-12 03:19:57.098  2353  2353 D DLObserver: onDockEvent mDockState = 0
+08-12 03:19:57.098  2353  2353 D DLObserver: onDockEvent mDockState = 0
+08-12 03:19:57.098  2353  2353 D DLObserver: onDockEvent mDockState = 0
+08-12 03:19:57.098  2353  2353 D DLObserver: onDockEvent mDockState = 0
+08-12 03:19:57.098  2353  2353 D DLObserver: onDockEvent mDockState = 0
+08-12 03:19:57.098  2353  2353 D DLObserver: onDockEvent mDockState = 0
+08-12 03:19:57.103  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 3115: USF: TMD3719: Far00
+08-12 03:19:57.105  1377  1377 D AOC     : A3:MSG: usf_vsc_log.cc, 44: USF: gti: [STTW] prox state far
+08-12 03:19:57.105  2572  2572 D GRIL-S  : [0134]> UPDATE_SCONE_INFO Mobility:3 Battery:2 Thermal:2 Screen:2
+08-12 03:19:57.110 14495 14495 D StateManager: goToState - fromState: AllApps, toState: Normal, partial trace:
+08-12 03:19:57.110 14495 14495 D StateManager: 	at com.android.launcher3.Launcher.onScreenOnChanged(go/retraceme 229ef009c6bb3615beda05b6414f9bc22e9f7450b41c1b7d8db7ad832ef90083:20)
+08-12 03:19:57.110 14495 14495 D StateManager: onStateTransitionStart - state: Normal
+08-12 03:19:57.111 14495 14495 D AutofillManager: view is not autofillable - activity denied for autofill
+08-12 03:19:57.112 14495 14495 D BaseDepthController: mSurface is null and mCurrentBlur is: 0
+08-12 03:19:57.113 14495 14495 D StatsLog: LAUNCHER_ALLAPPS_EXIT
+08-12 03:19:57.113 14495 14495 D StateManager: onStateTransitionEnd - state: Normal
+08-12 03:19:57.113 14495 14495 D RecentsView: reset - mEnableDrawingLiveTile: false, mRecentsAnimationController: null
+08-12 03:19:57.113 14495 14495 D StatsLog: LAUNCHER_GOOGLE_ALLAPPS_SEARCH_SESSION_EXIT
+08-12 03:19:57.135 14495 14495 D b/321291049: updateSplitButtonHiddenFlags called with flag: 1 enabled: true shouldBeVisible: false partial trace: 
+08-12 03:19:57.135 14495 14495 D b/321291049: 	at com.android.quickstep.views.OverviewActionsView.updateSplitButtonHiddenFlags(go/retraceme 229ef009c6bb3615beda05b6414f9bc22e9f7450b41c1b7d8db7ad832ef90083:56)
+08-12 03:19:57.135 14495 14495 D b/321291049: 	at com.android.quickstep.views.RecentsView.updateCurrentTaskActionsVisibility(go/retraceme 229ef009c6bb3615beda05b6414f9bc22e9f7450b41c1b7d8db7ad832ef90083:37)
+08-12 03:19:57.135 14495 14495 D b/321291049: 	at com.android.quickstep.views.RecentsView.notifyPageSwitchListener(go/retraceme 229ef009c6bb3615beda05b6414f9bc22e9f7450b41c1b7d8db7ad832ef90083:4)
+08-12 03:19:57.135 14495 14495 D b/321291049: 	at com.android.launcher3.PagedView.setCurrentPage(go/retraceme 229ef009c6bb3615beda05b6414f9bc22e9f7450b41c1b7d8db7ad832ef90083:9)
+08-12 03:19:57.162  2572  3459 D GRIL-S  : [0134]< UPDATE_SCONE_INFO 
+08-12 03:19:57.165  1931  6441 D CompatibilityChangeReporter: Compat change id reported: 261072174; UID 1000; state: ENABLED
+08-12 03:19:57.177  1117 23120 I Lyric   : face_authentication_controller.cc:68: FaceAuthPreAllocation Finished
+08-12 03:19:57.293  2353  2353 I KeyguardTransitionRepository: FINISHED transition: TransitionStep(from=GONE, to=DOZING, value=1.0, transitionState=FINISHED, ownerName=FromGoneTransitionInteractor)
+08-12 03:19:57.316  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1436: USF: TMD3719: [PROX]Initial(full) baseline[0]: 98.480242
+08-12 03:19:57.316  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1437: USF: TMD3719: [PROX]max: 55.000001, min: 52.999997
+08-12 03:19:57.317  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1439: USF: TMD3719: [PROX]std_dev: 0.707106, var: 0.500000, scale: 1.823708
+08-12 03:19:57.317  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1421: USF: TMD3719: [PROX]Initial(full) baseline[1]: 52.101045
+08-12 03:19:57.318  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1422: USF: TMD3719: [PROX]max: 37.999999, min: 31.999999
+08-12 03:19:57.318  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1424: USF: TMD3719: [PROX]std_dev: 2.277608, var: 5.187500, scale: 1.457372
+08-12 03:19:57.330  1139  1814 I sensor-suez: Vendor atom [id = 100133] reported.
+08-12 03:19:57.389  2964  4850 I NearbySharing: Stopping scanning because the screen is locked.
+08-12 03:19:57.396  2964  4850 I NearbySharing: Stopping Fast Init advertisement because we're not scanning in the foreground.
+08-12 03:19:57.402  2964  4850 I NearbySharing: Stopping advertising because no high power receive surface is registered and device is visible to HIDDEN.
+08-12 03:19:57.403  2964  4850 I NearbySharing: Stopping FastInitiation scanning because the screen is locked.
+08-12 03:19:57.408  2964  4850 I NearbySharing: Fast Initiation Scanning has stopped
+08-12 03:19:57.408  2964  4850 I NearbySharing: Dismissing HUN as there's no device nearby.
+08-12 03:19:57.495  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1487: USF: TMD3719: [PROX]Updated baseline[0]: 97.568392
+08-12 03:19:57.495  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1488: USF: TMD3719: [PROX]max: 54.000002, min: 51.999998
+08-12 03:19:57.497  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1490: USF: TMD3719: [PROX]std_dev: 0.707106, var: 0.500000, scale: 1.823708
+08-12 03:19:57.497  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1472: USF: TMD3719: [PROX]Updated baseline[1]: 50.825846
+08-12 03:19:57.498  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1473: USF: TMD3719: [PROX]max: 34.999999, min: 33.000001
+08-12 03:19:57.499  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1475: USF: TMD3719: [PROX]std_dev: 0.707106, var: 0.500000, scale: 1.457372
+08-12 03:19:57.512  1139  1814 I sensor-suez: Vendor atom [id = 100133] reported.
+08-12 03:19:57.675  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1487: USF: TMD3719: [PROX]Updated baseline[0]: 97.416412
+08-12 03:19:57.675  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1488: USF: TMD3719: [PROX]max: 55.000001, min: 51.999998
+08-12 03:19:57.676  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1490: USF: TMD3719: [PROX]std_dev: 1.089724, var: 1.187499, scale: 1.823708
+08-12 03:19:57.676  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1472: USF: TMD3719: [PROX]Updated baseline[1]: 50.886571
+08-12 03:19:57.677  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1473: USF: TMD3719: [PROX]max: 38.999998, min: 30.000001
+08-12 03:19:57.678  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1475: USF: TMD3719: [PROX]std_dev: 3.391165, var: 11.500000, scale: 1.457372
+08-12 03:19:57.691  1139  1814 I sensor-suez: Vendor atom [id = 100133] reported.
+08-12 03:19:57.840  2353  2370 V WindowManagerShell: Transition requested (#51): android.os.BinderProxy@32cffc7 TransitionRequestInfo { type = SLEEP, triggerTask = null, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 51 }
+08-12 03:19:57.842  1931  1968 V WindowManager: Sent Transition (#51) createdAt=08-12 03:19:57.836 via request=TransitionRequestInfo { type = SLEEP, triggerTask = null, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 51 }
+08-12 03:19:57.842  1931  1968 V WindowManager:     startWCT=null
+08-12 03:19:57.842  1931  1968 V WindowManager:     info={id=51 t=SLEEP f=0x0 trk=0 r=[] c=[]}
+08-12 03:19:57.850  1931  6441 W Transition: Transition already started id=51 state=2
+08-12 03:19:57.850  2353  2370 V WindowManagerShell: onTransitionReady (#51) android.os.BinderProxy@32cffc7: {id=51 t=SLEEP f=0x0 trk=0 r=[] c=[]}
+08-12 03:19:57.851  2353  2370 V WindowManagerShell: No transition roots in (#51) android.os.BinderProxy@32cffc7@0 so abort
+08-12 03:19:57.853  2353  2370 V WindowManagerShell: Transition animation finished (aborted=true), notifying core (#51) android.os.BinderProxy@32cffc7@0
+08-12 03:19:57.854  1931  1979 W UserManagerService: Requested status bar icon for non-badged user 0
+08-12 03:19:57.855  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1487: USF: TMD3719: [PROX]Updated baseline[0]: 97.340422
+08-12 03:19:57.855  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1488: USF: TMD3719: [PROX]max: 55.000001, min: 51.999998
+08-12 03:19:57.856  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1490: USF: TMD3719: [PROX]std_dev: 1.089724, var: 1.187499, scale: 1.823708
+08-12 03:19:57.856  1931  1968 V WindowManager: Finish Transition (#51): created at 08-12 03:19:57.836 collect-started=0.655ms request-sent=1.191ms started=3.116ms ready=3.104ms sent=3.988ms finished=18.335ms
+08-12 03:19:57.857  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1472: USF: TMD3719: [PROX]Updated baseline[1]: 50.461500
+08-12 03:19:57.857  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1473: USF: TMD3719: [PROX]max: 36.000001, min: 31.999999
+08-12 03:19:57.858  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 1475: USF: TMD3719: [PROX]std_dev: 1.479019, var: 2.187500, scale: 1.457372
+08-12 03:19:57.858  2353  2370 V WindowManagerShell: Track 0 became idle
+08-12 03:19:57.858  2353  2370 V WindowManagerShell: All active transition animations finished
+08-12 03:19:57.860   537   588 W VsyncModulator: setTransactionSchedule: Unexpected EarlyEnd
+08-12 03:19:57.866  1139  1814 I sensor-suez: Vendor atom [id = 100133] reported.
+08-12 03:19:57.917  2964  2964 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+08-12 03:19:57.927  1377  1377 D AOC     : A3:MSG: tmd3719_device.cc, 4228: USF: TMD3719: [PROX]New PPERS: 1
+08-12 03:19:58.310  1931  1931 I MR2ServiceImpl: Updating composite discovery preference | preference: RouteDiscoveryRequest{ preferredFeatures={}, activeScan=false }, active routers: []
+08-12 03:19:59.813  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 3: Enabled 0, odr_index 0, period_ns 0.
+08-12 03:19:59.816  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Motion Detect (active:-1).
+08-12 03:19:59.816  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 512 not found.
+08-12 03:19:59.817  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Motion Detect (active:-1).
+08-12 03:19:59.817  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 145: USF: Received kErrNotFound when disabling one shot sensor.
+08-12 03:19:59.817  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 510 not found.
+08-12 03:19:59.817  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 550: VSC: [Step Counter] stopSensorEvents: sensor 0x20002
+08-12 03:19:59.818  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 161: USF: Received kErrNotFound when disabling one shot sensor.
+08-12 03:19:59.818  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 532: VSC: [Step Counter] requestSensorEvents: sensor 0x10001, period=20 latency=1000ms.
+08-12 03:19:59.818  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Stationary Detect (active:1).
+08-12 03:19:59.819  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 4: Enabled 1, odr_index 1, period_ns 500000000.
+08-12 03:19:59.820  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 252: USF: Lsm6dsvDevice: Config sampling too slow. Took 594563ns.
+08-12 03:19:59.820  1377  1377 D AOC     : A3:MSG: motion_state_sensor.cc, 327: USF: MoSt: StationaryDetect sampling started with sampling ID 517.
+08-12 03:19:59.821  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Accelerometer (active:1).
+08-12 03:19:59.822  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 2: Enabled 1, odr_index 3, period_ns 66666666.
+08-12 03:19:59.823  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 0: Enabled 1, odr_index 5, period_ns 20000000.
+08-12 03:19:59.824  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/0/15/7 WM: 82 Intr: 1.
+08-12 03:19:59.827  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 550: VSC: [Significant Motion] stopSensorEvents: sensor 0x20002
+08-12 03:19:59.828  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 532: VSC: [Significant Motion] requestSensorEvents: sensor 0x10001, period=20 latency=3200m
+08-12 03:19:59.828  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Accelerometer (active:2).
+08-12 03:19:59.829  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Accelerometer (active:3).
+08-12 03:19:59.831  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Free Fall Detect (active:1).
+08-12 03:19:59.831  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 5: Enabled 1, odr_index 2, period_ns 500000000.
+08-12 03:19:59.831  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/0/15/7 WM: 82 Intr: 1.
+08-12 03:19:59.831  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 614746ns.
+08-12 03:19:59.833  1120  1346 I CHRE    : @ 1904.977: [AR] IDLE => ON
+08-12 03:19:59.833  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Stationary Detect (active:2).
+08-12 03:19:59.834  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Motion Detect (active:-1).
+08-12 03:19:59.834  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 511 not found.
+08-12 03:19:59.834  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 145: USF: Received kErrNotFound when disabling one shot sensor.
+08-12 03:19:59.837  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Temperature (active:2).
+08-12 03:19:59.852  1931  2306 W ProcessStats: Tracking association SourceState{9163352 system/1000 BFgs #36744} whose proc state 4 is better than process ProcessState{18af3e0 com.google.android.gms.persistent/10141 pkg=com.google.android.gms} proc state 6 (543 skipped)
+08-12 03:19:59.857  1167  1436 I vendor.google.wifi_ext-service-vendor: Wifi: Setting SAR Scenario to 3
+08-12 03:19:59.868  2572  2572 D GRIL-S  : [0135]> UPDATE_DEVICE_STATE DeviceState: Usb:1, Wifi: 1, Wifi AP: 0, Earpiece: 0, Bluetooth: 1, Wireless charging: 0, Screen: 0, Camera: 0, 0, -, -, Motion: 1, Bluetooth tethering: 0, Voice: 0, Wifi 2.4G: 1, Radio: 1, Bluetooth connected: 0, Bluetooth media: 0, Wifi Band: 1, Wifi AP Band: 0, Wifi call: 0, mmWave: 0, mCellBackhaul: 0, mHallSensor: 0, mDozeStatus: 1, mAppClassInfo: 0, mWifiCapSensorStatus: 0, mCellCapSensorStatus: 0, mBesideHeadHandStatus: 0, mSpeakerStatus: 0
+08-12 03:19:59.928  2572  3459 D GRIL-S  : [0135]< UPDATE_DEVICE_STATE 
+08-12 03:20:00.735  1656  1656 I pixel-thermal: VIRTUAL-SKIN:37.6925 raw data: VIRTUAL-NEU-QUT-SKIN1-SKIN2-USB-USB2-GNSS-1:36690.5 VIRTUAL-NEU-QUT-SKIN1-SKIN2-USB-USB2-GNSS-4:35825.5 VIRTUAL-QUT-SKIN2-USB-GNSS-3:37692.5 VIRTUAL-QUT-SKIN2-USB-USB2-2:37346 VIRTUAL-SKIN:37692.5 gnss_tcxo_therm:38918 neutral_therm:38717 quiet_therm:36803 skin_therm1:37983 skin_therm2:41845 usb_pwr_therm:37805 usb_pwr_therm2:37960 
+08-12 03:20:00.738  2544  2620 D TemperatureStateSource: getDeviceTemperatures: deviceTemperatureType=3 temperatureSource=0 temperatures=[37.692535]
+08-12 03:20:00.741  2544  2625 D BusinessScope: Start running the #268 block
+08-12 03:20:00.743  2544  2625 D BusinessScope: Finish running the #268 block
+08-12 03:20:00.744  2544  2625 D BusinessScope: Start running the #269 block
+08-12 03:20:00.744  2544  2625 D BusinessScope: Finish running the #269 block
+08-12 03:20:01.340  4223  4386 I AiAiEcho: (REDACTED) Predicting[%d]: %s
+08-12 03:20:01.341  4223  4386 I AiAiEcho: (REDACTED) EchoTargets: %s
+08-12 03:20:01.341  4223  4386 I AiAiEcho: Filtered by AiAi flag check: %s
+08-12 03:20:01.341  4223  4386 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+08-12 03:20:01.342  4223  4386 I AiAiEcho: (REDACTED) Predicting[%d]: %s
+08-12 03:20:01.342  4223  4386 I AiAiEcho: (REDACTED) EchoTargets: %s
+08-12 03:20:01.342  4223  4386 I AiAiEcho: Filtered by AiAi flag check: %s
+08-12 03:20:01.342  4223  4386 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+08-12 03:20:01.343  4223  4386 I AiAiEcho: (REDACTED) #postPredictionTargets: Sending updates to UISurface %s with targets# %s (types=[%s])
+08-12 03:20:01.344  4223  4386 I AiAiEcho: (REDACTED) #postPredictionTargets: Sending updates to UISurface %s with targets# %s (types=[%s])
+08-12 03:20:01.346 14495 14495 D SsBaseTemplateCard: No text view can be set up
+08-12 03:20:01.346 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:20:01.346 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:20:01.346 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:20:01.346 14495 14495 I SsBaseTemplateCard: Secondary card pane is null
+08-12 03:20:01.362  1931  1931 D BiometricService: Sensor ID(1), oemStrength: 4095, updatedStrength: 4095, modality 8, state: 0, cookie: 0, sensorId 1, hasEnrollments: true cannot participate in Keystore operations
+08-12 03:20:01.363  1931  1931 I TrustManagerService: User is unlockable by non-strong face auth
+08-12 03:20:01.363  2964  2964 I ActiveUnlock: onDeviceLocked [CONTEXT service_id=327 ]
+08-12 03:20:01.365  1153  4801 D NfcNciHalWrapper: nfc_set_state 5->11
+08-12 03:20:01.365  4223  4386 I AiAiEcho: (REDACTED) Predicting[%d]: %s
+08-12 03:20:01.366  4223  4386 I AiAiEcho: (REDACTED) EchoTargets: %s
+08-12 03:20:01.366  4223  4386 I AiAiEcho: Filtered by AiAi flag check: %s
+08-12 03:20:01.366   521 10433 I keystore2: system/security/keystore2/src/authorization.rs:173 - on_device_locked(user_id=0, unlocking_sids=[8596725609674635788], weak_unlock_enabled=true)
+08-12 03:20:01.366  4223  4386 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+08-12 03:20:01.366  4223  4386 I AiAiEcho: (REDACTED) Predicting[%d]: %s
+08-12 03:20:01.366  4223  4386 I AiAiEcho: (REDACTED) EchoTargets: %s
+08-12 03:20:01.366  4223  4386 I AiAiEcho: Filtered by AiAi flag check: %s
+08-12 03:20:01.367  4223  4386 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+08-12 03:20:01.367  4223  4386 I AiAiEcho: (REDACTED) #postPredictionTargets: Sending updates to UISurface %s with targets# %s (types=[%s])
+08-12 03:20:01.368  4223  4386 I AiAiEcho: (REDACTED) #postPredictionTargets: Sending updates to UISurface %s with targets# %s (types=[%s])
+08-12 03:20:01.369 14495 14495 D SsBaseTemplateCard: No text view can be set up
+08-12 03:20:01.369   537   537 I RefreshRateSelector: Display 4619827677550801152 policy changed
+08-12 03:20:01.369   537   537 I RefreshRateSelector: Previous: {defaultModeId=0, allowGroupSwitching=false, primaryRanges={physical=[0.00 Hz, inf Hz], render=[0.00 Hz, 60.00 Hz]}, appRequestRanges={physical=[0.00 Hz, inf Hz], render=[0.00 Hz, 60.00 Hz]}}
+08-12 03:20:01.369   537   537 I RefreshRateSelector: Current:  DisplayManagerPolicy{defaultModeId=1, allowGroupSwitching=false, primaryRanges={physical=[90.00 Hz, 90.00 Hz], render=[0.00 Hz, 60.00 Hz]}, appRequestRanges={physical=[90.00 Hz, 90.00 Hz], render=[0.00 Hz, 60.00 Hz]}}
+08-12 03:20:01.369   537   537 I RefreshRateSelector: 1 mode changes were performed under the previous policy
+08-12 03:20:01.369   537   537 D DisplayDevice: setDesiredMode 4619827677550801152 {mode=45.00 Hz (90.00 Hz(90.00 Hz)), emitEvent=true, force=false}
+08-12 03:20:01.369 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:20:01.369 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:20:01.369 14495 14495 D SsBaseTemplateCard: Passed-in item info is null
+08-12 03:20:01.369 14495 14495 I SsBaseTemplateCard: Secondary card pane is null
+08-12 03:20:01.374  2353  2353 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SHOW
+08-12 03:20:01.374  2353  2353 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+08-12 03:20:01.376   521 10433 I keystore2: system/security/keystore2/src/super_key.rs:978 - UnlockedDeviceRequired super keys for user 0 are retained in plaintext, with biometric-encrypted copy too.
+08-12 03:20:01.376  2353  2429 D KeyguardViewMediator: updateActivityLockScreenState(true, true)
+08-12 03:20:01.378  1931  6447 W UserManagerService: Requested status bar icon for non-badged user 0
+08-12 03:20:01.387   526   526 D libnos_datagram: Calling App 0x02 with params 0x0000
+08-12 03:20:01.388  2353  2353 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+08-12 03:20:01.388  1931  6447 D SystemServerTiming: getUserSwitchability-0
+08-12 03:20:01.388  1931  6447 D SystemServerTiming: TM.isInCall
+08-12 03:20:01.389  1931  6447 D SystemServerTiming: hasUserRestriction-DISALLOW_USER_SWITCH
+08-12 03:20:01.389  1931  6447 D SystemServerTiming: getInt-ALLOW_USER_SWITCHING_WHEN_SYSTEM_USER_LOCKED
+08-12 03:20:01.389  1931  6447 D SystemServerTiming: isUserUnlocked-USER_SYSTEM
+08-12 03:20:01.392 14495 14495 I OverviewComponentObserver: updateOverviewTargets: mIsHomeDisabled=true, isDefaultHomeNull=false, mIsDefaultHome=true
+08-12 03:20:01.398  1931  1971 I DisplayDeviceRepository: Display device changed: DisplayDeviceInfo{"Built-in Screen": uniqueId="local:4619827677550801152", 1080 x 2400, modeId 2, renderFrameRate 45.0, defaultModeId 1, userPreferredModeId 1, supportedModes [{id=1, width=1080, height=2400, fps=60.0, vsync=60.0, alternativeRefreshRates=[90.0], supportedHdrTypes=[2, 3, 4]}, {id=2, width=1080, height=2400, fps=90.0, vsync=90.0, alternativeRefreshRates=[60.0], supportedHdrTypes=[2, 3, 4]}], colorMode 0, supportedColorModes [0, 7, 9], hdrCapabilities HdrCapabilities{mSupportedHdrTypes=[2, 3, 4], mMaxLuminance=1000.0, mMaxAverageLuminance=120.0, mMinLuminance=5.0E-4}, allmSupported false, gameContentTypeSupported false, density 420, 391.885 x 409.127 dpi, appVsyncOff 6233333, presDeadline 11500000, cutout DisplayCutout{insets=Rect(0, 118 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(480, 0 - 625, 118), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1080 displayHeight=2400 physicalDisplayWidth=1080 physicalDisplayHeight=2400 density={2.625} cutoutSpec={M 507,66 a 33,33 0 1 0 66,0 33,33 0 1 0 -66,0 Z @left} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}} sideOverrides={}}, touch INTERNAL, rotation 0, type INTERNAL, address {port=0, model=0x401ceccbbbeef1}, deviceProductInfo DeviceProductInfo{name=Common Panel, manufacturerPnpId=GGL, productId=0, modelYear=null, manufactureDate=ManufactureDate{week=1, year=1990}, connectionToSinkType=0}, state OFF, committedState OFF, frameRateOverride , brightnessMinimum 0.0, brightnessMaximum 1.0, brightnessDefault 0.14028056, hdrSdrRatio 1.0, roundedCorners RoundedCorners{[RoundedCorner{position=TopLeft, radius=47, center=Point(47, 47)}, RoundedCorner{position=TopRight, radius=47, center=Point(1033, 47)}, RoundedCorner{position=BottomRight, radius=48, center=Point(1032, 2352)}, RoundedCorner{position=BottomLeft, radius=48, center=Point(48, 2352)}]}, FLAG_ALLOWED_TO_BE_DEFAULT_DISPLAY, FLAG_ROTATES_WITH_CONTENT, FLAG_SECURE, FLAG_SUPPORTS_PROTECTED_BUFFERS, FLAG_TRUSTED, installOrientation 0, displayShape DisplayShape{ spec=2007282862 displayWidth=1080 displayHeight=2400 physicalPixelDisplaySizeRatio=1.0 rotation=0 offsetX=0 offsetY=0 scale=1.0}}
+08-12 03:20:01.400  1931  1971 D DisplayManagerService: Ignore redundant display event 0/2 to 10138/844
+08-12 03:20:01.401  1114  1187 D audio_hw: adev_set_parameters: enter: screen_state=off
+08-12 03:20:01.401  1931  2001 D BrightnessThermalClamper: Thermal status observer already started
+08-12 03:20:01.401  1931  2001 D BrightnessPowerClamper: Power throttling data is missing for configuration data.
+08-12 03:20:01.402  1931  2731 D SystemServerTiming: getUserSwitchability-0
+08-12 03:20:01.402  1931  2731 D SystemServerTiming: TM.isInCall
+08-12 03:20:01.403  1931  2731 D SystemServerTiming: hasUserRestriction-DISALLOW_USER_SWITCH
+08-12 03:20:01.403  1931  2731 D SystemServerTiming: getInt-ALLOW_USER_SWITCHING_WHEN_SYSTEM_USER_LOCKED
+08-12 03:20:01.403  1931  2731 D SystemServerTiming: isUserUnlocked-USER_SYSTEM
+08-12 03:20:01.424   526   526 D libnos_datagram: App 0x02 returning 0x0
+08-12 03:20:01.471  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Gyroscope (active:1).
+08-12 03:20:01.476  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 1: Enabled 1, odr_index 7, period_ns 5000000.
+08-12 03:20:01.476  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/240/15/30 WM: 172 Intr: 3.
+08-12 03:20:01.477  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 571818ns.
+08-12 03:20:01.478  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for MMC56X3X Magnetometer (active:2).
+08-12 03:20:01.478  1377  1377 D AOC     : A3:MSG: mmc56x3x_device.cc, 409: USF: MMC56X3X0: mmc56x3x_enable_measure odr = 100.
+08-12 03:20:01.480  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Accelerometer (active:4).
+08-12 03:20:01.481  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 0: Enabled 1, odr_index 5, period_ns 20000000.
+08-12 03:20:01.481  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/240/15/30 WM: 172 Intr: 3.
+08-12 03:20:01.482  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 372152ns.
+08-12 03:20:01.483  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Temperature (active:4).
+08-12 03:20:01.484  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 2: Enabled 1, odr_index 3, period_ns 66666666.
+08-12 03:20:01.484  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/240/15/30 WM: 19 Intr: 19.
+08-12 03:20:01.485  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 458659ns.
+08-12 03:20:01.925   526   543 D libnos_datagram: Calling App 0x00 with params 0x0200
+08-12 03:20:01.958   526   543 D libnos_datagram: App 0x00 returning 0x0
+08-12 03:20:02.016  4780  9502 W HomeApp|zew: Waiting 15 seconds for auth recovery...
+08-12 03:20:03.152  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC:39.8548 raw data: VIRTUAL-SKIN-CHARGE-WLC:39854.8 disp_therm:37715 skin_therm2:41845 usb_pwr_therm2:37849 
+08-12 03:20:03.163  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC power_budget=516.162 err=-0.854797 s_power=2000 time_elapsed_ms=7039 p=-683.838 i=-800 d=0 budget transient=0 control target=2
+08-12 03:20:03.164  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC power budget=0 after (PARTIAL_SYSTEM_POWER: 854.79 mW, cdev_weight: 0.800000) is excluded
+08-12 03:20:03.164  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC binded power rails: (PARTIAL_SYSTEM_POWER: 854.79 mW, cdev_weight: 0.800000)
+08-12 03:20:03.168  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU:37.5961 raw data: VIRTUAL-NEU-QUT-SKIN1-SKIN2-USB-USB2-GNSS-1:36599.1 VIRTUAL-NEU-QUT-SKIN1-SKIN2-USB-USB2-GNSS-4:35782.9 VIRTUAL-QUT-SKIN2-USB-GNSS-3:37596.1 VIRTUAL-QUT-SKIN2-USB-USB2-2:37284.9 VIRTUAL-SKIN:37596.1 VIRTUAL-SKIN-CPU:37596.1 gnss_tcxo_therm:38361 neutral_therm:38495 quiet_therm:36870 skin_therm1:37916 skin_therm2:41845 usb_pwr_therm:37738 usb_pwr_therm2:37849 
+08-12 03:20:03.168  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU power_budget=2396.56 err=3.4039 s_power=800 time_elapsed_ms=7039 p=1361.56 i=235.004 d=0 budget transient=0 control target=3
+08-12 03:20:03.169  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU power budget=2368.07 after (VSYS_PWR_MODEM: 94.99 mW, cdev_weight: 0.300000) is excluded
+08-12 03:20:03.169  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU binded power rails: (VSYS_PWR_MODEM: 94.99 mW, cdev_weight: 0.300000)(S4M_VDD_CPUCL0: 59.64 mW)(S2M_VDD_CPUCL2: 24.98 mW)(S3M_VDD_CPUCL1: 16.27 mW)
+08-12 03:20:03.169  1656  1660 I pixel-thermal: VIRTUAL-SKIN:37.5961 raw data: VIRTUAL-SKIN:37596.1 
+08-12 03:20:03.169  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE:37.5961 raw data: VIRTUAL-SKIN:37596.1 VIRTUAL-SKIN-CHARGE:37596.1 
+08-12 03:20:03.170  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE power_budget=1892.23 err=1.4039 s_power=1200 time_elapsed_ms=7039 p=982.727 i=-290.495 d=0 budget transient=0 control target=2
+08-12 03:20:03.170  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE power budget=1208.4 after (PARTIAL_SYSTEM_POWER: 854.79 mW, cdev_weight: 0.800000) is excluded
+08-12 03:20:03.170  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE binded power rails: (PARTIAL_SYSTEM_POWER: 854.79 mW, cdev_weight: 0.800000)
+08-12 03:20:03.170  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU:37.5961 raw data: VIRTUAL-SKIN:37596.1 VIRTUAL-SKIN-CPU-GPU:37596.1 
+08-12 03:20:03.170  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU power_budget=3021.17 err=7.4039 s_power=800 time_elapsed_ms=7039 p=2221.17 i=0 d=0 budget transient=0 control target=3
+08-12 03:20:03.170  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU binded power rails: (S4M_VDD_CPUCL0: 59.64 mW)(S2M_VDD_CPUCL2: 24.98 mW)(S3M_VDD_CPUCL1: 16.27 mW)(S2S_VDD_G3D: 6.18 mW)
+08-12 03:20:03.171  1656  1660 I pixel-thermal: VIRTUAL-SKIN-HINT:37.5961 raw data: VIRTUAL-SKIN:37596.1 VIRTUAL-SKIN-HINT:37596.1 
+08-12 03:20:03.172  1656  1660 I pixel-thermal: cellular-emergency:37.5961 raw data: VIRTUAL-SKIN:37596.1 cellular-emergency:37596.1 
+08-12 03:20:03.172  1656  1660 I pixel-thermal: skin_therm1:37.916 raw data: skin_therm1:37916 
+08-12 03:20:03.604  1931  2126 D ActivityManager: freezing 2703 com.android.settings
+08-12 03:20:03.639  1931  2126 D ActivityManager: freezing 3289 com.google.android.turboadapter
+08-12 03:20:03.648  1931  2277 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+08-12 03:20:03.652  1931  2277 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+08-12 03:20:03.652  1931  2277 D InetDiagMessage: Destroyed live tcp sockets for uids={10198} in 10ms
+08-12 03:20:03.703  1931  2126 D ActivityManager: freezing 3277 com.google.android.settings.intelligence
+08-12 03:20:03.711  1931  2277 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+08-12 03:20:03.715  1931  2277 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+08-12 03:20:03.715  1931  2277 D InetDiagMessage: Destroyed live tcp sockets for uids={10134} in 7ms
+08-12 03:20:04.189  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 4: Enabled 0, odr_index 0, period_ns 0.
+08-12 03:20:04.190  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/240/15/30 WM: 19 Intr: 19.
+08-12 03:20:04.191  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 1270753ns.
+08-12 03:20:04.194  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Stationary Detect (active:-1).
+08-12 03:20:04.194  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 517 not found.
+08-12 03:20:04.195  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 161: USF: Received kErrNotFound when disabling one shot sensor.
+08-12 03:20:04.195  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Motion Detect (active:1).
+08-12 03:20:04.195  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 3: Enabled 1, odr_index 1, period_ns 500000000.
+08-12 03:20:04.195  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/240/15/30 WM: 19 Intr: 19.
+08-12 03:20:04.196  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 477254ns.
+08-12 03:20:04.196  1377  1377 D AOC     : A3:MSG: motion_state_sensor.cc, 327: USF: MoSt: MotionDetect sampling started with sampling ID 525.
+08-12 03:20:04.198  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Motion Detect (active:2).
+08-12 03:20:04.199  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Free Fall Detect (active:0).
+08-12 03:20:04.200  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 5: Enabled 0, odr_index 0, period_ns 0.
+08-12 03:20:04.200  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/240/15/30 WM: 19 Intr: 19.
+08-12 03:20:04.201  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 494263ns.
+08-12 03:20:04.202  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Stationary Detect (active:-1).
+08-12 03:20:04.203  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 523 not found.
+08-12 03:20:04.204  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 145: USF: Received kErrNotFound when disabling one shot sensor.
+08-12 03:20:04.491  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Gyroscope (active:2).
+08-12 03:20:04.491  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 1: Enabled 0, odr_index 0, period_ns 0.
+08-12 03:20:04.492  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/0/15/7 WM: 3 Intr: 28.
+08-12 03:20:04.492  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 823527ns.
+08-12 03:20:04.494  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for MMC56X3X Magnetometer (active:2).
+08-12 03:20:04.495  1377  1377 D AOC     : A3:MSG: mmc56x3x_device.cc, 409: USF: MMC56X3X0: mmc56x3x_enable_measure odr = 10.
+08-12 03:20:04.497  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Accelerometer (active:5).
+08-12 03:20:04.498  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 0: Enabled 1, odr_index 5, period_ns 20000000.
+08-12 03:20:04.500  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/0/15/7 WM: 3 Intr: 28.
+08-12 03:20:04.500  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 261719ns.
+08-12 03:20:04.500  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Gyroscope (active:1).
+08-12 03:20:04.501  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Temperature (active:3).
+08-12 03:20:04.501  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 732: USF: Lsm6dsvDevice: Sensor 2: Enabled 1, odr_index 3, period_ns 66666666.
+08-12 03:20:04.502  1377  1377 D AOC     : A3:MSG: lsm6dsv_fifo.cc, 755: USF: Lsm6dsvFifo: ODR: XL/G/T/TS: 60/0/15/7 WM: 82 Intr: 1.
+08-12 03:20:04.502  1377  1377 D AOC     : A3:MSG: lsm6dsv_device.cc, 641: USF: Lsm6dsvDevice: Fifo was disabled for 409465ns.
+08-12 03:20:04.502  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for MMC56X3X Magnetometer (active:2).
+08-12 03:20:04.502  1377  1377 D AOC     : A3:MSG: mmc56x3x_device.cc, 409: USF: MMC56X3X0: mmc56x3x_enable_measure odr = 10.
+08-12 03:20:05.922  1931  2126 D ActivityManager: freezing 3505 com.google.android.apps.privacy.wildlife
+08-12 03:20:05.929  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 532: VSC: [Step Counter] requestSensorEvents: sensor 0x20002, period=18446744073709 latency
+08-12 03:20:05.929  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1677: USF: Received start sampling request for LSM6DSV Motion Detect (active:3).
+08-12 03:20:05.929  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 550: VSC: [Step Counter] stopSensorEvents: sensor 0x10001
+08-12 03:20:05.929  1931  2277 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+08-12 03:20:05.930  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Accelerometer (active:2).
+08-12 03:20:05.932  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 430: USF: Stopping stale sample stream with sampling ID: 518
+08-12 03:20:05.933  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Accelerometer (active:1).
+08-12 03:20:05.933  1931  2277 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+08-12 03:20:05.934  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 518 not found.
+08-12 03:20:05.934  1931  2277 D InetDiagMessage: Destroyed live tcp sockets for uids={10438} in 8ms
+08-12 03:20:06.306  1931  2126 D ActivityManager: freezing 3366 com.google.android.gms
+08-12 03:20:06.314  1931  2126 D ActivityManager: freezing 28378 com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+08-12 03:20:06.546  1931  2277 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+08-12 03:20:06.550  1931  2277 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+08-12 03:20:06.550  1931  2277 D InetDiagMessage: Destroyed live tcp sockets for uids={99016} in 6ms
+08-12 03:20:06.859  3530  3530 D WM-DelayedWorkTracker: Scheduling work 60c06ace-c1fe-4b03-86c1-4759835bcd6b
+08-12 03:20:06.860  3530  3530 D WM-GreedyScheduler: Starting work for 60c06ace-c1fe-4b03-86c1-4759835bcd6b
+08-12 03:20:06.879  3530  3584 D WM-Processor: tog: processing WorkGenerationalId(workSpecId=60c06ace-c1fe-4b03-86c1-4759835bcd6b, generation=0)
+08-12 03:20:06.892  3530  3584 D MddListenableWorkerFactory: createWorker for class: com.google.android.apps.messaging.shared.datamodel.workqueue.WorkQueueWorkerShim
+08-12 03:20:06.903  3530  3530 D WM-WorkerWrapper: Starting work for com.google.android.apps.messaging.shared.datamodel.workqueue.WorkQueueWorkerShim
+08-12 03:20:06.932  2964  3015 I NearbyConnections: Client (114646821) 0p:com.google.android.gms.nearby.sharing disconnecting
+08-12 03:20:06.933  2964  3015 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.934  2964 32080 I NearbyConnections: Because they unbound from our service, all state for client 114646821 will now be cleaned up.
+08-12 03:20:06.945  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.949  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.952  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.953  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.953  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.953  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.953  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.953  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.953  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.957  2964 32080 I Nearby  : (REDACTED) Successfully shutdown executor %s.
+08-12 03:20:06.989  3530  3609 I BuglePipeline: Finished pipeline work handler.
+08-12 03:20:06.998  3530  4862 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=60c06ace-c1fe-4b03-86c1-4759835bcd6b, class=com.google.android.apps.messaging.shared.datamodel.workqueue.WorkQueueWorkerShim, tags={ com.google.android.apps.messaging.shared.datamodel.workqueue.WorkQueueWorkerShim,smart_retries_pipeline_work_handler-retry_subqueue } ]
+08-12 03:20:07.000  3530  3530 D WM-Processor: tog 60c06ace-c1fe-4b03-86c1-4759835bcd6b executed; reschedule = false
+08-12 03:20:07.010  3530  4862 D WM-SystemJobScheduler: Cancelling work ID 60c06ace-c1fe-4b03-86c1-4759835bcd6b, Job ID 1868
+08-12 03:20:07.032  3530  4862 D WM-GreedyScheduler: Cancelling work ID 60c06ace-c1fe-4b03-86c1-4759835bcd6b
+08-12 03:20:07.044  3530  4862 D WM-SystemJobScheduler: Scheduling work ID 85b038ca-1b38-45c8-bf75-b076296803ea (com.google.apps.tiktok.contrib.work.TikTokListenableWorker), Job ID 1873
+08-12 03:20:07.047  1931  2116 D ActivityManager: sync unfroze 844 com.android.vending for 6
+08-12 03:20:07.052  1931  1990 E system_server: updateValue is called with a value {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, which is lower than the previous value {0, 0, 0, 0, 79, 55, 81, 114, 68, 32, 768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+08-12 03:20:07.053  1931  1990 E system_server: updateValue is called with a value {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, which is lower than the previous value {0, 0, 88, 41, 137, 283, 289, 238, 177, 45, 254, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 0, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+08-12 03:20:07.060  3530  4862 D WM-GreedyScheduler: Ignoring {WorkSpec: 9d5e70d2-01c5-4df0-845e-6ce0f984ef6a}. Requires device idle.
+08-12 03:20:07.061  3530  4862 D WM-GreedyScheduler: Ignoring {WorkSpec: 512b40b6-420b-4911-81d1-c7edfc18008b}. Requires device idle.
+08-12 03:20:07.061  3530  4862 D WM-GreedyScheduler: Ignoring {WorkSpec: 7202a121-ede9-4e50-94db-42d71d7b0bf2}. Requires ContentUri triggers.
+08-12 03:20:07.061  3530  4862 D WM-GreedyScheduler: Ignoring {WorkSpec: ba0c20b0-5c1e-4461-a2b7-13c18e4914bf}. Requires device idle.
+08-12 03:20:07.061  3530  4862 D WM-GreedyScheduler: Ignoring {WorkSpec: 393189bb-ecab-445d-89ab-d3be91e5dbd4}. Requires device idle.
+08-12 03:20:07.061  3530  4862 D WM-GreedyScheduler: Ignoring {WorkSpec: fa31cee3-b6d4-4994-9002-4155290166d1}. Requires ContentUri triggers.
+08-12 03:20:07.106  2964 32080 I NearbyPresence: (REDACTED) %s verified [==] new request %s equals to the old request
+08-12 03:20:07.111   844   844 I Finsky  : [2] SCH: job service start with id 9736.
+08-12 03:20:07.132  4298  4335 D PowerManagerGril: setLtePrefMode(LTE_PREF_MODE_DISABLED), result: 2
+08-12 03:20:07.132  4298  4335 W PowerManagerDecision: slot#0: Failed to change LtePref mode to: LTE_PREF_MODE_DISABLED, err: 2
+08-12 03:20:07.136  4298  4335 D PowerManagerGril: setLtePrefMode(LTE_PREF_MODE_DISABLED), result: 1
+08-12 03:20:07.138  4298  4335 D PowerManagerGril: setLtePrefMode(LTE_PREF_MODE_DISABLED), result: 1
+08-12 03:20:07.138  4298  4335 W PowerManagerDecision: slot#1: Failed to change LtePref mode to: LTE_PREF_MODE_DISABLED, err: 1
+08-12 03:20:07.149   844  4866 I Finsky  : [246] SCH: Satisfied jobs for 9736 are: 12-1
+08-12 03:20:07.157   844  4865 I Finsky  : [245] SCH: Job 12-1 starting
+08-12 03:20:07.157   844   844 I Finsky  : [2] WM::SCH: Logging work start for 12-1
+08-12 03:20:07.180   844   844 I Finsky  : [2] [ContentSync] job started
+08-12 03:20:07.627   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.mainline.primary.libs' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:07.658   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.uwb' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:07.664   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.widevine.nonupdatable' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:07.749   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.devicelock' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:07.812   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.apex.cts.shim' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:07.823  2353  2353 D DLObserver: onReceive(); android.intent.action.BATTERY_CHANGED
+08-12 03:20:07.823  2353  2353 D DLObserver: plugged=2
+08-12 03:20:07.828  2353  2353 D SystemEventDataSource: onReceive: intentAction
+08-12 03:20:07.829  2353  2353 D PowerNotificationWarningsGoogleImpl: onReceive: android.intent.action.BATTERY_CHANGED
+08-12 03:20:07.829  2353  3160 D PowerUI : can't show warning due to - plugged: true status unknown: false
+08-12 03:20:07.829  2353  2353 D IncompatibleChargerNotification: dispatchIntent: android.intent.action.BATTERY_CHANGED
+08-12 03:20:07.831  2353  2385 D GoogleBatteryDataSource: fetchDwellDefendStatus: CONNECTED
+08-12 03:20:07.832  2353  2385 D GoogleBatteryDataSource: fetchTempDefendStatus: t_sum=0, time_sum=0 t_avg=0 lst_v=0 lst_t=0 lst_u=0, dt=0, t=0 e=1
+08-12 03:20:07.833  2353  2385 D SystemEventDataSource: updatedEventData: SystemEventData(intentAction=android.intent.action.BATTERY_CHANGED, plugged=EventData(value=2), batteryScale=EventData(value=100), batteryLevel=EventData(value=43), chargingStatus=EventData(value=1), maxChargingCurrent=EventData(value=3000000), maxChargingVoltage=EventData(value=5000000), batteryStatus=EventData(value=2), halEventData=HalEventData(dockDefendStatus=EventData(value=-3), tempDefendEventData=EventData(value=false), dwellDefendEventData=EventData(value=false)), settingsEventData=SettingsEventData(dockDefenderBypass=EventData(value=0)), frameworkApiEventData=FrameworkApiEventData(batterySaverState=EventData(value=false), extremeBatterySaverState=EventData(value=false)))
+08-12 03:20:07.833  2353  2385 D SystemEventDataSource: extra doesn't changed, no need to onEventSourceUpdate
+08-12 03:20:07.889   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.appsearch' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:07.903   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.art' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:07.908   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.hardware.biometrics.face' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:07.997   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.mediaprovider' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.042   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.pixel.camera.hal' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.050   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.resolv' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.073   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.configinfrastructure' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.079   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.161   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.sdkext' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.178   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.179   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tethering' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.262   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.cellbroadcast' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.274   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.pixel.wifi.ext' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.299   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.rkpd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.436   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.pixel.euicc.update' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.453   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.compos' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.455   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tzdata5' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.482   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.permission' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.520   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.wifi' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.753   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media.swcodec' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.803   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.btservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.821   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adbd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.852   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.i18n' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.867   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.conscrypt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.883   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.hardware.cas' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.901   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.neuralnetworks' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.905   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.runtime' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.911   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ipsec' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.929   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ondevicepersonalization' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.945   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.healthfitness' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.994   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.extservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:08.997   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.virt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:09.038   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.os.statsd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:09.064   844   844 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.scheduling' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+08-12 03:20:09.134   844   844 I Finsky  : [2] App states replicator found 35 unowned apps
+08-12 03:20:09.340  2964  4254 E AuthPII : [RequestTokenManager] getToken() -> BAD_AUTHENTICATION. App: com.android.vending, Service: oauth2:https://www.googleapis.com/auth/googleplay
+08-12 03:20:09.340  2964  4254 E AuthPII : bhpb: Long live credential not available.
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at agul.a(:com.google.android.gms@261631029@26.16.31 (190400-900800821):1347)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at agus.b(:com.google.android.gms@261631029@26.16.31 (190400-900800821):26)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at aguq.a(:com.google.android.gms@261631029@26.16.31 (190400-900800821):745)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at agup.b(:com.google.android.gms@261631029@26.16.31 (190400-900800821):151)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at aajn.d(:com.google.android.gms@261631029@26.16.31 (190400-900800821):800)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at agoc.getAuthToken(:com.google.android.gms@261631029@26.16.31 (190400-900800821):411)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:250)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at android.os.Binder.transact(Binder.java:1345)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at cmqa.onTransact(:com.google.android.gms@261631029@26.16.31 (190400-900800821):12)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at android.os.Binder.transact(Binder.java:1345)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at cahu.onTransact(:com.google.android.gms@261631029@26.16.31 (190400-900800821):169)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at android.os.Binder.execTransactInternal(Binder.java:1505)
+08-12 03:20:09.340  2964  4254 E AuthPII : 	at android.os.Binder.execTransact(Binder.java:1444)
+08-12 03:20:09.341  2964  4254 E AuthPII : Message is Long live credential not available.
+08-12 03:20:09.341  2964  4254 E AuthPII : bhpb: Long live credential not available.
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at agul.a(:com.google.android.gms@261631029@26.16.31 (190400-900800821):1347)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at agus.b(:com.google.android.gms@261631029@26.16.31 (190400-900800821):26)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at aguq.a(:com.google.android.gms@261631029@26.16.31 (190400-900800821):745)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at agup.b(:com.google.android.gms@261631029@26.16.31 (190400-900800821):151)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at aajn.d(:com.google.android.gms@261631029@26.16.31 (190400-900800821):800)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at agoc.getAuthToken(:com.google.android.gms@261631029@26.16.31 (190400-900800821):411)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:250)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at android.os.Binder.transact(Binder.java:1345)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at cmqa.onTransact(:com.google.android.gms@261631029@26.16.31 (190400-900800821):12)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at android.os.Binder.transact(Binder.java:1345)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at cahu.onTransact(:com.google.android.gms@261631029@26.16.31 (190400-900800821):169)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at android.os.Binder.execTransactInternal(Binder.java:1505)
+08-12 03:20:09.341  2964  4254 E AuthPII : 	at android.os.Binder.execTransact(Binder.java:1444)
+08-12 03:20:09.367  2964  4254 I Auth    : (REDACTED) [GetToken] GetToken failed for app=%s with userRecoverable status: %s 
+08-12 03:20:09.370  2964  4254 W Auth    : [ChimeraGetToken] exception while trying to fetch auth tokens for app=com.google.android.gms, scope=oauth2:https://www.googleapis.com/auth/googleplay [CONTEXT service_id=153 ]
+08-12 03:20:09.370  2964  4254 W Auth    : aguk: GetToken failed with status code and recovery intent: BadAuthentication
+08-12 03:20:09.370  2964  4254 W Auth    : 	at agup.b(:com.google.android.gms@261631029@26.16.31 (190400-900800821):352)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at aajn.d(:com.google.android.gms@261631029@26.16.31 (190400-900800821):800)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at agoc.getAuthToken(:com.google.android.gms@261631029@26.16.31 (190400-900800821):411)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:250)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at android.os.Binder.transact(Binder.java:1345)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at cmqa.onTransact(:com.google.android.gms@261631029@26.16.31 (190400-900800821):12)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at android.os.Binder.transact(Binder.java:1345)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at cahu.onTransact(:com.google.android.gms@261631029@26.16.31 (190400-900800821):169)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at android.os.Binder.execTransactInternal(Binder.java:1505)
+08-12 03:20:09.370  2964  4254 W Auth    : 	at android.os.Binder.execTransact(Binder.java:1444)
+08-12 03:20:09.370  2964  4254 W GLSActivity: [GmsAccountAuthenticatorImpl] error status while fetching token:BadAuthentication
+08-12 03:20:09.400   844  4868 I Finsky  : [248] Completed 1 account content syncs with 0 successful.
+08-12 03:20:09.402   844   844 I Finsky  : [2] [ContentSync] Installation state replication failed, parameters=Id: 12-1, CT: 1786484905606, Constraints: [{ L: 100000, D: 86400000, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }].
+08-12 03:20:09.404   844   844 I Finsky  : [2] [ContentSync] Giving up after 5 failures.
+08-12 03:20:09.404   844   844 I Finsky  : [2] SCH: jobFinished: 12-1. TimeElapsed: 2247ms.
+08-12 03:20:09.407   844   844 I Finsky  : [2] WM::SCH: Logging work end for 12-1
+08-12 03:20:09.431   844   873 I Finsky  : [103] SCH: Scheduling phonesky job Id: 1-1337, CT: 1786484020106, Constraints: [{ L: 14399997, D: 57355613, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+08-12 03:20:09.431   844   873 I Finsky  : [103] SCH: Scheduling phonesky job Id: 10-4, CT: 1786484019772, Constraints: [{ L: 1200000, D: 86400000, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+08-12 03:20:09.438   844   873 I Finsky  : [103] SCH: Scheduling 1 system job(s)
+08-12 03:20:09.439   844   873 I Finsky  : [103] SCH: Scheduling system job Id: 9739, L: 210334, D: 56366281, C: false, I: false, N: 1
+08-12 03:20:09.455   844  4865 I Finsky  : [245] SCH: job service finished with id 9736.
+08-12 03:20:09.477   844   844 I Finsky  : [2] Memory trim requested to level 40
+08-12 03:20:09.478   844   844 I Finsky  : [2] Flushing in-memory image cache
+08-12 03:20:10.185  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC:39.7392 raw data: VIRTUAL-SKIN-CHARGE-WLC:39739.2 disp_therm:37671 skin_therm2:41639 usb_pwr_therm2:37849 
+08-12 03:20:10.203  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC power_budget=608.655 err=-0.739182 s_power=2000 time_elapsed_ms=7031 p=-591.345 i=-800 d=0 budget transient=0 control target=2
+08-12 03:20:10.203  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC power budget=16.2119 after (PARTIAL_SYSTEM_POWER: 740.55 mW, cdev_weight: 0.800000) is excluded
+08-12 03:20:10.203  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE-WLC binded power rails: (PARTIAL_SYSTEM_POWER: 740.55 mW, cdev_weight: 0.800000)
+08-12 03:20:10.206  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU:37.4654 raw data: VIRTUAL-NEU-QUT-SKIN1-SKIN2-USB-USB2-GNSS-1:36512 VIRTUAL-NEU-QUT-SKIN1-SKIN2-USB-USB2-GNSS-4:35692 VIRTUAL-QUT-SKIN2-USB-GNSS-3:37465.4 VIRTUAL-QUT-SKIN2-USB-USB2-2:37233.9 VIRTUAL-SKIN:37465.4 VIRTUAL-SKIN-CPU:37465.4 gnss_tcxo_therm:38294 neutral_therm:38406 quiet_therm:36825 skin_therm1:37827 skin_therm2:41639 usb_pwr_therm:37649 usb_pwr_therm2:37849 
+08-12 03:20:10.207  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU power_budget=2448.83 err=3.53457 s_power=800 time_elapsed_ms=7031 p=1413.83 i=235.004 d=0 budget transient=0 control target=3
+08-12 03:20:10.207  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU power budget=2414.78 after (VSYS_PWR_MODEM: 113.51 mW, cdev_weight: 0.300000) is excluded
+08-12 03:20:10.207  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU binded power rails: (VSYS_PWR_MODEM: 113.51 mW, cdev_weight: 0.300000)(S4M_VDD_CPUCL0: 84.31 mW)(S2M_VDD_CPUCL2: 1.06 mW)(S3M_VDD_CPUCL1: 4.30 mW)
+08-12 03:20:10.207  1656  1660 I pixel-thermal: VIRTUAL-SKIN:37.4654 raw data: VIRTUAL-SKIN:37465.4 
+08-12 03:20:10.207  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE:37.4654 raw data: VIRTUAL-SKIN:37465.4 VIRTUAL-SKIN-CHARGE:37465.4 
+08-12 03:20:10.207  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE power_budget=1991.38 err=1.53457 s_power=1200 time_elapsed_ms=7031 p=1074.2 i=-282.822 d=0 budget transient=0 control target=2
+08-12 03:20:10.208  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE power budget=1398.93 after (PARTIAL_SYSTEM_POWER: 740.55 mW, cdev_weight: 0.800000) is excluded
+08-12 03:20:10.208  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CHARGE binded power rails: (PARTIAL_SYSTEM_POWER: 740.55 mW, cdev_weight: 0.800000)
+08-12 03:20:10.208  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU:37.4654 raw data: VIRTUAL-SKIN:37465.4 VIRTUAL-SKIN-CPU-GPU:37465.4 
+08-12 03:20:10.208  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU power_budget=3060.37 err=7.53457 s_power=800 time_elapsed_ms=7031 p=2260.37 i=0 d=0 budget transient=0 control target=3
+08-12 03:20:10.208  1656  1660 I pixel-thermal: VIRTUAL-SKIN-CPU-GPU binded power rails: (S4M_VDD_CPUCL0: 84.31 mW)(S2M_VDD_CPUCL2: 1.06 mW)(S3M_VDD_CPUCL1: 4.30 mW)(S2S_VDD_G3D: 0.00 mW)
+08-12 03:20:10.208  1656  1660 I pixel-thermal: VIRTUAL-SKIN-HINT:37.4654 raw data: VIRTUAL-SKIN:37465.4 VIRTUAL-SKIN-HINT:37465.4 
+08-12 03:20:10.209  1656  1660 I pixel-thermal: cellular-emergency:37.4654 raw data: VIRTUAL-SKIN:37465.4 cellular-emergency:37465.4 
+08-12 03:20:10.209  1656  1660 I pixel-thermal: skin_therm1:37.827 raw data: skin_therm1:37827 
+08-12 03:20:10.750  1656  1656 I pixel-thermal: VIRTUAL-SKIN:37.4654 raw data: VIRTUAL-SKIN:37465.4 
+08-12 03:20:10.753  2544  2621 D TemperatureStateSource: getDeviceTemperatures: deviceTemperatureType=3 temperatureSource=0 temperatures=[37.46543]
+08-12 03:20:10.758  2544  2625 D BusinessScope: Start running the #270 block
+08-12 03:20:10.763  1656  1656 I pixel-thermal: VIRTUAL-SKIN:37.4654 raw data: VIRTUAL-SKIN:37465.4 
+08-12 03:20:10.765  2544  2625 I TemperatureStateSource: temperature was set
+08-12 03:20:10.767  2544  2625 D BusinessScope: Finish running the #270 block
+08-12 03:20:10.768  2544  2625 D BusinessScope: Start running the #271 block
+08-12 03:20:10.770  2544  2620 D ImpulseConnection: bindService: com.google.android.apps.turbo
+08-12 03:20:10.783  1931  6441 W ProcessStats: Tracking association SourceState{9163352 system/1000 BFgs #36764} whose proc state 4 is better than process ProcessState{18af3e0 com.google.android.gms.persistent/10141 pkg=com.google.android.gms} proc state 6 (168 skipped)
+08-12 03:20:10.798  2544  2544 D ImpulseConnection: onServiceConnected: ComponentInfo{com.google.android.apps.turbo/com.google.android.apps.turbo.adaptiveplatform.impulse.ImpulseClientService} service is null false
+08-12 03:20:10.801  2544  2625 D BusinessScope: Finish running the #271 block
+08-12 03:20:11.690  1656  1660 I pixel-thermal: usb_pwr_therm:37.649 raw data: usb_pwr_therm:37649 
+08-12 03:20:11.707  1656  1660 I pixel-thermal: VIRTUAL-USB-UI:0 raw data: USB-MINUS-SKIN2:-3990 VIRTUAL-USB-UI:0 skin_therm2:41639 usb_pwr_therm:37649 
+08-12 03:20:11.708  1656  1660 I pixel-thermal: VIRTUAL-USB-THROTTLING:0 raw data: USB-MINUS-SKIN2:-3990 VIRTUAL-USB-THROTTLING:0 usb_pwr_therm:37649 
+08-12 03:20:11.709  1656  1660 I pixel-thermal: Power rails total power: 927.08 mW for 60036 ms
+08-12 03:20:11.709  1656  1660 I pixel-thermal: Power rails [S6M_LLDO1: 31.78 mW] [L7S_SENSORS: 2.60 mW] [S10M_VDD_TPU: 0.00 mW] [S6S_LLDO2: 26.12 mW] [S8M_LLDO2: 33.10 mW] [S5M_VDD_INT: 15.17 mW] 
+08-12 03:20:11.709  1656  1660 I pixel-thermal: Power rails [S3M_VDD_CPUCL1: 7.14 mW] [VSYS_PWR_CAM: 5.06 mW] [S2M_VDD_CPUCL2: 4.19 mW] [S1M_VDD_MIF: 25.11 mW] [S4M_VDD_CPUCL0: 46.76 mW] [VSYS_PWR_WLAN_BT: 50.80 mW] 
+08-12 03:20:11.709  1656  1660 I pixel-thermal: Power rails [VSYS_PWR_RFFE: 0.40 mW] [VSYS_PWR_MODEM: 99.46 mW] [VSYS_PWR_MMWAVE: 0.22 mW] [S7S_MLDO: 71.33 mW] [S8S_VDD_G3D_L2: 3.51 mW] [S5S_VDDQ_MEM: 6.23 mW] 
+08-12 03:20:11.709  1656  1660 I pixel-thermal: Power rails [S1S_VDD_CAM: 6.69 mW] [S2S_VDD_G3D: 7.77 mW] [S9S_VDD_AOC: 7.71 mW] [S4S_VDD2H_MEM: 25.74 mW] [L15M_VDD_SLC_M: 10.70 mW] [VSYS_PWR_DISPLAY: 439.47 mW] 
+08-12 03:20:11.887   521  4860 I keystore2: system/security/keystore2/watchdog/src/lib.rs:319 - Watchdog thread idle -> terminating. Have a great day.
+08-12 03:20:12.658  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 532: VSC: [Significant Motion] requestSensorEvents: sensor 0x20002, period=18446744073709 l
+08-12 03:20:12.658  1377  1377 D AOC     : A3:MSG: vsc_controller.cc, 550: VSC: [Significant Motion] stopSensorEvents: sensor 0x10001
+08-12 03:20:12.658  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Accelerometer (active:1).
+08-12 03:20:12.659  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 430: USF: Stopping stale sample stream with sampling ID: 520
+08-12 03:20:12.659  1377  1377 D AOC     : A3:MSG: usf_sensor_client.cc, 430: USF: Stopping stale sample stream with sampling ID: 520
+08-12 03:20:12.659  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Accelerometer (active:0).
+08-12 03:20:12.659  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 520 not found.
+08-12 03:20:12.660  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 1685: USF: Received stop sampling request for LSM6DSV Accelerometer (active:0).
+08-12 03:20:12.660  1377  1377 D AOC     : A3:MSG: usf_sensor.cc, 2141: USF: Sampling configuration 520 not found.
+08-12 03:20:12.959  2964  2964 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
