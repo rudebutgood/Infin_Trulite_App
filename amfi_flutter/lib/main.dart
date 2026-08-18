@@ -3,7 +3,6 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
-import 'models/nav_item.dart';
 import 'models/fii_dii_data.dart';
 import 'services/nav_repository.dart';
 import 'services/portfolio_service.dart';
@@ -14,11 +13,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:intl/intl.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:translator/translator.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'indices_page.dart';
+import 'tabs/funds_tab.dart';
+import 'tabs/portfolio_tab.dart';
+import 'pages/portfolio_charts_page.dart';
+import 'widgets/common_widgets.dart';
 
 /**
  * INFIN TRULITE - Main Entry Point
@@ -196,51 +199,30 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   final PortfolioService _portfolio = PortfolioService();
   final FiiDiiService _fiiDiiService = FiiDiiService();
   final IndexService _indexService = IndexService();
-  final TextEditingController _searchCtl = TextEditingController();
-  final ScrollController _scrollCtl = ScrollController();
-  final ScrollController _portfolioScrollCtl = ScrollController();
-  final FocusNode _searchFocus = FocusNode();
   final GoogleTranslator _translator = GoogleTranslator();
 
   // Cache & State
   final Map<String, String> _translationCache = {};
-  List<NavItem> _items = [];
-  List<String> _recentSearches = [];
-  bool _loading = true;
-  bool _showSuggestions = false;
-  bool _showNetReturns = false;
+  bool _loading = false;
+  int _refreshCount = 0;
 
-  // NAV Filters
-  final List<String> _fundTypes = ['All', 'Direct', 'Regular', 'IDCW', 'Others'];
-  String _selectedFundType = 'Direct';
-  String _selectedCompany = 'All Companies';
-  List<String> _amcList = ['All Companies'];
+  // Metadata
   String? _lastImportedAt;
   DateTime? _lastImportedAtDt;
   Duration? _lastImportDuration;
   String? _lastApiTimestamp;
-  String _sortOption = 'Return \u2193';
   Map<String, dynamic>? _lastSyncLog;
   List<FiiDiiData> _fiiDiiData = [];
   bool _fetchingFiiDii = false;
   List<IndexData> _indicesData = [];
   bool _fetchingIndices = false;
 
-  // Portfolio State
+  // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
-  Map<String, List<Map<String, dynamic>>> _groupedPortfolio = {};
-  Set<String> _expandedGroups = {};
-  String _selectedPortfolioCompany = 'All Companies';
-  List<String> _portfolioAmcList = ['All Companies'];
-  String _portfolioSortOption = 'Invested \u2193';
-  String _portfolioPeriod = '1D';
   String _selectedLanguage = 'English';
-  bool _fetchingHistorical = false;
-  DateTimeRange? _customPortfolioRange;
   List<Map<String, dynamic>> _importedFiles = [];
   Set<int>? _selectedImportIds;
   DateTime? _selectedFilterDate;
-  Map<String, double> _periodNavs = {};
 
   // Application Settings
   bool _setOpenPortfolioFirst = false;
@@ -267,14 +249,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       }
     });
 
-    _searchFocus.addListener(() {
-      if (mounted) {
-        setState(() {
-          _showSuggestions = _searchFocus.hasFocus && _recentSearches.isNotEmpty;
-        });
-      }
-    });
-
     _initStateAsync();
   }
 
@@ -282,10 +256,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     final prefs = await SharedPreferences.getInstance();
 
     // Load persisted filters
-    _selectedFundType = prefs.getString('selectedFundType') ?? 'Direct';
     _selectedLanguage = prefs.getString('selectedLanguage') ?? 'English';
-    _searchCtl.text = prefs.getString('lastSearch') ?? '';
-    _recentSearches = prefs.getStringList('recentSearches') ?? [];
 
     // Load metadata from Repository
     _lastImportedAt = await _repo.lastImportedAt();
@@ -293,7 +264,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       try { _lastImportedAtDt = DateTime.parse(_lastImportedAt!); } catch (_) { _lastImportedAtDt = null; }
     }
     _lastApiTimestamp = await _repo.lastApiTimestamp();
-    _amcList = ['All Companies', ...await _repo.getFundCompanies()];
     _lastSyncLog = await _repo.getLastSyncLog();
 
     // Load App Settings
@@ -309,8 +279,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _setApiTimeout = prefs.getInt('setApiTimeout') ?? 40;
     _setSyncTime = prefs.getString('setSyncTime') ?? "06:00";
     _setNAVDefaultSort = prefs.getString('setNAVDefaultSort') ?? 'Return \u2193';
-    _sortOption = _setNAVDefaultSort;
-
+    
     final themeStr = prefs.getString('setThemeMode') ?? 'system';
     _setThemeMode = ThemeMode.values.firstWhere(
             (e) => e.toString().split('.').last == themeStr,
@@ -319,9 +288,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     widget.onThemeChanged(_setThemeMode);
 
     if (mounted) setState(() {});
-
-    // Initial Data Load
-    await _load();
 
     _importedFiles = await _portfolio.listImports();
     if (_selectedImportIds == null) {
@@ -333,7 +299,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _fetchIndices();
 
     // Trigger refresh if no data is present
-    if (_items.isEmpty && _portfolioRows.isEmpty) {
+    if (_portfolioRows.isEmpty) {
       _refresh();
     }
 
@@ -376,21 +342,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
-  Widget txt(String text, {TextStyle? style, bool overflow = false, TextAlign? align}) {
-    if (_selectedLanguage == 'English') {
-      return Text(text, style: style, overflow: overflow ? TextOverflow.ellipsis : null, textAlign: align);
-    }
-    return FutureBuilder<String>(
-      future: _translate(text),
-      builder: (context, snapshot) => Text(
-        snapshot.data ?? text,
-        style: style,
-        overflow: overflow ? TextOverflow.ellipsis : null,
-        textAlign: align,
-      ),
-    );
-  }
-
   String t(String key, {String? arg}) {
     const Map<String, Map<String, String>> staticLabels = {
       'English': {
@@ -421,8 +372,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
   Future<void> _loadPortfolio() async {
     _portfolioRows = await _portfolio.listPortfolio(
-        amc: _selectedPortfolioCompany,
-        orderBy: _getPortfolioOrder(),
         importIds: _selectedImportIds?.toList(),
         targetDate: _selectedFilterDate != null ? DateFormat('yyyy-MM-dd').format(_selectedFilterDate!) : null
     );
@@ -431,17 +380,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       _portfolioRows = _portfolioRows.where((r) => (r['total_units'] as num? ?? 0) > 0.001).toList();
     }
 
-    if (!_showNetReturns && _portfolioPeriod != '1D') {
-      await _loadPeriodNavs();
-    }
-
-    _groupedPortfolio = {};
-    for (var r in _portfolioRows) {
-      final isin = (r['isin'] as String?) ?? 'No ISIN';
-      _groupedPortfolio.putIfAbsent(isin, () => []).add(r);
-    }
-
-    _portfolioAmcList = ['All Companies', ...await _portfolio.getPortfolioCompanies()];
     _importedFiles = await _portfolio.listImports();
     if (mounted) setState(() {});
   }
@@ -472,189 +410,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _loadPeriodNavs() async {
-    final milestoneDates = _getMilestoneDates(_portfolioPeriod);
-    if (milestoneDates.isEmpty) return;
-    final startDate = milestoneDates.first;
-
-    final database = await _repo.db;
-    final isins = _portfolioRows.map((r) => r['isin'] as String).where((i) => i != null).toSet().toList();
-
-    if (isins.isEmpty) return;
-
-    final placeholders = List.filled(isins.length, '?').join(',');
-    final sql = '''
-      SELECT isin, nav_value FROM (
-        SELECT isin_div_payout as isin, nav_value, nav_date FROM nav
-        UNION ALL
-        SELECT isin_reinvestment as isin, nav_value, nav_date FROM nav
-      ) WHERE nav_date <= ? AND isin IN ($placeholders)
-      GROUP BY isin
-      HAVING nav_date = MAX(nav_date)
-    ''';
-
-    final res = await database.rawQuery(sql, [startDate, ...isins]);
-    _periodNavs = { for (var r in res) r['isin'] as String : (r['nav_value'] as num).toDouble() };
-  }
-
-  Future<void> _handlePeriodChange(String pVal) async {
-    setState(() {
-      _portfolioPeriod = pVal;
-      _fetchingHistorical = true;
-    });
-
-    try {
-      if (pVal == 'Custom') {
-        final picked = await showDateRangePicker(
-          context: context,
-          firstDate: DateTime(2000),
-          lastDate: DateTime.now(),
-        );
-        if (picked != null) {
-          _customPortfolioRange = picked;
-        } else {
-          setState(() => _fetchingHistorical = false);
-          return;
-        }
-      }
-
-      final isins = _portfolioRows.map((r) => r['isin'] as String).where((i) => i != null).toList();
-      final schemeCodes = await _repo.getSchemeCodesForIsins(isins);
-
-      if (schemeCodes.isNotEmpty) {
-        final db = await _repo.db;
-        String? latestRefDate;
-
-        for (int i = 0; i < 5; i++) {
-          final target = DateTime.now().subtract(Duration(days: i));
-          if (target.weekday == DateTime.saturday || target.weekday == DateTime.sunday) continue;
-          final fmt = DateFormat('yyyy-MM-dd').format(target);
-          final res = await db.rawQuery('SELECT 1 FROM nav WHERE nav_date = ? LIMIT 1', [fmt]);
-          if (res.isNotEmpty) {
-            latestRefDate = fmt;
-            break;
-          }
-        }
-
-        final base = latestRefDate != null ? DateTime.parse(latestRefDate) : DateTime.now();
-        final start = _getPeriodStartDate(pVal, from: base);
-
-        final List<String> milestoneDates = [];
-        milestoneDates.add(DateFormat('yyyy-MM-dd').format(base));
-
-        for (int i = 0; i < 5; i++) {
-          milestoneDates.add(DateFormat('yyyy-MM-dd').format(start.add(Duration(days: i))));
-        }
-
-        final summary = await _repo.fetchHistoricalForSchemes(schemeCodes, milestoneDates, timeoutSeconds: _setApiTimeout);
-        final int count = summary['count'] ?? 0;
-        if (mounted && count > 0) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Successfully loaded historical data for $pVal period.'),
-          ));
-        }
-      }
-      await _loadPortfolio();
-      _fetchFiiDii();
-      _fetchIndices();
-    } catch (e) {
-      debugPrint('Error in period change: $e');
-    } finally {
-      if (mounted) setState(() => _fetchingHistorical = false);
-    }
-  }
-
-  String? _getPortfolioOrder() {
-    switch (_portfolioSortOption) {
-      case 'Invested \u2193': return 'invested_desc';
-      case 'Invested \u2191': return 'invested_asc';
-      case 'Value \u2193': return 'current_desc';
-      case 'Value \u2191': return 'current_asc';
-      case 'Return \u2193': return 'return_desc';
-      case 'Return \u2191': return 'return_asc';
-      case 'Name A-Z': return 'name_asc';
-      case 'Name Z-A': return 'name_desc';
-      default: return null;
-    }
-  }
-
-  String _formatCurrency(num value) {
-    if (_setPrivacyMode) return '****';
-    return NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(value).trim();
-  }
-
-  String _formatImportedAt(String iso) {
-    try {
-      DateTime dt;
-      if (iso.endsWith('Z') && iso.length > 10) {
-        dt = DateTime.parse(iso.substring(0, iso.length - 1));
-      } else {
-        dt = DateTime.parse(iso);
-      }
-      final local = dt.toLocal();
-      return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')} ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return iso;
-    }
-  }
-
-  Future<void> _load({bool silent = false}) async {
-    if (!silent && mounted) setState(() => _loading = true);
-    try {
-      String? orderBy;
-      switch (_sortOption) {
-        case 'Return \u2193': orderBy = 'return_desc'; break;
-        case 'Return \u2191': orderBy = 'return_asc'; break;
-        case 'Name A-Z': orderBy = 'name_asc'; break;
-        case 'Name Z-A': orderBy = 'name_desc'; break;
-        case 'Nav Date \u2193': orderBy = 'date_desc'; break;
-        case 'Nav Date \u2191': orderBy = 'date_asc'; break;
-        case 'Nav report time \u2193': orderBy = 'timestamp_desc'; break;
-        case 'Nav report time \u2191': orderBy = 'timestamp_asc'; break;
-      }
-      final list = await _repo.queryLatestWithChange(
-        q: _searchCtl.text,
-        fundType: _selectedFundType,
-        amc: _selectedCompany,
-        orderBy: orderBy,
-        date: _selectedFilterDate != null ? DateFormat('yyyy-MM-dd').format(_selectedFilterDate!) : null,
-        prioritizeHeldAndFav: _setPrioritizeHeldAndFav,
-      );
-      if (mounted) {
-        setState(() {
-          _items = list;
-        });
-      }
-    } catch (e) {
-      if (!silent && mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      if (!silent && mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _savePrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedFundType', _selectedFundType);
-    await prefs.setString('lastSearch', _searchCtl.text);
-    if (_recentSearches.length > 10) _recentSearches = _recentSearches.sublist(0, 10);
-    await prefs.setStringList('recentSearches', _recentSearches);
-  }
-
-  void _updateSearchHistory(String query) {
-    if (query.trim().isEmpty) return;
-    setState(() {
-      _recentSearches.remove(query);
-      _recentSearches.insert(0, query);
-      if (_recentSearches.length > 10) _recentSearches = _recentSearches.sublist(0, 10);
-    });
-    _savePrefs();
-  }
-
-  Future<void> _toggleFavorite(NavItem it) async {
-    await _repo.toggleFavorite(it.schemeCode!, !it.isFavorite);
-    _load(silent: true);
-  }
-
   Future<void> _refresh() async {
     if (mounted) {
       setState(() {
@@ -675,19 +430,19 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
       _lastImportedAt = await _repo.lastImportedAt();
       _lastApiTimestamp = await _repo.lastApiTimestamp();
-      _amcList = ['All Companies', ...await _repo.getFundCompanies()];
       _lastSyncLog = await _repo.getLastSyncLog();
 
       if (_lastImportedAt != null) {
         try { _lastImportedAtDt = DateTime.parse(_lastImportedAt!); } catch (_) { _lastImportedAtDt = null; }
       }
-      await _savePrefs();
-      await _load();
       await _loadPortfolio();
       _fetchFiiDii();
       _fetchIndices();
 
       if (mounted) {
+        setState(() {
+          _refreshCount++;
+        });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Successfully fetched $count records in ${end.difference(start).inSeconds}s')
         ));
@@ -722,97 +477,15 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       lastDate: last,
     );
     if (picked != null) {
-      setState(() => _selectedFilterDate = picked);
-      _load();
+      setState(() {
+        _selectedFilterDate = picked;
+        _refreshCount++;
+      });
       _loadPortfolio();
     }
   }
 
   // --- UI WIDGETS & MODALS ---
-
-  void _showDetails(NavItem it) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (c, s) => ListView(
-          controller: s,
-          padding: const EdgeInsets.all(20),
-          children: [
-            Row(
-              children: [
-                Expanded(child: txt(it.schemeName ?? '-', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-                IconButton(
-                    icon: Icon(it.isFavorite ? Icons.star : Icons.star_border, color: Colors.amber),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _toggleFavorite(it);
-                    }
-                ),
-              ],
-            ),
-            const Divider(),
-            _detailRow('Scheme Code', it.schemeCode),
-            _detailRow('ISIN (Payout)', it.isinDivPayout),
-            _detailRow('ISIN (Reinv)', it.isinReinvestment),
-            _detailRow('AMC', it.mfName),
-            _detailRow('Category', it.category),
-            _detailRow('NAV Value', it.navValue?.toString()),
-            _detailRow('NAV Date', it.navDate),
-            _detailRow('Sync Timestamp', it.apiTimestamp),
-            _detailRow('Is Held', it.isHeld ? 'Yes' : 'No'),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () => _launchExternalUrl('https://www.google.com/search?q=${it.schemeName}'),
-              icon: const Icon(Icons.search),
-              label: const Text('Search on Web'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPortfolioDetails(Map<String, dynamic> r) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (c, s) => ListView(
-          controller: s,
-          padding: const EdgeInsets.all(20),
-          children: [
-            txt(r['fund_name'] ?? '-', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Divider(),
-            _detailRow('Investor', r['investor_name']),
-            _detailRow('ISIN', r['isin']),
-            _detailRow('Folio', r['folio_number']),
-            _detailRow('Units', r['total_units']?.toString()),
-            _detailRow('Invested Value', '₹${_formatCurrency(r['invested_value'] as num? ?? 0)}'),
-            _detailRow('Current Value', '₹${_formatCurrency((r['total_units'] as num? ?? 0) * (r['latest_nav'] as num? ?? 0))}'),
-            _detailRow('Latest NAV', r['latest_nav']?.toString()),
-            _detailRow('NAV Date', r['latest_nav_date']),
-            const Divider(),
-            const Text('Raw Data:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-              child: SelectableText(r['raw_data'] ?? '{}', style: const TextStyle(fontSize: 10, fontFamily: 'monospace')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _showSettingsMenu() {
     showModalBottomSheet(
@@ -860,9 +533,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                         indicatorColor: Colors.indigo[900],
                         tabs: [
                           const Tab(child: Text('General'), icon: Icon(Icons.settings_outlined)),
-                          Tab(child: txt('Sync'), icon: const Icon(Icons.sync_outlined)),
-                          Tab(child: txt('UI'), icon: const Icon(Icons.palette_outlined)),
-                          Tab(child: txt('Tools'), icon: const Icon(Icons.build_outlined)),
+                          Tab(child: CommonWidgets.txt('Sync', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.sync_outlined)),
+                          Tab(child: CommonWidgets.txt('UI', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.palette_outlined)),
+                          Tab(child: CommonWidgets.txt('Tools', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.build_outlined)),
                         ],
                       ),
                       Expanded(
@@ -897,7 +570,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           trailing: const Icon(Icons.language),
           onTap: () {
             showDialog(context: context, builder: (ctx) => AlertDialog(
-              title: txt('Choose Language'),
+              title: CommonWidgets.txt('Choose Language', selectedLanguage: _selectedLanguage, translate: _translate),
               content: Column(mainAxisSize: MainAxisSize.min, children: ['English', 'Hindi', 'Marathi', 'Gujarati', 'Tamil', 'Telugu', 'Kannada', 'Bengali', 'Malayalam', 'Punjabi'].map((l) => RadioListTile<String>(
                   title: Text(l), value: l, groupValue: _selectedLanguage,
                   onChanged: (v) async {
@@ -948,7 +621,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           setLocalState(() {});
         }),
         ListTile(
-          title: txt('Sync Time', style: const TextStyle(fontSize: 14)),
+          title: CommonWidgets.txt('Sync Time', style: const TextStyle(fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
           subtitle: Text('Refresh every day at $_setSyncTime', style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.access_time),
           onTap: () async {
@@ -965,16 +638,16 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           },
         ),
         ListTile(
-          title: txt('API Timeout', style: const TextStyle(fontSize: 14)),
+          title: CommonWidgets.txt('API Timeout', style: const TextStyle(fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
           subtitle: Text('$_setApiTimeout seconds', style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.timer_outlined),
           onTap: () {
             final ctl = TextEditingController(text: _setApiTimeout.toString());
             showDialog(context: context, builder: (ctx) => AlertDialog(
-              title: txt('API Timeout (s)'),
+              title: CommonWidgets.txt('API Timeout (s)', selectedLanguage: _selectedLanguage, translate: _translate),
               content: TextField(controller: ctl, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'Enter seconds')),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: txt('Cancel')),
+                TextButton(onPressed: () => Navigator.pop(ctx), child: CommonWidgets.txt('Cancel', selectedLanguage: _selectedLanguage, translate: _translate)),
                 TextButton(onPressed: () async {
                   final v = int.tryParse(ctl.text);
                   if (v != null && v > 0) {
@@ -984,18 +657,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     Navigator.pop(ctx);
                     setLocalState(() {});
                   }
-                }, child: txt('Save'))
+                }, child: CommonWidgets.txt('Save', selectedLanguage: _selectedLanguage, translate: _translate))
               ],
             ));
           },
         ),
         ListTile(
-          title: txt('Lookback Window', style: const TextStyle(fontSize: 14)),
+          title: CommonWidgets.txt('Lookback Window', style: const TextStyle(fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
           subtitle: Text('Fetch last $_setRefreshDays business days on refresh', style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.history),
           onTap: () {
             showDialog(context: context, builder: (ctx) => AlertDialog(
-              title: txt('Lookback Days'),
+              title: CommonWidgets.txt('Lookback Days', selectedLanguage: _selectedLanguage, translate: _translate),
               content: Column(mainAxisSize: MainAxisSize.min, children: [1, 3, 5, 7, 10, 30].map((d) => RadioListTile<int>(
                   title: Text('$d business days'), value: d, groupValue: _setRefreshDays,
                   onChanged: (v) async {
@@ -1040,16 +713,15 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('setPrioritizeHeldAndFav', v);
           setState(() => _setPrioritizeHeldAndFav = v);
-          await _load();
           setLocalState(() {});
         }),
         ListTile(
-          title: txt('Appearance', style: const TextStyle(fontSize: 14)),
+          title: CommonWidgets.txt('Appearance', style: const TextStyle(fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
           subtitle: Text(_setThemeMode.toString().split('.').last.toUpperCase(), style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.palette),
           onTap: () {
             showDialog(context: context, builder: (ctx) => AlertDialog(
-              title: txt('Choose Theme'),
+              title: CommonWidgets.txt('Choose Theme', selectedLanguage: _selectedLanguage, translate: _translate),
               content: Column(mainAxisSize: MainAxisSize.min, children: [ThemeMode.system, ThemeMode.light, ThemeMode.dark].map((m) => RadioListTile<ThemeMode>(
                   title: Text(m.toString().split('.').last.toUpperCase()), value: m, groupValue: _setThemeMode,
                   onChanged: (v) async {
@@ -1112,7 +784,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         final count = await _repo.fetchAndImport(specificDates: dates, timeoutSeconds: _setApiTimeout);
         final end = DateTime.now();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Fetched $count records in ${end.difference(start).inSeconds}s')));
-        await _load();
+        setState(() {
+          _refreshCount++;
+        });
         await _loadPortfolio();
         _fetchFiiDii();
         _fetchIndices();
@@ -1152,13 +826,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       if (confirm == true) {
         final count = await _repo.clearDataInRange(from, to);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted $count records')));
-        _load();
+        setState(() {
+          _refreshCount++;
+        });
       }
     }
   }
 
   void _showCacheExplorer() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => _CacheExplorerPage(repo: _repo, txt: txt)));
+    Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => _CacheExplorerPage(
+        repo: _repo,
+        txt: (t, {style, overflow = false, align}) => CommonWidgets.txt(t, style: style, overflow: overflow, align: align, selectedLanguage: _selectedLanguage, translate: _translate)
+    )));
   }
 
   void _showFeaturesDialog() {
@@ -1169,7 +848,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           children: [
             _InfinLogo(size: 28),
             const SizedBox(width: 12),
-            txt('App Features', style: TextStyle(color: Colors.indigo[900])),
+            CommonWidgets.txt('App Features', style: TextStyle(color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
           ],
         ),
         content: SingleChildScrollView(
@@ -1191,7 +870,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ],
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: txt('Got it!'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: CommonWidgets.txt('Got it!', selectedLanguage: _selectedLanguage, translate: _translate))],
       ),
     );
   }
@@ -1200,36 +879,39 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: txt('Legal Disclosures', style: TextStyle(color: Colors.indigo[900])),
+        title: CommonWidgets.txt('Legal Disclosures', style: TextStyle(color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              txt('Disclaimer', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              CommonWidgets.txt('Disclaimer', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
               const SizedBox(height: 4),
-              txt(
+              CommonWidgets.txt(
                 'Infin Trulite is a data tracking tool only. It does not provide financial, investment, or legal advice. All mutual fund investments are subject to market risks.',
                 style: const TextStyle(fontSize: 11, color: Colors.black87),
+                selectedLanguage: _selectedLanguage, translate: _translate
               ),
               const SizedBox(height: 12),
-              txt('Data Source', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              CommonWidgets.txt('Data Source', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
               const SizedBox(height: 4),
-              txt(
+              CommonWidgets.txt(
                 'All Mutual Fund NAV data is sourced from AMFI (Association of Mutual Funds in India). While we strive for accuracy, the developer is not responsible for any discrepancies in the data.',
                 style: const TextStyle(fontSize: 11, color: Colors.black87),
+                selectedLanguage: _selectedLanguage, translate: _translate
               ),
               const SizedBox(height: 12),
-              txt('Privacy', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              CommonWidgets.txt('Privacy', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
               const SizedBox(height: 4),
-              txt(
+              CommonWidgets.txt(
                 'Your portfolio data and statement imports are stored exclusively on your device. We do not upload or store your financial information on any remote server.',
                 style: const TextStyle(fontSize: 11, color: Colors.black87),
+                selectedLanguage: _selectedLanguage, translate: _translate
               ),
             ],
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: txt('Accept'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: CommonWidgets.txt('Accept', selectedLanguage: _selectedLanguage, translate: _translate))],
       ),
     );
   }
@@ -1237,7 +919,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   Widget _actionTile(String title, IconData icon, Function onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.indigo, size: 20),
-      title: txt(title, style: const TextStyle(fontSize: 14)),
+      title: CommonWidgets.txt(title, style: const TextStyle(fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
       onTap: () {
         Navigator.pop(context);
         onTap();
@@ -1253,6 +935,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     setState(() => _loading = true);
     try {
       final count = await _portfolio.importXlsxFile(file.path);
+      setState(() {
+        _refreshCount++;
+      });
       await _loadPortfolio();
       _fetchFiiDii();
       _fetchIndices();
@@ -1269,7 +954,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: txt('Manage Imports'),
+        title: CommonWidgets.txt('Manage Imports', selectedLanguage: _selectedLanguage, translate: _translate),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -1286,6 +971,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     await _portfolio.deleteImport(imp['id']);
                     Navigator.pop(ctx);
                     _showManageImportsDialog();
+                    setState(() {
+                      _refreshCount++;
+                    });
                     _loadPortfolio();
                   },
                 ),
@@ -1296,79 +984,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
       ),
     );
-  }
-
-  void _showPortfolioCharts() async {
-    final amcMap = <String, double>{};
-    final invMap = <String, double>{};
-    final typeMap = <String, double>{};
-    final catMap = <String, double>{};
-    final schemeMap = <String, double>{};
-    final segmentFunds = <String, List<Map<String, dynamic>>>{};
-    double totalVal = 0;
-
-    for (var r in _portfolioRows) {
-      final units = (r['total_units'] as num? ?? 0).toDouble();
-      final nav = (r['latest_nav'] as num? ?? 0).toDouble();
-      final val = units * nav;
-      if (val <= 0) continue;
-      totalVal += val;
-
-      final amc = r['mf_name'] ?? 'Others';
-      amcMap[amc] = (amcMap[amc] ?? 0) + val;
-      segmentFunds.putIfAbsent('AMC:$amc', () => []).add({'name': r['fund_name'], 'value': val});
-
-      final inv = r['investor_name'] ?? 'Others';
-      invMap[inv] = (invMap[inv] ?? 0) + val;
-      segmentFunds.putIfAbsent('INV:$inv', () => []).add({'name': r['fund_name'], 'value': val});
-
-      final cat = r['category_name'] ?? 'Others';
-      catMap[cat] = (catMap[cat] ?? 0) + val;
-      segmentFunds.putIfAbsent('CAT:$cat', () => []).add({'name': r['fund_name'], 'value': val});
-
-      final scheme = r['fund_name'] ?? 'Unknown';
-      schemeMap[scheme] = (schemeMap[scheme] ?? 0) + val;
-      segmentFunds.putIfAbsent('FUND:$scheme', () => []).add({'name': r['fund_name'], 'value': val});
-
-      final type = scheme.toUpperCase().contains('DIRECT') ? 'Direct' : 'Regular';
-      typeMap[type] = (typeMap[type] ?? 0) + val;
-      segmentFunds.putIfAbsent('TYPE:$type', () => []).add({'name': r['fund_name'], 'value': val});
-    }
-
-    final amcData = amcMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final invData = invMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final catData = catMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final typeData = typeMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final schemeData = schemeMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-
-    final profitMap = <String, double>{};
-    for (var r in _portfolioRows) {
-      final units = (r['total_units'] as num? ?? 0).toDouble();
-      final latestNav = (r['latest_nav'] as num? ?? 0).toDouble();
-      final invested = (r['invested_value'] as num? ?? 0).toDouble();
-      final profit = (units * latestNav) - invested;
-      if (profit > 0) {
-        profitMap[r['fund_name']] = profit;
-      }
-    }
-    final profitableData = profitMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-
-    final hist = await _portfolio.getHistoricalValue(importIds: _selectedImportIds?.toList());
-
-    Navigator.push(context, MaterialPageRoute(builder: (c) => _PortfolioChartsPage(
-      amcData: amcData,
-      investorData: invData,
-      typeData: typeData,
-      categoryData: catData,
-      schemeData: schemeData,
-      profitableData: profitableData,
-      historyData: hist,
-      segmentFunds: segmentFunds,
-      totalValue: totalVal,
-      formatCurrency: _formatCurrency,
-      detailRow: _detailRow,
-      txt: txt,
-    )));
   }
 
   Future<void> _launchExternalUrl(String url) async {
@@ -1412,11 +1027,11 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                   bool? confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      title: txt('Show Balances?'),
-                      content: txt('Portfolio values will be visible on the screen.'),
+                      title: CommonWidgets.txt('Show Balances?', selectedLanguage: _selectedLanguage, translate: _translate),
+                      content: CommonWidgets.txt('Portfolio values will be visible on the screen.', selectedLanguage: _selectedLanguage, translate: _translate),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: txt('Cancel')),
-                        TextButton(onPressed: () => Navigator.pop(ctx, true), child: txt('Show', style: const TextStyle(color: Colors.red))),
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: CommonWidgets.txt('Cancel', selectedLanguage: _selectedLanguage, translate: _translate)),
+                        TextButton(onPressed: () => Navigator.pop(ctx, true), child: CommonWidgets.txt('Show', style: const TextStyle(color: Colors.red), selectedLanguage: _selectedLanguage, translate: _translate)),
                       ],
                     ),
                   );
@@ -1436,8 +1051,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                 else if (v == 'manage') _showManageImportsDialog();
                 else if (v == 'settings') _showSettingsMenu();
                 else if (v == 'clear_date') {
-                  setState(() => _selectedFilterDate = null);
-                  _load();
+                  setState(() {
+                    _selectedFilterDate = null;
+                    _refreshCount++;
+                  });
                   _loadPortfolio();
                 }
               },
@@ -1445,7 +1062,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                 if (_selectedFilterDate != null)
                   PopupMenuItem(
                       value: 'clear_date',
-                      child: Row(children: [const Icon(Icons.clear, size: 20, color: Colors.red), const SizedBox(width: 8), txt('Clear Date Filter')])
+                      child: Row(children: [const Icon(Icons.clear, size: 20, color: Colors.red), const SizedBox(width: 8), CommonWidgets.txt('Clear Date Filter', selectedLanguage: _selectedLanguage, translate: _translate)])
                   ),
                 PopupMenuItem(
                     value: 'import',
@@ -1457,14 +1074,14 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              txt('Import Portfolio'),
+                              CommonWidgets.txt('Import Portfolio', selectedLanguage: _selectedLanguage, translate: _translate),
                               const Text('Excel/CSV Support', style: TextStyle(fontSize: 10, color: Colors.grey)),
                             ],
                           )
                         ]
                     )
                 ),
-                PopupMenuItem(value: 'manage', child: Row(children: [const Icon(Icons.layers, size: 20, color: Colors.indigo), const SizedBox(width: 8), txt('Manage Imports')])),
+                PopupMenuItem(value: 'manage', child: Row(children: [const Icon(Icons.layers, size: 20, color: Colors.indigo), const SizedBox(width: 8), CommonWidgets.txt('Manage Imports', selectedLanguage: _selectedLanguage, translate: _translate)])),
                 PopupMenuItem(value: 'settings', child: Row(children: [const Icon(Icons.tune, size: 20, color: Colors.indigo), const SizedBox(width: 8), const Text('Settings')])),
               ],
             ),
@@ -1474,8 +1091,31 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           controller: _tabCtl,
           children: [
             _buildHomeTab(),
-            _buildNavsTab(),
-            _buildPortfolioTab(),
+            FundsTab(
+              key: ValueKey('funds_$_refreshCount'),
+              selectedLanguage: _selectedLanguage,
+              translate: _translate,
+              t: t,
+              selectedFilterDate: _selectedFilterDate,
+              lastSyncLog: _lastSyncLog,
+              setCompactLayout: _setCompactLayout,
+              setShowIconsInNav: _setShowIconsInNav,
+              setPrioritizeHeldAndFav: _setPrioritizeHeldAndFav,
+            ),
+            PortfolioTab(
+              key: ValueKey('portfolio_$_refreshCount'),
+              selectedLanguage: _selectedLanguage,
+              translate: _translate,
+              t: t,
+              selectedFilterDate: _selectedFilterDate,
+              privacyMode: _setPrivacyMode,
+              hideZeroHoldings: _setHideZeroHoldings,
+              showFolioInList: _setShowFolioInList,
+              setCompactLayout: _setCompactLayout,
+              setShowIconsInNav: _setShowIconsInNav,
+              selectedImportIds: _selectedImportIds,
+              setApiTimeout: _setApiTimeout,
+            ),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -1531,9 +1171,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                txt(t('synopsis'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                CommonWidgets.txt(t('synopsis'), style: const TextStyle(color: Colors.white70, fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
                 const SizedBox(height: 8),
-                Text('₹${_formatCurrency(totalCur)}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                Text('₹${CommonWidgets.formatCurrency(totalCur, privacyMode: _setPrivacyMode)}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1548,7 +1188,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         ),
 
         const SizedBox(height: 24),
-        txt(t('quick_access'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo[900])),
+        CommonWidgets.txt(t('quick_access'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
         const SizedBox(height: 12),
 
         // Grid of Quick Access Tiles
@@ -1562,7 +1202,14 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           children: [
             _homeTile('Live NAVs', Icons.show_chart, Colors.blue, () => _tabCtl.animateTo(1)),
             _homeTile('Portfolio', Icons.account_balance_wallet, Colors.green, () => _tabCtl.animateTo(2)),
-            _homeTile('Analytics', Icons.bar_chart, Colors.orange, _showPortfolioCharts),
+            _homeTile('Analytics', Icons.bar_chart, Colors.orange, () {
+              Navigator.push(context, MaterialPageRoute(builder: (c) => PortfolioChartsPage(
+                portfolioRows: _portfolioRows,
+                selectedImportIds: _selectedImportIds,
+                selectedLanguage: _selectedLanguage,
+                translate: _translate,
+              )));
+            }),
             _homeTile('Import', Icons.file_upload, Colors.purple, _pickAndImportFile),
             _fiiDiiTile(),
             _indicesTile(),
@@ -1572,14 +1219,14 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         const SizedBox(height: 32),
         // Sync Status & Info
         if (_lastSyncLog != null) ...[
-          txt('Recent Activity', style: const TextStyle(fontWeight: FontWeight.bold)),
+          CommonWidgets.txt('Recent Activity', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: _selectedLanguage, translate: _translate),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[300]!)),
             child: Column(
               children: [
-                _infoRow('Last Sync', _formatImportedAt(_lastSyncLog!['end_time'])),
+                _infoRow('Last Sync', CommonWidgets.formatImportedAt(_lastSyncLog!['end_time'])),
                 _infoRow('Rows Fetched', _lastSyncLog!['rows_fetched'].toString()),
                 _infoRow('Duration', '${(_lastSyncLog!['duration_ms'] / 1000).toStringAsFixed(1)}s'),
                 _infoRow('Status', _lastSyncLog!['status'], color: _lastSyncLog!['status'] == 'Success' ? Colors.green : Colors.red),
@@ -1590,7 +1237,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
         const SizedBox(height: 32),
         // App Guide / Feature Items
-        txt('App Guide', style: const TextStyle(fontWeight: FontWeight.bold)),
+        CommonWidgets.txt('App Guide', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: _selectedLanguage, translate: _translate),
         const SizedBox(height: 8),
         _featureItem(Icons.auto_awesome, 'Smart Grouping', 'Your holdings are automatically grouped by ISIN for better clarity.'),
         _featureItem(Icons.translate, 'Vernacular Support', 'Access the app in your preferred language via Settings.'),
@@ -1618,10 +1265,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        txt(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+        CommonWidgets.txt(label, style: const TextStyle(color: Colors.white60, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
         const SizedBox(height: 4),
         Text(
-          '${value >= 0 ? '+' : ''}₹${_formatCurrency(value)}',
+          '${value >= 0 ? '+' : ''}₹${CommonWidgets.formatCurrency(value, privacyMode: _setPrivacyMode)}',
           style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         Text(
@@ -1650,7 +1297,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                txt('FII / DII Trade Data', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                CommonWidgets.txt('FII / DII Trade Data', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), selectedLanguage: _selectedLanguage, translate: _translate),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
@@ -1672,7 +1319,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                txt(d.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                CommonWidgets.txt(d.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), selectedLanguage: _selectedLanguage, translate: _translate),
                                 Text(d.date, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                               ],
                             ),
@@ -1740,7 +1387,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     children: [
                       Icon(Icons.swap_horizontal_circle, color: Colors.indigo[700], size: 20),
                       const SizedBox(width: 6),
-                      txt('FII/DII', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      CommonWidgets.txt('FII/DII', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -1771,59 +1418,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   void _showIndicesDetails() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        height: MediaQuery.of(ctx).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                txt('Market Indices', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-              ],
-            ),
-            const Divider(),
-            if (_indicesData.isEmpty)
-              const Expanded(child: Center(child: Text('No index data available.')))
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _indicesData.length,
-                  itemBuilder: (context, index) {
-                    final d = _indicesData[index];
-                    return ListTile(
-                      title: txt(d.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('Last: ${d.last}'),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text('${d.variation > 0 ? '+' : ''}${d.variation.toStringAsFixed(2)}',
-                              style: TextStyle(color: d.variation >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
-                          Text('${d.percentChange > 0 ? '+' : ''}${d.percentChange.toStringAsFixed(2)}%',
-                              style: TextStyle(color: d.percentChange >= 0 ? Colors.green : Colors.red, fontSize: 12)),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(height: 10),
-            Text('Data from NSE India.', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
-          ],
-        ),
-      ),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const IndicesPage()));
   }
 
   Widget _indicesTile() {
@@ -1857,7 +1452,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     children: [
                       Icon(Icons.analytics, color: Colors.indigo[700], size: 20),
                       const SizedBox(width: 6),
-                      txt('Indices', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      CommonWidgets.txt('Indices', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -1905,7 +1500,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           children: [
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 8),
-            txt(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            CommonWidgets.txt(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
           ],
         ),
       ),
@@ -1925,710 +1520,13 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildNavsTab() {
-    final header = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (_lastSyncLog != null)
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    children: [
-                      txt('Source: ', style: const TextStyle(fontSize: 10, color: Colors.black54)),
-                      Text('AMFI India (${_formatImportedAt(_lastSyncLog!['end_time'])})',
-                          style: const TextStyle(fontSize: 10, color: Colors.black54)),
-                    ],
-                  ),
-                ),
-              ),
-            if (_selectedFilterDate != null)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: Colors.amber[100], borderRadius: BorderRadius.circular(4)),
-                child: Text('Date: ${DateFormat('dd-MMM-yyyy').format(_selectedFilterDate!)}',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber[900])),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 45,
-          child: TextField(
-            controller: _searchCtl,
-            focusNode: _searchFocus,
-            onSubmitted: (v) => _updateSearchHistory(v),
-            onChanged: (v) {
-              setState(() {});
-              _load(silent: true);
-            },
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-            decoration: InputDecoration(
-              hintText: t('search'),
-              isDense: true,
-              prefixIcon: const Icon(Icons.search, size: 20, color: Colors.blueGrey),
-              suffixIcon: _searchCtl.text.isNotEmpty
-                  ? IconButton(
-                padding: EdgeInsets.zero,
-                icon: const Icon(Icons.cancel, size: 20, color: Colors.grey),
-                onPressed: () {
-                  _searchCtl.clear();
-                  setState(() {});
-                  _load();
-                },
-              )
-                  : null,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-          ),
-        ),
-        if (_showSuggestions)
-          Container(
-            constraints: const BoxConstraints(maxHeight: 200),
-            margin: const EdgeInsets.only(top: 4),
-            decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, spreadRadius: 1)]
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              itemCount: _recentSearches.length,
-              itemBuilder: (context, index) {
-                final s = _recentSearches[index];
-                return ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  leading: const Icon(Icons.history, size: 18, color: Colors.grey),
-                  title: Text(s, style: const TextStyle(fontSize: 13)),
-                  onTap: () {
-                    _searchCtl.text = s;
-                    _searchFocus.unfocus();
-                    _load();
-                  },
-                  trailing: IconButton(
-                      icon: const Icon(Icons.close, size: 16),
-                      onPressed: () {
-                        setState(() => _recentSearches.remove(s));
-                        _savePrefs();
-                      }
-                  ),
-                );
-              },
-            ),
-          ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _fundTypes.map((tVal) {
-              final selected = tVal == _selectedFundType;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: ChoiceChip(
-                  label: txt(tVal, style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
-                  selected: selected,
-                  selectedColor: Colors.indigo[100],
-                  checkmarkColor: Colors.indigo,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  onSelected: (vVal) async {
-                    if (vVal) {
-                      setState(() => _selectedFundType = tVal);
-                      await _savePrefs();
-                      _load();
-                    }
-                  },
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              flex: 5,
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _selectedCompany,
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
-                    items: _amcList.map((s) => DropdownMenuItem(
-                        value: s,
-                        child: Text(s == 'All Companies' ? t('all_amc') : s, overflow: TextOverflow.ellipsis)
-                    )).toList(),
-                    onChanged: (vVal) {
-                      if (vVal == null) return;
-                      setState(() => _selectedCompany = vVal);
-                      _load();
-                    },
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              flex: 4,
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _sortOption,
-                    style: TextStyle(fontSize: 12, color: Colors.indigo[700], fontWeight: FontWeight.w600),
-                    icon: Icon(Icons.sort, size: 16, color: Colors.indigo[700]),
-                    items: [
-                      'Return \u2193', 'Return \u2191', 'Name A-Z', 'Name Z-A',
-                      'Nav Date \u2193', 'Nav Date \u2191',
-                      'Nav report time \u2193', 'Nav report time \u2191'
-                    ].map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
-                    onChanged: (vVal) {
-                      if (vVal == null) return;
-                      setState(() => _sortOption = vVal);
-                      _load();
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (_loading) const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: LinearProgressIndicator(minHeight: 2)),
-      ],
-    );
-
-    return Scrollbar(
-      controller: _scrollCtl,
-      interactive: true,
-      thickness: 6,
-      radius: const Radius.circular(3),
-      child: ListView.separated(
-        controller: _scrollCtl,
-        padding: const EdgeInsets.all(12.0),
-        itemCount: _items.isEmpty ? 2 : _items.length + 1,
-        separatorBuilder: (context, index) => index == 0 ? const SizedBox() : Divider(height: 1, thickness: 0.5, color: Colors.grey[200]),
-        itemBuilder: (c, i) {
-          if (i == 0) return header;
-          if (_items.isEmpty) return Container(height: 300, child: Center(child: txt(t('no_data'))));
-
-          final it = _items[i - 1];
-          return ListTile(
-            dense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-            visualDensity: _setCompactLayout ? VisualDensity.compact : VisualDensity.standard,
-            onTap: () => _showDetails(it),
-            title: txt(it.schemeName ?? '-',
-                style: TextStyle(fontSize: _setCompactLayout ? 13 : 14, fontWeight: it.isFavorite ? FontWeight.w700 : FontWeight.w500, color: Colors.indigo[900])),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Expanded(child: Text('${it.navDate ?? ''}  \u2022  ${it.apiTimestamp != null ? _formatImportedAt(it.apiTimestamp!) : ''}',
-                        style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey[600]))),
-                    if (_setShowIconsInNav) ...[
-                      if (it.isHeld) Padding(padding: const EdgeInsets.only(right: 6.0), child: Icon(Icons.account_balance_wallet, size: 12, color: Colors.indigo[400])),
-                      if (it.isFavorite) Icon(Icons.star, size: 12, color: Colors.amber[700]),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-            trailing: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(it.navValue?.toString() ?? '-', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 13 : 14)),
-                if (it.prevNavValue != null)
-                  Builder(builder: (ctx) {
-                    final diff = (it.navValue ?? 0) - (it.prevNavValue ?? 0);
-                    final pct = (it.prevNavValue != null && it.prevNavValue! != 0) ? (diff / it.prevNavValue! * 100) : null;
-                    final txtStr = (diff >= 0 ? '+' : '') + diff.toStringAsFixed(4) + (pct != null ? ' (${pct.toStringAsFixed(2)}%)' : '');
-                    return Text(txtStr, style: TextStyle(color: diff >= 0 ? Colors.green[700] : Colors.red[700], fontSize: _setCompactLayout ? 10 : 11));
-                  }),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPortfolioTab() {
-    final header = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: InkWell(
-                onTap: () {
-                  setState(() => _showNetReturns = !_showNetReturns);
-                  _loadPortfolio();
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _showNetReturns ? Colors.orange[50] : Colors.green[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: (_showNetReturns ? Colors.orange[200] : Colors.green[200])!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                          _showNetReturns ? Icons.pie_chart : Icons.trending_up,
-                          size: 16,
-                          color: _showNetReturns ? Colors.orange[800] : Colors.green[800]
-                      ),
-                      const SizedBox(width: 8),
-                      txt(_showNetReturns ? 'Viewing Net Returns' : 'Viewing $_portfolioPeriod Returns',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _showNetReturns ? Colors.orange[900] : Colors.green[900])),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            IconButton(
-              icon: Icon(Icons.bar_chart, color: Colors.indigo[900]),
-              onPressed: _showPortfolioCharts,
-              tooltip: 'Portfolio Analytics',
-            ),
-          ],
-        ),
-        if (_selectedFilterDate != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: Colors.amber[50], borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.amber[200]!)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.filter_list, size: 14, color: Colors.amber),
-                  const SizedBox(width: 6),
-                  Text('Showing values as of: ${DateFormat('dd-MMM-yyyy').format(_selectedFilterDate!)}',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber)),
-                ],
-              ),
-            ),
-          ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              flex: 5,
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _selectedPortfolioCompany,
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
-                    items: _portfolioAmcList.map((s) => DropdownMenuItem(value: s, child: txt(s, overflow: true))).toList(),
-                    onChanged: (vVal) {
-                      if (vVal == null) return;
-                      setState(() => _selectedPortfolioCompany = vVal);
-                      _loadPortfolio();
-                    },
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              flex: 4,
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _portfolioSortOption,
-                    style: const TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.bold),
-                    items: [
-                      'Invested \u2193', 'Invested \u2191', 'Value \u2193', 'Value \u2191',
-                      'Return \u2193', 'Return \u2191', 'Name A-Z', 'Name Z-A'
-                    ].map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
-                    onChanged: (vVal) {
-                      if (vVal == null) return;
-                      setState(() => _portfolioSortOption = vVal);
-                      _loadPortfolio();
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: ['1D', '1W', '1M', '3M', '6M', '1Y', '2Y', '3Y', '5Y', 'Custom'].map((pVal) {
-              final selected = pVal == _portfolioPeriod;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: ChoiceChip(
-                  label: Text(pVal, style: TextStyle(fontSize: 11, fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
-                  selected: selected,
-                  selectedColor: Colors.indigo[900],
-                  labelStyle: TextStyle(color: selected ? Colors.white : Colors.black87),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  onSelected: (vVal) {
-                    if (vVal) _handlePeriodChange(pVal);
-                  },
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        if (_fetchingHistorical) const Padding(padding: EdgeInsets.only(top: 10.0), child: LinearProgressIndicator(minHeight: 2)),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            txt('My Holdings', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            Text(' (${_groupedPortfolio.length})', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-          ],
-        ),
-        const SizedBox(height: 6),
-      ],
-    );
-
-    final groupedIsins = _groupedPortfolio.keys.toList();
-
-    return Column(
-      children: [
-        Expanded(
-          child: _portfolioRows.isEmpty
-              ? Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(children: [header, Expanded(child: Center(child: txt('No holdings imported yet')))]),
-          )
-              : Scrollbar(
-            controller: _portfolioScrollCtl,
-            interactive: true,
-            thickness: 6,
-            radius: const Radius.circular(3),
-            child: ListView.separated(
-              controller: _portfolioScrollCtl,
-              padding: const EdgeInsets.all(16.0),
-              itemCount: groupedIsins.length + 1,
-              separatorBuilder: (context, index) => index == 0 ? const SizedBox() : Divider(height: 1, thickness: 0.5, color: Colors.grey[300]),
-              itemBuilder: (c, i) {
-                if (i == 0) return header;
-                final isin = groupedIsins[i - 1];
-                final list = _groupedPortfolio[isin]!;
-                final isExpanded = _expandedGroups.contains(isin);
-
-                double gInv = 0, gCur = 0, gPeriodGain = 0;
-                for (var r in list) {
-                  final inv = (r['invested_value'] as num? ?? 0).toDouble();
-                  gInv += inv;
-                  final units = (r['total_units'] as num? ?? 0).toDouble();
-                  final latestNav = (r['latest_nav'] as num? ?? 0).toDouble();
-                  final cur = units * latestNav;
-                  gCur += cur;
-
-                  if (latestNav > 0) {
-                    double refPrevNav;
-                    if (_portfolioPeriod == '1D') {
-                      final prevNav = (r['prev_nav'] as num? ?? 0).toDouble();
-                      refPrevNav = prevNav > 0 ? prevNav : latestNav;
-                    } else {
-                      refPrevNav = _periodNavs[r['isin']] ?? latestNav;
-                    }
-                    gPeriodGain += units * (latestNav - refPrevNav);
-                  }
-                }
-                final gPct = (gInv > 0) ? ((gCur - gInv) / gInv * 100) : 0;
-                final gPeriodPct = (gCur - gPeriodGain > 0) ? (gPeriodGain / (gCur - gPeriodGain) * 100) : 0;
-
-                return Column(
-                  children: [
-                    ListTile(
-                      dense: true,
-                      visualDensity: _setCompactLayout ? VisualDensity.compact : VisualDensity.standard,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                      onTap: () {
-                        setState(() {
-                          if (isExpanded) _expandedGroups.remove(isin);
-                          else _expandedGroups.add(isin);
-                        });
-                      },
-                      title: txt(list.first['fund_name'] ?? 'Unknown Fund',
-                          style: TextStyle(fontSize: _setCompactLayout ? 13 : 14, fontWeight: FontWeight.w600, color: Colors.indigo[900])),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text('${list.length} holdings \u2022 \u20b9${_formatCurrency(gInv)}',
-                                    style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey[600])),
-                              ),
-                              Icon(isExpanded ? Icons.expand_less : Icons.expand_more, size: _setCompactLayout ? 16 : 18, color: Colors.grey),
-                              if (_setShowIconsInNav) ...[
-                                const SizedBox(width: 8),
-                                Icon(Icons.account_balance_wallet, size: 12, color: Colors.indigo[400]),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                      trailing: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          setState(() => _showNetReturns = !_showNetReturns);
-                          _loadPortfolio();
-                        },
-                        child: Container(
-                          width: 100,
-                          alignment: Alignment.centerRight,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: !_showNetReturns
-                                    ? Text(
-                                  '${gPeriodGain >= 0 ? '+' : ''}${_formatCurrency(gPeriodGain)} (${gPeriodPct.toStringAsFixed(2)}%)',
-                                  style: TextStyle(fontSize: _setCompactLayout ? 11 : 12, fontWeight: FontWeight.bold, color: gPeriodGain >= 0 ? Colors.green[700] : Colors.red[700]),
-                                )
-                                    : RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(fontSize: _setCompactLayout ? 12 : 13, fontWeight: FontWeight.bold, color: Colors.black87),
-                                    children: [
-                                      TextSpan(text: _formatCurrency(gCur)),
-                                      TextSpan(
-                                        text: ' (${gPct >= 0 ? '+' : ''}${gPct.toStringAsFixed(2)}%)',
-                                        style: TextStyle(color: gPct >= 0 ? Colors.green[700] : Colors.red[700], fontSize: _setCompactLayout ? 10 : 11),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (isExpanded)
-                      ...list.map((r) {
-                        final double inv = (r['invested_value'] as num? ?? 0).toDouble();
-                        final double u = (r['total_units'] as num? ?? 0).toDouble();
-                        final double nav = (r['latest_nav'] as num? ?? 0).toDouble();
-                        double curVal = 0, pGain = 0;
-                        if (nav > 0) {
-                          curVal = u * nav;
-                          double refPrevNav;
-                          if (_portfolioPeriod == '1D') {
-                            final prevNav = (r['prev_nav'] as num? ?? 0).toDouble();
-                            refPrevNav = prevNav > 0 ? prevNav : nav;
-                          } else {
-                            refPrevNav = _periodNavs[r['isin']] ?? nav;
-                          }
-                          pGain = u * (nav - refPrevNav);
-                        }
-                        return Container(
-                          margin: const EdgeInsets.only(left: 16),
-                          decoration: BoxDecoration(border: Border(left: BorderSide(color: Colors.indigo[100]!, width: 1))),
-                          child: ListTile(
-                            dense: true,
-                            visualDensity: _setCompactLayout ? VisualDensity.compact : VisualDensity.standard,
-                            onTap: () => _showPortfolioDetails(r),
-                            title: Text(r['investor_name'] ?? 'Family', style: TextStyle(fontSize: _setCompactLayout ? 12 : 13, color: Colors.indigo[700], fontWeight: FontWeight.w500)),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 2.0),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: FittedBox(
-                                      alignment: Alignment.centerLeft,
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                          'U: ${u.toStringAsFixed(3)}${_setShowFolioInList ? ' \u2022 F: ${r['folio_number'] ?? '-'}' : ''} \u2022 ${r['latest_nav_date'] ?? 'No NAV'}',
-                                          style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey[600])
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            trailing: Container(
-                              width: 100,
-                              alignment: Alignment.centerRight,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      !_showNetReturns ? '${pGain >= 0 ? '+' : ''}${_formatCurrency(pGain)}' : _formatCurrency(curVal),
-                                      style: TextStyle(fontSize: _setCompactLayout ? 11 : 12, fontWeight: FontWeight.w500, color: !_showNetReturns ? (pGain >= 0 ? Colors.green[700] : Colors.red[700]) : Colors.black87),
-                                    ),
-                                  ),
-                                  Text('\u20b9${_formatCurrency(inv)}', style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: Colors.grey)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                  ],
-                );
-              },
-            ),
-          ),
-        ),
-
-        // Sticky Summary Footer
-        if (_portfolioRows.isNotEmpty)
-          Builder(builder: (context) {
-            double totalInv = 0, totalCur = 0, totalPeriodGain = 0, totalCurForPeriod = 0;
-            int validPeriodCount = 0;
-            for (var r in _portfolioRows) {
-              final double units = (r['total_units'] as num? ?? 0).toDouble();
-              final double latestNav = (r['latest_nav'] as num? ?? 0).toDouble();
-              totalInv += (r['invested_value'] as num? ?? 0).toDouble();
-              final cur = units * latestNav;
-              totalCur += cur;
-
-              if (latestNav > 0) {
-                double refPrevNav;
-                if (_portfolioPeriod == '1D') {
-                  final prevNav = (r['prev_nav'] as num? ?? 0).toDouble();
-                  refPrevNav = prevNav > 0 ? prevNav : latestNav;
-                } else {
-                  refPrevNav = _periodNavs[r['isin']] ?? latestNav;
-                }
-
-                totalPeriodGain += units * (latestNav - refPrevNav);
-                totalCurForPeriod += cur;
-                if (refPrevNav > 0) validPeriodCount++;
-              }
-            }
-            final totalNetGain = totalCur - totalInv;
-            final totalNetPct = (totalInv > 0) ? (totalNetGain / totalInv * 100) : 0;
-            final totalPeriodPct = (totalCurForPeriod - totalPeriodGain > 0) ? (totalPeriodGain / (totalCurForPeriod - totalPeriodGain) * 100) : 0;
-
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                  color: Colors.indigo[50],
-                  border: Border(top: BorderSide(color: Colors.indigo[100]!, width: 2)),
-                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))]
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                      txt('TOTAL', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo, fontSize: 16)),
-                      FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Row(
-                        children: [
-                          txt('Effective ', style: const TextStyle(fontSize: 10, color: Colors.indigo)),
-                          Text('$validPeriodCount/${_portfolioRows.length} ', style: const TextStyle(fontSize: 10, color: Colors.indigo, fontWeight: FontWeight.bold)),
-                          txt('matched', style: const TextStyle(fontSize: 10, color: Colors.indigo)),
-                          txt(' for $_portfolioPeriod', style: const TextStyle(fontSize: 10, color: Colors.indigo)),
-                        ],
-                      )),
-                    ]),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-                    Text(
-                        !_showNetReturns ? '${totalPeriodGain >= 0 ? '+' : ''}\u20b9${_formatCurrency(totalPeriodGain)}' : '\u20b9${_formatCurrency(totalCur)}',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: !_showNetReturns ? (totalPeriodGain >= 0 ? Colors.green[800] : Colors.red[800]) : Colors.black87)
-                    ),
-                    Text(
-                        !_showNetReturns ? 'Period: ${totalPeriodPct.toStringAsFixed(2)}%' : '\u20b9${_formatCurrency(totalInv)} (${totalNetGain >= 0 ? '+' : ''}${totalNetPct.toStringAsFixed(2)}%)',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: !_showNetReturns ? (totalPeriodGain >= 0 ? Colors.green[800] : Colors.red[800]) : (totalNetGain >= 0 ? Colors.green[800] : Colors.red[800]))
-                    ),
-                  ]),
-                ],
-              ),
-            );
-          }),
-      ],
-    );
-  }
-
   @override
   void dispose() {
     _tabCtl.dispose();
-    _searchCtl.dispose();
-    _scrollCtl.dispose();
-    _portfolioScrollCtl.dispose();
-    _searchFocus.dispose();
     super.dispose();
   }
 
   // --- HELPER METHODS ---
-
-  List<String> _getMilestoneDates(String period) {
-    final now = DateTime.now();
-    final dates = <DateTime>[];
-    DateTime latest = now;
-    while (latest.weekday == DateTime.saturday || latest.weekday == DateTime.sunday) {
-      latest = latest.subtract(const Duration(days: 1));
-    }
-
-    dates.add(latest);
-    if (period == 'Custom' && _customPortfolioRange != null) {
-      dates.add(_customPortfolioRange!.start);
-      dates.add(_customPortfolioRange!.end);
-    } else {
-      dates.add(_getPeriodStartDate(period, from: latest));
-    }
-
-    final sorted = dates.toSet().toList()..sort();
-    return sorted.map((d) {
-      var bd = d;
-      while (bd.weekday == DateTime.saturday || bd.weekday == DateTime.sunday) {
-        bd = bd.subtract(const Duration(days: 1));
-      }
-      return DateFormat('yyyy-MM-dd').format(bd);
-    }).toSet().toList()..sort();
-  }
-
-  DateTime _getPeriodStartDate(String period, {DateTime? from}) {
-    final base = from ?? DateTime.now();
-    switch (period) {
-      case '1D': return base.subtract(const Duration(days: 1));
-      case '1W': return base.subtract(const Duration(days: 7));
-      case '1M': return DateTime(base.year, base.month - 1, base.day);
-      case '3M': return DateTime(base.year, base.month - 3, base.day);
-      case '6M': return DateTime(base.year, base.month - 6, base.day);
-      case '1Y': return DateTime(base.year - 1, base.month, base.day);
-      case '2Y': return DateTime(base.year - 2, base.month, base.day);
-      case '3Y': return DateTime(base.year - 3, base.month, base.day);
-      case '5Y': return DateTime(base.year - 5, base.month, base.day);
-      default: return base;
-    }
-  }
 
   Widget _featureItem(IconData icon, String title, String desc) {
     return Padding(
@@ -2646,8 +1544,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                txt(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87)),
-                txt(desc, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                CommonWidgets.txt(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87), selectedLanguage: _selectedLanguage, translate: _translate),
+                CommonWidgets.txt(desc, style: const TextStyle(fontSize: 11, color: Colors.grey), selectedLanguage: _selectedLanguage, translate: _translate),
               ],
             ),
           ),
@@ -2656,23 +1554,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _detailRow(String label, String? value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(flex: 2, child: txt(label, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey, fontSize: 13))),
-          Expanded(flex: 3, child: SelectableText(value ?? '-', style: TextStyle(fontWeight: FontWeight.w400, color: color, fontSize: 13))),
-        ],
-      ),
-    );
-  }
-
   Widget _settingSwitch(String title, String subtitle, bool val, Function(bool) onChanged) {
     return SwitchListTile(
-      title: txt(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-      subtitle: txt(subtitle, style: const TextStyle(fontSize: 11)),
+      title: CommonWidgets.txt(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500), selectedLanguage: _selectedLanguage, translate: _translate),
+      subtitle: CommonWidgets.txt(subtitle, style: const TextStyle(fontSize: 11), selectedLanguage: _selectedLanguage, translate: _translate),
       value: val,
       onChanged: onChanged,
       dense: true,
@@ -2682,306 +1567,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 }
 
 // --- SUB-PAGES & CUSTOM COMPONENTS ---
-
-class _PortfolioChartsPage extends StatefulWidget {
-  final List<MapEntry<String, double>> amcData;
-  final List<MapEntry<String, double>> investorData;
-  final List<MapEntry<String, double>> typeData;
-  final List<MapEntry<String, double>> categoryData;
-  final List<MapEntry<String, double>> schemeData;
-  final List<MapEntry<String, double>> profitableData;
-  final List<MapEntry<String, double>> historyData;
-  final Map<String, List<Map<String, dynamic>>> segmentFunds;
-  final double totalValue;
-  final String Function(num) formatCurrency;
-  final Widget Function(String, String?, {Color? color}) detailRow;
-  final Widget Function(String, {TextStyle? style, bool overflow, TextAlign? align}) txt;
-
-  const _PortfolioChartsPage({
-    required this.amcData,
-    required this.investorData,
-    required this.typeData,
-    required this.categoryData,
-    required this.schemeData,
-    required this.profitableData,
-    required this.historyData,
-    required this.segmentFunds,
-    required this.totalValue,
-    required this.formatCurrency,
-    required this.detailRow,
-    required this.txt,
-  });
-
-  @override
-  _PortfolioChartsPageState createState() => _PortfolioChartsPageState();
-}
-
-class _PortfolioChartsPageState extends State<_PortfolioChartsPage> {
-  int _touchedIndex = -1;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: widget.txt('Portfolio Analytics')),
-      body: Scrollbar(
-        child: ListView(
-          padding: const EdgeInsets.all(20.0),
-          children: [
-            // Line Chart Section
-            if (widget.historyData.isNotEmpty) ...[
-              widget.txt('Portfolio Value Growth', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo)),
-              const SizedBox(height: 8),
-              Text('Trend of your total holdings value over time', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              const SizedBox(height: 24),
-              _growthChartSection(widget.historyData),
-              const Divider(height: 60),
-            ],
-
-            // Pie Charts for Allocations
-            _chartSection('Scheme Allocation', widget.schemeData, 'FUND', context),
-            const Divider(height: 60),
-            _chartSection('Asset Allocation (AMC)', widget.amcData, 'AMC', context),
-            const Divider(height: 60),
-            _chartSection('Family Distribution', widget.investorData, 'INV', context),
-            const Divider(height: 60),
-            _chartSection('Category Mix', widget.categoryData, 'CAT', context),
-            const Divider(height: 60),
-            _chartSection('Scheme Type', widget.typeData, 'TYPE', context),
-
-            const Divider(height: 60),
-
-            // Gainers List
-            widget.txt('Top Gainers', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo)),
-            Text('Funds with highest absolute profit in your portfolio', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-            const SizedBox(height: 16),
-            _profitabilitySection(widget.profitableData),
-            const SizedBox(height: 60),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _growthChartSection(List<MapEntry<String, double>> data) {
-    return Container(
-      height: 250,
-      padding: const EdgeInsets.only(right: 16, top: 16),
-      child: LineChart(
-        LineChartData(
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              tooltipBgColor: Colors.indigo[900]!,
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  return LineTooltipItem(
-                    '${data[spot.x.toInt()].key}\n\u20b9${widget.formatCurrency(spot.y)}',
-                    const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                  );
-                }).toList();
-              },
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey[200]!, strokeWidth: 1),
-          ),
-          borderData: FlBorderData(show: true, border: Border(bottom: BorderSide(color: Colors.grey[300]!), left: BorderSide(color: Colors.grey[300]!))),
-          titlesData: FlTitlesData(
-            show: true,
-            bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, meta) {
-                      int idx = value.toInt();
-                      if (idx >= 0 && idx < data.length) {
-                        final parts = data[idx].key.split('-');
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text('${parts[2]}/${parts[1]}', style: const TextStyle(fontSize: 10)),
-                        );
-                      }
-                      return const Text('');
-                    }
-                )
-            ),
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          ),
-          lineBarsData: [
-            LineChartBarData(
-              spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), data[i].value)),
-              isCurved: true,
-              color: Colors.indigo,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: true),
-              belowBarData: BarAreaData(show: true, color: Colors.indigo.withOpacity(0.1)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _chartSection(String title, List<MapEntry<String, double>> data, String prefix, BuildContext context) {
-    final topItems = data.take(5).toList();
-    final othersValue = data.length > 5 ? data.skip(5).fold(0.0, (sum, e) => sum + e.value) : 0.0;
-
-    final List<PieChartSectionData> sections = [];
-    final List<Color> colors = [Colors.indigo, Colors.blue, Colors.teal, Colors.orange, Colors.red, Colors.grey];
-
-    for (int i = 0; i < topItems.length; i++) {
-      final isTouched = i == _touchedIndex;
-      final pct = (topItems[i].value / widget.totalValue * 100);
-      sections.add(PieChartSectionData(
-        value: topItems[i].value,
-        title: '${pct.toStringAsFixed(1)}%',
-        radius: isTouched ? 75 : 65,
-        color: colors[i],
-        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-      ));
-    }
-    if (othersValue > 0) {
-      sections.add(PieChartSectionData(
-        value: othersValue,
-        title: '${(othersValue / widget.totalValue * 100).toStringAsFixed(1)}%',
-        radius: 65,
-        color: colors.last,
-        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-      ));
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        widget.txt(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo)),
-        const SizedBox(height: 24),
-        SizedBox(
-          height: 200,
-          child: PieChart(
-            PieChartData(
-              pieTouchData: PieTouchData(
-                touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                  if (event is FlTapUpEvent || event is FlLongPressEnd) {
-                    final index = pieTouchResponse?.touchedSection?.touchedSectionIndex ?? -1;
-                    if (index >= 0 && index < topItems.length) {
-                      _showSegmentDetails(topItems[index].key, prefix, topItems[index].value, context);
-                    } else if (index == topItems.length && othersValue > 0) {
-                      _showSegmentDetails('Others', prefix, othersValue, context);
-                    }
-                  }
-
-                  setState(() {
-                    if (!event.isInterestedForInteractions ||
-                        pieTouchResponse == null ||
-                        pieTouchResponse.touchedSection == null) {
-                      _touchedIndex = -1;
-                      return;
-                    }
-                    _touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                  });
-                },
-              ),
-              sections: sections,
-              centerSpaceRadius: 45,
-              sectionsSpace: 2,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        ...List.generate(topItems.length, (i) => _legendItem(colors[i], topItems[i].key, topItems[i].value, prefix, context)),
-        if (othersValue > 0) _legendItem(colors.last, 'Others', othersValue, prefix, context),
-      ],
-    );
-  }
-
-  Widget _profitabilitySection(List<MapEntry<String, double>> data) {
-    if (data.isEmpty) return const Text('No gainers found.');
-    return Column(
-      children: data.take(10).map((e) => Card(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: ListTile(
-          dense: true,
-          title: widget.txt(e.key, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500), overflow: true),
-          trailing: Text('\u20b9${widget.formatCurrency(e.value)}',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
-        ),
-      )).toList(),
-    );
-  }
-
-  void _showSegmentDetails(String name, String prefix, double totalSegVal, BuildContext context) {
-    final funds = widget.segmentFunds['$prefix:$name'] ?? [];
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: widget.txt(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Total Segment Value: \u20b9${widget.formatCurrency(totalSegVal)}',
-                style: TextStyle(fontSize: 13, color: Colors.indigo[900], fontWeight: FontWeight.bold)),
-            const Divider(),
-            SizedBox(
-              height: 300,
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: funds.length,
-                itemBuilder: (c, i) {
-                  final f = funds[i];
-                  final double fVal = (f['value'] as num? ?? 0).toDouble();
-                  final pct = totalSegVal > 0 ? (fVal / totalSegVal * 100) : 0;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        widget.txt(f['name'] ?? 'Unknown', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('\u20b9${widget.formatCurrency(fVal)}', style: TextStyle(fontSize: 11, color: Colors.grey[700])),
-                            Text('${pct.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
-      ),
-    );
-  }
-
-  Widget _legendItem(Color color, String name, double value, String prefix, BuildContext context) {
-    final pct = (value / widget.totalValue * 100).toStringAsFixed(1);
-    return InkWell(
-      onTap: () => _showSegmentDetails(name, prefix, value, context),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8),
-        child: Row(
-          children: [
-            Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-            const SizedBox(width: 12),
-            Expanded(child: widget.txt(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500), overflow: true)),
-            Text('\u20b9${widget.formatCurrency(value)} ($pct%)',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[800])),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _InfinLogo extends StatelessWidget {
   final double size;

@@ -295,6 +295,8 @@ class NavRepository {
         case 'return_asc': subOrder = "CASE WHEN p.nav_value IS NULL OR p.nav_value = 0 THEN 1 ELSE 0 END, ((n.nav_value - p.nav_value)/p.nav_value) ASC"; break;
         case 'date_desc': subOrder = "CASE WHEN n.nav_date IS NULL THEN 1 ELSE 0 END, n.nav_date DESC"; break;
         case 'date_asc': subOrder = "CASE WHEN n.nav_date IS NULL THEN 1 ELSE 0 END, n.nav_date ASC"; break;
+        case 'timestamp_desc': subOrder = "CASE WHEN n.api_timestamp IS NULL THEN 1 ELSE 0 END, n.api_timestamp DESC"; break;
+        case 'timestamp_asc': subOrder = "CASE WHEN n.api_timestamp IS NULL THEN 1 ELSE 0 END, n.api_timestamp ASC"; break;
       }
       orderClause = '$prefixOrder$subOrder';
     }
