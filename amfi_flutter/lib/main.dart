@@ -4,9 +4,11 @@ import 'dart:ui';
 import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'models/fii_dii_data.dart';
+import 'models/gift_nifty_data.dart';
 import 'services/nav_repository.dart';
 import 'services/portfolio_service.dart';
 import 'services/fii_dii_service.dart';
+import 'services/gift_nifty_service.dart';
 import 'models/index_data.dart';
 import 'services/index_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -199,6 +201,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   final PortfolioService _portfolio = PortfolioService();
   final FiiDiiService _fiiDiiService = FiiDiiService();
   final IndexService _indexService = IndexService();
+  final GiftNiftyService _giftNiftyService = GiftNiftyService();
   final GoogleTranslator _translator = GoogleTranslator();
 
   // Cache & State
@@ -216,6 +219,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   bool _fetchingFiiDii = false;
   List<IndexData> _indicesData = [];
   bool _fetchingIndices = false;
+  List<GiftNiftyData> _giftNiftyData = [];
+  bool _fetchingGiftNifty = false;
 
   // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
@@ -297,6 +302,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     await _loadPortfolio();
     _fetchFiiDii();
     _fetchIndices();
+    _fetchGiftNifty();
 
     // Trigger refresh if no data is present
     if (_portfolioRows.isEmpty) {
@@ -410,6 +416,19 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
+  Future<void> _fetchGiftNifty() async {
+    if (_fetchingGiftNifty) return;
+    setState(() => _fetchingGiftNifty = true);
+    try {
+      final data = await _giftNiftyService.fetchGiftNiftyData();
+      if (mounted) setState(() => _giftNiftyData = data);
+    } catch (e) {
+      debugPrint('Gift Nifty Fetch Error: $e');
+    } finally {
+      if (mounted) setState(() => _fetchingGiftNifty = false);
+    }
+  }
+
   Future<void> _refresh() async {
     if (mounted) {
       setState(() {
@@ -438,6 +457,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       await _loadPortfolio();
       _fetchFiiDii();
       _fetchIndices();
+      _fetchGiftNifty();
 
       if (mounted) {
         setState(() {
@@ -941,6 +961,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       await _loadPortfolio();
       _fetchFiiDii();
       _fetchIndices();
+      _fetchGiftNifty();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported $count portfolio items')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Import failed: $e')));
@@ -1213,6 +1234,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             _homeTile('Import', Icons.file_upload, Colors.purple, _pickAndImportFile),
             _fiiDiiTile(),
             _indicesTile(),
+            _giftNiftyTile(),
           ],
         ),
 
@@ -1419,6 +1441,133 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
   void _showIndicesDetails() {
     Navigator.push(context, MaterialPageRoute(builder: (context) => const IndicesPage()));
+  }
+
+  void _showGiftNiftyDetails() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (c, s) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CommonWidgets.txt('GIFT Nifty Details', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), selectedLanguage: _selectedLanguage, translate: _translate),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const Divider(),
+              if (_giftNiftyData.isEmpty)
+                const Expanded(child: Center(child: Text('No Gift Nifty data available.')))
+              else
+                Expanded(
+                  child: ListView.builder(
+                    controller: s,
+                    itemCount: _giftNiftyData.length,
+                    itemBuilder: (context, index) {
+                      final d = _giftNiftyData[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  CommonWidgets.txt('${d.symbol} Future', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), selectedLanguage: _selectedLanguage, translate: _translate),
+                                  Text(d.expiryDate, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _tradeValueItem('LTP', d.lastPrice, Colors.indigo),
+                                  _tradeValueItem('Change', d.dayChange, d.dayChange >= 0 ? Colors.green : Colors.red),
+                                  _tradeValueItem('% Chg', d.percentChange, d.dayChange >= 0 ? Colors.green : Colors.red),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Updated at:', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                                  Text(d.timestamp, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 10),
+              Text('Values in USD. Data from NSE International Exchange.', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _giftNiftyTile() {
+    GiftNiftyData? near;
+    if (_giftNiftyData.isNotEmpty) {
+      near = _giftNiftyData.first;
+    }
+
+    return InkWell(
+      onTap: _showGiftNiftyDetails,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        ),
+        child: _fetchingGiftNifty
+            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.public, color: Colors.indigo[700], size: 20),
+                      const SizedBox(width: 6),
+                      CommonWidgets.txt('GIFT NIFTY', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (near != null) ...[
+                    Text('LTP: ${near.lastPrice.toStringAsFixed(1)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${near.dayChange > 0 ? '+' : ''}${near.dayChange.toStringAsFixed(1)} (${near.percentChange.toStringAsFixed(2)}%)',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: near.dayChange >= 0 ? Colors.green : Colors.red),
+                    ),
+                  ],
+                  if (_giftNiftyData.isEmpty)
+                    const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                ],
+              ),
+      ),
+    );
   }
 
   Widget _indicesTile() {
