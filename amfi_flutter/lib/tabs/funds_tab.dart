@@ -242,6 +242,13 @@ class _FundsTabState extends State<FundsTab> {
                 child: Text('Date: ${DateFormat('dd-MMM-yyyy').format(widget.selectedFilterDate!)}',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber[900])),
               ),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 20, color: Colors.indigo),
+              onPressed: widget.onRefreshTriggered,
+              tooltip: 'Sync NAVs',
+              visualDensity: VisualDensity.compact,
+            ),
           ],
         ),
         const SizedBox(height: 8),

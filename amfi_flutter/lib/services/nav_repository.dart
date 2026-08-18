@@ -331,6 +331,11 @@ class NavRepository {
     return await database.delete('nav', where: 'nav_date BETWEEN ? AND ?', whereArgs: [from, to]);
   }
 
+  Future<int> clearDataOlderThan(String date) async {
+    final database = await db;
+    return await database.delete('nav', where: 'nav_date < ?', whereArgs: [date]);
+  }
+
   Future<void> toggleFavorite(String schemeCode, bool isFavorite) async {
     final database = await db;
     if (isFavorite) {

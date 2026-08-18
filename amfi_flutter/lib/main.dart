@@ -5,10 +5,12 @@ import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'models/fii_dii_data.dart';
 import 'models/gift_nifty_data.dart';
+import 'models/gold_rate_data.dart';
 import 'services/nav_repository.dart';
 import 'services/portfolio_service.dart';
 import 'services/fii_dii_service.dart';
 import 'services/gift_nifty_service.dart';
+import 'services/gold_rate_service.dart';
 import 'models/index_data.dart';
 import 'services/index_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -202,6 +204,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   final FiiDiiService _fiiDiiService = FiiDiiService();
   final IndexService _indexService = IndexService();
   final GiftNiftyService _giftNiftyService = GiftNiftyService();
+  final GoldRateService _goldService = GoldRateService();
   final GoogleTranslator _translator = GoogleTranslator();
 
   // Cache & State
@@ -221,6 +224,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   bool _fetchingIndices = false;
   List<GiftNiftyData> _giftNiftyData = [];
   bool _fetchingGiftNifty = false;
+  List<GoldRateData> _goldRates = [];
+  bool _fetchingGold = false;
 
   // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
@@ -303,6 +308,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _fetchFiiDii();
     _fetchIndices();
     _fetchGiftNifty();
+    _fetchGoldRates();
 
     // Trigger refresh if no data is present
     if (_portfolioRows.isEmpty) {
@@ -390,8 +396,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     if (mounted) setState(() {});
   }
 
-  Future<void> _fetchFiiDii() async {
-    if (_fetchingFiiDii) return;
+  Future<void> _fetchFiiDii({bool force = false}) async {
+    if (_fetchingFiiDii && !force) return;
     setState(() => _fetchingFiiDii = true);
     try {
       _fiiDiiData = await _fiiDiiService.fetchFiiDiiData();
@@ -402,8 +408,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _fetchIndices() async {
-    if (_fetchingIndices) return;
+  Future<void> _fetchIndices({bool force = false}) async {
+    if (_fetchingIndices && !force) return;
     setState(() => _fetchingIndices = true);
     try {
       final data = await _indexService.fetchIndices();
@@ -416,8 +422,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _fetchGiftNifty() async {
-    if (_fetchingGiftNifty) return;
+  Future<void> _fetchGiftNifty({bool force = false}) async {
+    if (_fetchingGiftNifty && !force) return;
     setState(() => _fetchingGiftNifty = true);
     try {
       final data = await _giftNiftyService.fetchGiftNiftyData();
@@ -426,6 +432,19 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       debugPrint('Gift Nifty Fetch Error: $e');
     } finally {
       if (mounted) setState(() => _fetchingGiftNifty = false);
+    }
+  }
+
+  Future<void> _fetchGoldRates({bool force = false}) async {
+    if (_fetchingGold && !force) return;
+    setState(() => _fetchingGold = true);
+    try {
+      final data = await _goldService.fetchGoldRates();
+      if (mounted) setState(() => _goldRates = data);
+    } catch (e) {
+      debugPrint('Gold Fetch Error: $e');
+    } finally {
+      if (mounted) setState(() => _fetchingGold = false);
     }
   }
 
@@ -455,9 +474,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         try { _lastImportedAtDt = DateTime.parse(_lastImportedAt!); } catch (_) { _lastImportedAtDt = null; }
       }
       await _loadPortfolio();
-      _fetchFiiDii();
-      _fetchIndices();
-      _fetchGiftNifty();
+      _fetchFiiDii(force: true);
+      _fetchIndices(force: true);
+      _fetchGiftNifty(force: true);
+      _fetchGoldRates(force: true);
 
       if (mounted) {
         setState(() {
@@ -767,6 +787,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       children: [
         _actionTile('Fetch Range of NAVs', Icons.date_range, _showFetchRangeDialog),
         _actionTile('Clear Data in Range', Icons.delete_sweep_outlined, _showClearInRange),
+        _actionTile('Clear Data > 3 Days Old', Icons.auto_delete_outlined, _clearOlderThan3Days),
         _actionTile('Cache Explorer', Icons.storage, _showCacheExplorer),
         const Divider(),
         _actionTile('Manage Imports', Icons.settings, _showManageImportsDialog),
@@ -850,6 +871,31 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           _refreshCount++;
         });
       }
+    }
+  }
+
+  void _clearOlderThan3Days() async {
+    final cutoff = DateTime.now().subtract(const Duration(days: 3));
+    final cutoffStr = DateFormat('yyyy-MM-dd').format(cutoff);
+
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Purge Old Data?'),
+        content: Text('This will delete all NAV history older than $cutoffStr (3 days ago).'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Purge', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final count = await _repo.clearDataOlderThan(cutoffStr);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Purged $count old records')));
+      setState(() {
+        _refreshCount++;
+      });
     }
   }
 
@@ -959,9 +1005,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         _refreshCount++;
       });
       await _loadPortfolio();
-      _fetchFiiDii();
-      _fetchIndices();
-      _fetchGiftNifty();
+      _fetchFiiDii(force: true);
+      _fetchIndices(force: true);
+      _fetchGiftNifty(force: true);
+      _fetchGoldRates(force: true);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported $count portfolio items')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Import failed: $e')));
@@ -974,35 +1021,75 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     final imports = await _portfolio.listImports();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: CommonWidgets.txt('Manage Imports', selectedLanguage: _selectedLanguage, translate: _translate),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: imports.length,
-            itemBuilder: (c, i) {
-              final imp = imports[i];
-              return ListTile(
-                title: Text(imp['file_name'] ?? 'Unknown File'),
-                subtitle: Text('Imported: ${imp['imported_at']}'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    await _portfolio.deleteImport(imp['id']);
-                    Navigator.pop(ctx);
-                    _showManageImportsDialog();
-                    setState(() {
-                      _refreshCount++;
-                    });
-                    _loadPortfolio();
-                  },
-                ),
-              );
-            },
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setLocalState) => AlertDialog(
+          title: CommonWidgets.txt('Manage Imports', selectedLanguage: _selectedLanguage, translate: _translate),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: imports.isEmpty
+                ? const Center(child: Text('No imports found'))
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: imports.length,
+                    itemBuilder: (c, i) {
+                      final imp = imports[i];
+                      final id = imp['id'] as int;
+                      final isSelected = _selectedImportIds?.contains(id) ?? true;
+
+                      return CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: isSelected,
+                        onChanged: (val) {
+                          setState(() {
+                            if (val == true) {
+                              _selectedImportIds?.add(id);
+                            } else {
+                              _selectedImportIds?.remove(id);
+                            }
+                            _refreshCount++;
+                          });
+                          setLocalState(() {});
+                          _loadPortfolio();
+                        },
+                        title: Text(
+                          imp['investor_name'] != null && imp['investor_name'].toString().isNotEmpty
+                              ? imp['investor_name']
+                              : (imp['file_name'] ?? 'Unknown File'),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text('Imported: ${imp['imported_at']}', style: const TextStyle(fontSize: 11)),
+                        secondary: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                          onPressed: () async {
+                            bool? del = await showDialog<bool>(
+                              context: context,
+                              builder: (c) => AlertDialog(
+                                title: const Text('Delete Import?'),
+                                content: const Text('This will remove all holdings associated with this statement.'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+                                  TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                                ],
+                              ),
+                            );
+                            if (del == true) {
+                              await _portfolio.deleteImport(id);
+                              setState(() {
+                                _selectedImportIds?.remove(id);
+                                _refreshCount++;
+                              });
+                              Navigator.pop(ctx);
+                              _showManageImportsDialog();
+                              _loadPortfolio();
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
           ),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
       ),
     );
   }
@@ -1065,7 +1152,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                 setState(() => _setPrivacyMode = newVal);
               },
             ),
-            IconButton(icon: const Icon(Icons.refresh), onPressed: _refresh, tooltip: 'Sync NAVs'),
             PopupMenuButton<String>(
               onSelected: (v) {
                 if (v == 'import') _pickAndImportFile();
@@ -1122,6 +1208,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               setCompactLayout: _setCompactLayout,
               setShowIconsInNav: _setShowIconsInNav,
               setPrioritizeHeldAndFav: _setPrioritizeHeldAndFav,
+              onRefreshTriggered: _refresh,
             ),
             PortfolioTab(
               key: ValueKey('portfolio_$_refreshCount'),
@@ -1148,7 +1235,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           unselectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'Funds'),
+            BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Funds'),
             BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Portfolio'),
           ],
         ),
@@ -1209,7 +1296,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         ),
 
         const SizedBox(height: 24),
-        CommonWidgets.txt(t('quick_access'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            CommonWidgets.txt(t('quick_access'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.indigo),
+              onPressed: _refresh,
+              tooltip: 'Refresh All',
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
 
         // Grid of Quick Access Tiles
@@ -1235,6 +1333,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             _fiiDiiTile(),
             _indicesTile(),
             _giftNiftyTile(),
+            _goldTile(),
           ],
         ),
 
@@ -1413,28 +1512,38 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (fii != null)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('FII', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        Text('${fii.netValue > 0 ? '+' : ''}${fii.netValue.toInt()}',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: fii.netValue >= 0 ? Colors.green : Colors.red)),
-                      ],
-                    ),
-                  if (dii != null)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('DII', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        Text('${dii.netValue > 0 ? '+' : ''}${dii.netValue.toInt()}',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: dii.netValue >= 0 ? Colors.green : Colors.red)),
-                      ],
-                    ),
+                  if (fii != null) _fiiDiiRow(fii.date, 'FII', fii.netValue),
+                  if (dii != null) _fiiDiiRow(dii.date, 'DII', dii.netValue),
                   if (fii == null && dii == null)
                     const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
+      ),
+    );
+  }
+
+  Widget _fiiDiiRow(String date, String label, double value) {
+    String displayDate = date;
+    if (date.contains('-')) {
+      final parts = date.split('-');
+      if (parts.length >= 2) displayDate = "${parts[0]} ${parts[1]}";
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(displayDate, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.w500)),
+          Row(
+            children: [
+              Text(label, style: const TextStyle(fontSize: 10, color: Colors.black54)),
+              const SizedBox(width: 4),
+              Text('${value > 0 ? '+' : ''}${value.toInt()}',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: value >= 0 ? Colors.green : Colors.red)),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1524,17 +1633,109 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     );
   }
 
+  void _showGoldDetails() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (c, s) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CommonWidgets.txt('Bullion Rates', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), selectedLanguage: _selectedLanguage, translate: _translate),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const Divider(),
+              if (_goldRates.isEmpty)
+                const Expanded(child: Center(child: Text('No bullion data available.')))
+              else
+                Expanded(
+                  child: Scrollbar(
+                    controller: s,
+                    thumbVisibility: true,
+                    child: ListView.builder(
+                      controller: s,
+                      itemCount: _goldRates.length,
+                      itemBuilder: (context, index) {
+                        final d = _goldRates[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(d.symbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.indigo)),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _compactTradeItem('Bid', d.bid, Colors.black87),
+                                    _compactTradeItem('Ask', d.ask, Colors.black87),
+                                    _compactTradeItem('High', d.high, Colors.green),
+                                    _compactTradeItem('Low', d.low, Colors.red),
+                                  ],
+                                ),
+                                if (d.info.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(d.info, style: const TextStyle(fontSize: 9, color: Colors.grey, fontStyle: FontStyle.italic)),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 10),
+              Text('Data sourced from DP Gold.', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _compactTradeItem(String label, double val, Color color) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey)),
+        Text(
+          val > 1000 ? val.toInt().toString() : val.toStringAsFixed(2),
+          style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 11),
+        ),
+      ],
+    );
+  }
+
   Widget _giftNiftyTile() {
-    GiftNiftyData? near;
+    GiftNiftyData? near, far;
     if (_giftNiftyData.isNotEmpty) {
       near = _giftNiftyData.first;
+      if (_giftNiftyData.length > 1) far = _giftNiftyData[1];
     }
 
     return InkWell(
       onTap: _showGiftNiftyDetails,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1548,20 +1749,14 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.public, color: Colors.indigo[700], size: 20),
-                      const SizedBox(width: 6),
-                      CommonWidgets.txt('GIFT NIFTY', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
+                      Icon(Icons.public, color: Colors.indigo[700], size: 16),
+                      const SizedBox(width: 4),
+                      CommonWidgets.txt('GIFT NIFTY', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  if (near != null) ...[
-                    Text('LTP: ${near.lastPrice.toStringAsFixed(1)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${near.dayChange > 0 ? '+' : ''}${near.dayChange.toStringAsFixed(1)} (${near.percentChange.toStringAsFixed(2)}%)',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: near.dayChange >= 0 ? Colors.green : Colors.red),
-                    ),
-                  ],
+                  const SizedBox(height: 6),
+                  if (near != null) _giftNiftyRow(near.expiryDate, near.lastPrice, near.percentChange),
+                  if (far != null) _giftNiftyRow(far.expiryDate, far.lastPrice, far.percentChange),
                   if (_giftNiftyData.isEmpty)
                     const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
@@ -1570,14 +1765,110 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _indicesTile() {
-    IndexData? nifty, next50;
-    if (_indicesData.isNotEmpty) {
+  Widget _giftNiftyRow(String date, double ltp, double pct) {
+    // Shorten date: "25-Aug-2026" -> "25 Aug"
+    String displayDate = date;
+    if (date.contains('-')) {
+      final parts = date.split('-');
+      if (parts.length >= 2) displayDate = "${parts[0]} ${parts[1]}";
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(displayDate, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.w500)),
+          Row(
+            children: [
+              Text(ltp.toStringAsFixed(1), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 4),
+              Text(
+                '(${pct > 0 ? '+' : ''}${pct.toStringAsFixed(2)}%)',
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: pct >= 0 ? Colors.green : Colors.red),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _goldTile() {
+    GoldRateData? gold, silver, usdinr;
+    if (_goldRates.isNotEmpty) {
       try {
-        nifty = _indicesData.firstWhere((d) => d.name.toUpperCase().contains('NIFTY 50'));
+        gold = _goldRates.firstWhere((d) => d.symbol.toUpperCase().contains('GOLD SPOT'));
+      } catch (_) {
+        try { gold = _goldRates.firstWhere((d) => d.symbol.toUpperCase().contains('GOLD 999')); } catch (_) {}
+      }
+      try {
+        silver = _goldRates.firstWhere((d) => d.symbol.toUpperCase().contains('SILVER SPOT'));
       } catch (_) {}
       try {
-        next50 = _indicesData.firstWhere((d) => d.name.toUpperCase().contains('NIFTY NEXT 50'));
+        usdinr = _goldRates.firstWhere((d) => d.symbol.toUpperCase().contains('USDINR'));
+      } catch (_) {}
+    }
+
+    return InkWell(
+      onTap: _showGoldDetails,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        ),
+        child: _fetchingGold
+            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.currency_rupee, color: Colors.amber, size: 16),
+                      const SizedBox(width: 4),
+                      CommonWidgets.txt('BULLION', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (gold != null) _rateRow('Gold', gold.bid),
+                  if (silver != null) _rateRow('Silver', silver.bid),
+                  if (usdinr != null) _rateRow('USDINR', usdinr.bid),
+                  if (_goldRates.isEmpty)
+                    const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _rateRow(String label, double value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w500)),
+          Text(
+            label == 'USDINR' ? value.toStringAsFixed(2) : value.toInt().toString(),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _indicesTile() {
+    IndexData? nifty, nifty500;
+    if (_indicesData.isNotEmpty) {
+      try {
+        nifty = _indicesData.firstWhere((d) => d.name.toUpperCase() == 'NIFTY 50');
+      } catch (_) {}
+      try {
+        nifty500 = _indicesData.firstWhere((d) => d.name.toUpperCase() == 'NIFTY 500');
       } catch (_) {}
     }
 
@@ -1585,7 +1876,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       onTap: _showIndicesDetails,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1599,36 +1890,40 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.analytics, color: Colors.indigo[700], size: 20),
-                      const SizedBox(width: 6),
-                      CommonWidgets.txt('Indices', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
+                      Icon(Icons.analytics, color: Colors.indigo[700], size: 16),
+                      const SizedBox(width: 4),
+                      CommonWidgets.txt('Indices', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  if (nifty != null)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('NIFTY', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        Text('${nifty.percentChange > 0 ? '+' : ''}${nifty.percentChange.toStringAsFixed(2)}%',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: nifty.percentChange >= 0 ? Colors.green : Colors.red)),
-                      ],
-                    ),
-                  if (next50 != null)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('NEXT50', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        Text('${next50.percentChange > 0 ? '+' : ''}${next50.percentChange.toStringAsFixed(2)}%',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: next50.percentChange >= 0 ? Colors.green : Colors.red)),
-                      ],
-                    ),
+                  const SizedBox(height: 6),
+                  if (nifty != null) _indexRow('Nifty 50', nifty.last, nifty.percentChange),
+                  if (nifty500 != null) _indexRow('Nifty 500', nifty500.last, nifty500.percentChange),
                   if (_indicesData.isEmpty)
                     const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                  if (_indicesData.isNotEmpty && nifty == null && next50 == null)
-                    Text(_indicesData.first.name.split(' ').first, style: const TextStyle(fontSize: 10, color: Colors.grey), overflow: TextOverflow.ellipsis),
                 ],
               ),
+      ),
+    );
+  }
+
+  Widget _indexRow(String label, double last, double pct) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.w500)),
+          Row(
+            children: [
+              Text(last.toStringAsFixed(1), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 4),
+              Text(
+                '(${pct > 0 ? '+' : ''}${pct.toStringAsFixed(2)}%)',
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: pct >= 0 ? Colors.green : Colors.red),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
