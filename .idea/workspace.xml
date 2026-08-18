@@ -8,12 +8,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/models/gold_rate_data.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/gold_rate_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/.last_build_id" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/favicon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/flutter.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/flutter_bootstrap.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/flutter_service_worker.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/main.dart.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/manifest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/build/web/version.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -159,7 +164,7 @@
     "git-widget-placeholder": "master",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/manoz/StudioProjects/Infin Trulite/docs",
-    "settings.editor.selected.configurable": "tools.preferences.codegpt.telemetry",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
     "show.migrate.to.gradle.popup": "false"
   }
 }]]></component>

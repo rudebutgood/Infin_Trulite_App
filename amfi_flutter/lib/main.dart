@@ -1266,31 +1266,34 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         Card(
           elevation: 4,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: [Colors.indigo[900]!, Colors.indigo[700]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CommonWidgets.txt(t('synopsis'), style: const TextStyle(color: Colors.white70, fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
-                const SizedBox(height: 8),
-                Text('₹${CommonWidgets.formatCurrency(totalCur, privacyMode: _setPrivacyMode)}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _synopsisItem(t('net_gain'), netGain.toDouble(), netPct.toDouble()),
-                    _synopsisItem(t('day_gain'), totalDayGain.toDouble(), dayPct.toDouble()),
-                  ],
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _tabCtl.animateTo(2),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.indigo[900]!, Colors.indigo[700]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CommonWidgets.txt(t('synopsis'), style: const TextStyle(color: Colors.white70, fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
+                  const SizedBox(height: 8),
+                  Text('₹${CommonWidgets.formatCurrency(totalCur, privacyMode: _setPrivacyMode)}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _synopsisItem(t('net_gain'), netGain.toDouble(), netPct.toDouble()),
+                      _synopsisItem(t('day_gain'), totalDayGain.toDouble(), dayPct.toDouble()),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1319,17 +1322,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           crossAxisSpacing: 16,
           childAspectRatio: 1.5,
           children: [
-            _homeTile('Live NAVs', Icons.show_chart, Colors.blue, () => _tabCtl.animateTo(1)),
-            _homeTile('Portfolio', Icons.account_balance_wallet, Colors.green, () => _tabCtl.animateTo(2)),
-            _homeTile('Analytics', Icons.bar_chart, Colors.orange, () {
-              Navigator.push(context, MaterialPageRoute(builder: (c) => PortfolioChartsPage(
-                portfolioRows: _portfolioRows,
-                selectedImportIds: _selectedImportIds,
-                selectedLanguage: _selectedLanguage,
-                translate: _translate,
-              )));
-            }),
-            _homeTile('Import', Icons.file_upload, Colors.purple, _pickAndImportFile),
             _fiiDiiTile(),
             _indicesTile(),
             _giftNiftyTile(),
