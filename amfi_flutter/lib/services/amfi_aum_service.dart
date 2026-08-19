@@ -17,22 +17,24 @@ class AmfiAumService {
     return _client!;
   }
 
-  Future<AmfiAumData> fetchAumData(int fyId, int periodId) async {
+  Future<AmfiAumData> fetchAumData(int fyId, int periodId, {bool ignoreCache = false}) async {
     final client = _getClient();
     final url = '$_baseUrl&fyId=$fyId&periodId=$periodId';
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'aum_cache_${fyId}_$periodId';
-    
-    // Check cache (valid for 24 hours)
-    final cachedData = prefs.getString(cacheKey);
-    final cacheTime = prefs.getInt('${cacheKey}_time') ?? 0;
     final now = DateTime.now().millisecondsSinceEpoch;
+    
+    // Check cache (valid for 24 hours) if not ignored
+    if (!ignoreCache) {
+      final cachedData = prefs.getString(cacheKey);
+      final cacheTime = prefs.getInt('${cacheKey}_time') ?? 0;
 
-    if (cachedData != null && (now - cacheTime) < 24 * 60 * 60 * 1000) {
-      try {
-        return _parseAumResponse(json.decode(cachedData));
-      } catch (_) {
-        // Cache corrupted, fetch fresh
+      if (cachedData != null && (now - cacheTime) < 24 * 60 * 60 * 1000) {
+        try {
+          return _parseAumResponse(json.decode(cachedData));
+        } catch (_) {
+          // Cache corrupted, fetch fresh
+        }
       }
     }
 
@@ -141,17 +143,32 @@ class AmfiAumService {
     );
   }
 
-  Future<AmfiAumComparison> fetchAumComparison() async {
-    final current = await fetchAumData(1, 1);
-    AmfiAumData? previous;
-    try {
-      previous = await fetchAumData(1, 2);
-    } catch (_) {}
-
-    if (previous == null || previous.totalAum == 0) {
-      previous = await fetchAumData(2, 1);
+  Future<AmfiAumComparison> fetchAumComparison({
+    bool ignoreCache = false,
+    int? compFyId,
+    int? compPeriodId,
+  }) async {
+    final current = await fetchAumData(1, 1, ignoreCache: ignoreCache);
+    
+    AmfiAumData? target;
+    if (compFyId != null && compPeriodId != null) {
+      try {
+        target = await fetchAumData(compFyId, compPeriodId, ignoreCache: ignoreCache);
+      } catch (_) {}
     }
-    return AmfiAumComparison(current: current, previous: previous);
+
+    if (target == null || target.totalAum == 0) {
+      // Default fallback logic
+      try {
+        target = await fetchAumData(1, 2, ignoreCache: ignoreCache);
+      } catch (_) {}
+
+      if (target == null || target.totalAum == 0) {
+        target = await fetchAumData(2, 1, ignoreCache: ignoreCache);
+      }
+    }
+    
+    return AmfiAumComparison(current: current, previous: target!);
   }
 
   double _toDouble(dynamic val) {

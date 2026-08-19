@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'models/index_data.dart';
 import 'services/index_service.dart';
+import 'widgets/common_widgets.dart';
 
 class IndicesPage extends StatefulWidget {
   final String selectedLanguage;
@@ -201,7 +202,7 @@ class _IndicesPageState extends State<IndicesPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Market Indices', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: CommonWidgets.txt('Market Indices', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [
@@ -215,7 +216,7 @@ class _IndicesPageState extends State<IndicesPage> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredData.isEmpty
-                    ? const Center(child: Text('No data available'))
+                    ? Center(child: CommonWidgets.txt('No data available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
                     : ListView.builder(
                         itemCount: _filteredData.length,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -269,7 +270,7 @@ class _IndicesPageState extends State<IndicesPage> {
           // Sorting Dropdown
           Row(
             children: [
-              const Text('Sort:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              CommonWidgets.txt('Sort:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
               const SizedBox(width: 8),
               Expanded(
                 child: DropdownButtonHideUnderline(
@@ -280,7 +281,7 @@ class _IndicesPageState extends State<IndicesPage> {
                     items: _sortOptions.map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value),
+                        child: CommonWidgets.txt(value, selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -363,7 +364,7 @@ class _IndicesPageState extends State<IndicesPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(d.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 14 : 15, color: Colors.indigo[900])),
+                    CommonWidgets.txt(d.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 14 : 15, color: Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                     const SizedBox(height: 2),
                     Text('Last: ₹${d.last.toStringAsFixed(2)}', style: TextStyle(color: Colors.black87, fontSize: widget.setCompactLayout ? 12 : 13)),
                     if (d.yearHigh != null && d.yearLow != null)
@@ -378,7 +379,7 @@ class _IndicesPageState extends State<IndicesPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '$label${(displayChange ?? 0) >= 0 && !_sortBy.contains('Ratio') ? '+' : ''}${displayChange?.toStringAsFixed(2) ?? 'N/A'}${(_sortBy.contains('%') || _sortBy == 'vs Year High %') ? '%' : ''}',
+                    '${label.isNotEmpty ? label : ''}${(displayChange ?? 0) >= 0 && !_sortBy.contains('Ratio') ? '+' : ''}${displayChange?.toStringAsFixed(2) ?? 'N/A'}${(_sortBy.contains('%') || _sortBy == 'vs Year High %') ? '%' : ''}',
                     style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14),
                   ),
                   Text(

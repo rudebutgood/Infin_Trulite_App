@@ -8,13 +8,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/bullion_page.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/fii_dii_page.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/gift_nifty_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/amfi_aum_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/amfi_aum_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/bullion_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/bullion_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/amfi_aum_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/amfi_aum_service.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,23 +60,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0000386278257443" />
-      <entry key="MS500" value="1.131946504261717" />
-      <entry key="S2" value="1.7755117594634995" />
-      <entry key="S5" value="2.312773842883746" />
-      <entry key="S10" value="2.608135015718739" />
-      <entry key="S30" value="2.8566066620927693" />
-      <entry key="S60" value="2.926558303863324" />
-      <entry key="M2" value="2.963844589312353" />
-      <entry key="M5" value="3.409293064388895" />
-      <entry key="M10" value="7.252266912487532" />
-      <entry key="M15" value="12.306264537958123" />
-      <entry key="M30" value="23.434999554729217" />
-      <entry key="H1" value="33.314759619068234" />
-      <entry key="H2" value="39.93179314216387" />
-      <entry key="H4" value="43.766033759334434" />
-      <entry key="D1" value="47.26485857529404" />
-      <entry key="W1" value="47.89423425579245" />
+      <entry key="MS100" value="1.0000000000231533" />
+      <entry key="MS500" value="1.0074631479404879" />
+      <entry key="S2" value="1.2939209296869423" />
+      <entry key="S5" value="1.6127625362519682" />
+      <entry key="S10" value="1.782791502414256" />
+      <entry key="S30" value="1.9216132306551343" />
+      <entry key="S60" value="1.960006890941484" />
+      <entry key="M2" value="1.9797994136258115" />
+      <entry key="M5" value="1.9918702632180887" />
+      <entry key="M10" value="1.9959268362776899" />
+      <entry key="M15" value="1.9972827107664313" />
+      <entry key="M30" value="1.9986404311695134" />
+      <entry key="H1" value="1.9993199843741518" />
+      <entry key="H2" value="1.9996609354510322" />
+      <entry key="H4" value="2.006759638473726" />
+      <entry key="D1" value="12.993432173921812" />
+      <entry key="W1" value="40.88632588476862" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -99,23 +98,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9330700458240515" />
-      <entry key="MS500" value="1.1170787546428325" />
-      <entry key="S2" value="1.7700806600843375" />
-      <entry key="S5" value="2.309884413424781" />
-      <entry key="S10" value="2.606480525357271" />
-      <entry key="S30" value="2.8559949349863385" />
-      <entry key="S60" value="2.9262438703325313" />
-      <entry key="M2" value="2.9636849851598153" />
-      <entry key="M5" value="3.409206803323904" />
-      <entry key="M10" value="7.252128620921355" />
-      <entry key="M15" value="12.306089923598122" />
-      <entry key="M30" value="23.43482213415448" />
-      <entry key="H1" value="33.314631089828985" />
-      <entry key="H2" value="39.931715572868924" />
-      <entry key="H4" value="43.76599112427932" />
-      <entry key="D1" value="47.264850884254415" />
-      <entry key="W1" value="47.89423314203984" />
+      <entry key="MS100" value="0.8293195458316275" />
+      <entry key="MS500" value="0.9702931590966598" />
+      <entry key="S2" value="1.2802593596499434" />
+      <entry key="S5" value="1.6053846854255034" />
+      <entry key="S10" value="1.7785920929198173" />
+      <entry key="S30" value="1.9200744145862503" />
+      <entry key="S60" value="1.9592182530966262" />
+      <entry key="M2" value="1.9794001375274501" />
+      <entry key="M5" value="1.991709343415046" />
+      <entry key="M10" value="1.9958461731585018" />
+      <entry key="M15" value="1.997228890070684" />
+      <entry key="M30" value="1.998613498149223" />
+      <entry key="H1" value="1.9993065121900944" />
+      <entry key="H2" value="1.9996541979378546" />
+      <entry key="H4" value="2.006756262612605" />
+      <entry key="D1" value="12.993429823474512" />
+      <entry key="W1" value="40.88632490026442" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -271,7 +270,15 @@
       <option name="project" value="LOCAL" />
       <updated>1787169841941</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="initial commit">
+      <option name="closed" value="true" />
+      <created>1787171399286</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1787171399286</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

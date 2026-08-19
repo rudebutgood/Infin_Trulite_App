@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/amfi_aum_data.dart';
 import '../services/amfi_aum_service.dart';
+import '../widgets/common_widgets.dart';
 
 class AmfiAumPage extends StatefulWidget {
   final String selectedLanguage;
@@ -28,6 +29,16 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
   List<AmfiAumGroup> _filteredGroups = [];
   bool _loading = true;
   int _groupIndex = 0; // 0 for Category, 1 for AMC, 2 for AMC+Category
+
+  final Map<String, List<int>> _compOptions = {
+    'Previous Period': [1, 2],
+    '1 Year ago': [2, 1],
+    '2 Years ago': [3, 1],
+    '3 Years ago': [4, 1],
+    '5 Years ago': [6, 1],
+    '10 Years ago': [11, 1],
+  };
+  String _selectedComp = 'Previous Period';
   
   String _sortBy = 'AUM';
   bool _isAscending = false;
@@ -40,11 +51,16 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
     _fetch();
   }
 
-  Future<void> _fetch() async {
+  Future<void> _fetch({bool force = false}) async {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      final res = await _service.fetchAumComparison();
+      final comp = _compOptions[_selectedComp]!;
+      final res = await _service.fetchAumComparison(
+        ignoreCache: force,
+        compFyId: comp[0],
+        compPeriodId: comp[1],
+      );
       if (mounted) {
         setState(() {
           _data = res;
@@ -146,15 +162,25 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(group.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        CommonWidgets.txt(group.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                         Tooltip(
                           message: 'Full Value: ₹${_formatAum(group.aum, full: true)} Cr',
-                          child: Text('Current Total: ₹${_formatAum(group.aum)} Cr', style: const TextStyle(color: Colors.indigo, fontSize: 13, fontWeight: FontWeight.bold)),
+                          child: Row(
+                            children: [
+                              CommonWidgets.txt('Current Total: ', style: const TextStyle(color: Colors.indigo, fontSize: 13, fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                              Text('₹${_formatAum(group.aum)} Cr', style: const TextStyle(color: Colors.indigo, fontSize: 13, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                         ),
                         if (prevGroup != null)
                            Tooltip(
                              message: 'Full Value: ₹${_formatAum(prevGroup.aum, full: true)} Cr',
-                             child: Text('Previous Total: ₹${_formatAum(prevGroup.aum)} Cr', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                             child: Row(
+                               children: [
+                                 CommonWidgets.txt('Previous Total: ', style: const TextStyle(color: Colors.grey, fontSize: 12), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                                 Text('₹${_formatAum(prevGroup.aum)} Cr', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                               ],
+                             ),
                            ),
                       ],
                     ),
@@ -190,7 +216,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(child: Text(sch.schemeName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+                              Expanded(child: CommonWidgets.txt(sch.schemeName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
                               const SizedBox(width: 8),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -244,7 +270,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey)),
+        CommonWidgets.txt(label, style: const TextStyle(fontSize: 9, color: Colors.grey), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
         Tooltip(
           message: 'Full Value: ${val.toStringAsFixed(2)}',
           child: Text(_formatAum(val), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
@@ -272,17 +298,17 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('MF Industry AUM', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: CommonWidgets.txt('MF Industry AUM', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: () => _fetch(force: true)),
         ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _data == null
-              ? const Center(child: Text('No data available'))
+              ? Center(child: CommonWidgets.txt('No data available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
               : Scrollbar(
                   thumbVisibility: true,
                   child: CustomScrollView(
@@ -291,7 +317,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                       SliverToBoxAdapter(child: _buildSearchAndSort()),
                       SliverToBoxAdapter(child: _buildGroupingToggle()),
                       if (_filteredGroups.isEmpty)
-                        const SliverFillRemaining(child: Center(child: Text('No entries found')))
+                        SliverFillRemaining(child: Center(child: CommonWidgets.txt('No entries found', selectedLanguage: widget.selectedLanguage, translate: widget.translate)))
                       else
                         SliverPadding(
                           padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
@@ -334,11 +360,11 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Industry AAUM', style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)),
+              CommonWidgets.txt('Industry AAUM', style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4)),
-                child: Text(cur.period, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                child: CommonWidgets.txt(cur.period, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
               ),
             ],
           ),
@@ -352,10 +378,8 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
             children: [
               Tooltip(
                 message: 'Absolute Growth: ₹${_formatAum(absDiff, full: true)} Cr',
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                  child: Column(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -363,27 +387,32 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                         const SizedBox(width: 6),
                         Text(
                           '${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(2)}%',
-                          style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14),
+                          style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                       ],
                     ),
                     Text(
                       '(${absDiff >= 0 ? '+' : ''}₹${_formatAum(absDiff.abs())} Cr)',
-                      style: TextStyle(color: color.withOpacity(0.9), fontWeight: FontWeight.bold, fontSize: 10),
+                      style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                   ],
                 ),
-                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 24),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('vs ${prev.period}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                    Row(
+                      children: [
+                        CommonWidgets.txt('vs ', style: const TextStyle(color: Colors.white70, fontSize: 11), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                        CommonWidgets.txt(prev.period, style: const TextStyle(color: Colors.white70, fontSize: 11), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     Tooltip(
                       message: 'Full Value: ₹${_formatAum(prev.totalAum, full: true)} Cr',
-                      child: Text('₹${_formatAum(prev.totalAum)} Cr', style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.w500)),
+                      child: Text('₹${_formatAum(prev.totalAum)} Cr', style: const TextStyle(color: Colors.white60, fontSize: 14, fontWeight: FontWeight.w500)),
                     ),
                   ],
                 ),
@@ -430,7 +459,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
             children: [
               Icon(icon, size: 16, color: active ? Colors.indigo[700] : Colors.grey),
               const SizedBox(width: 6),
-              Text(label, style: TextStyle(fontSize: 12, fontWeight: active ? FontWeight.bold : FontWeight.normal, color: active ? Colors.indigo[700] : Colors.grey[600])),
+              CommonWidgets.txt(label, style: TextStyle(fontSize: 12, fontWeight: active ? FontWeight.bold : FontWeight.normal, color: active ? Colors.indigo[700] : Colors.grey[600]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
             ],
           ),
         ),
@@ -465,26 +494,45 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text('Sort By:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blueGrey)),
-              const SizedBox(width: 12),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[300]!)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedComp,
+                      isExpanded: true,
+                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                      items: _compOptions.keys.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: CommonWidgets.txt(value, selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _selectedComp = val);
+                          _fetch();
+                        }
+                      },
+                    ),
                   ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[300]!)),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _sortBy,
                       isExpanded: true,
-                      isDense: true,
-                      style: const TextStyle(color: Colors.black87, fontSize: 13),
+                      style: const TextStyle(color: Colors.black87, fontSize: 12),
                       items: _sortOptions.map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text(value),
+                          child: CommonWidgets.txt(value, selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -499,7 +547,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               IconButton(
                 icon: Icon(_isAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 20, color: Colors.indigo),
                 onPressed: () {
@@ -508,7 +556,6 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                     _sortAndFilter();
                   });
                 },
-                tooltip: _isAscending ? 'Ascending' : 'Descending',
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -539,7 +586,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(group.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14, color: Colors.indigo[900])),
+                    CommonWidgets.txt(group.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14, color: Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -572,7 +619,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                       style: TextStyle(color: color.withOpacity(0.8), fontSize: widget.setCompactLayout ? 9 : 10, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  Text('Growth', style: TextStyle(color: Colors.grey[600], fontSize: widget.setCompactLayout ? 9 : 10)),
+                  CommonWidgets.txt('Growth', style: TextStyle(color: Colors.grey[600], fontSize: widget.setCompactLayout ? 9 : 10), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                 ],
               ),
               const SizedBox(width: 8),

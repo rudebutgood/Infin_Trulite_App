@@ -1326,32 +1326,37 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           elevation: 4,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => _tabCtl.animateTo(2),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.indigo[900]!, Colors.indigo[700]!],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CommonWidgets.txt(t('synopsis'), style: const TextStyle(color: Colors.white70, fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
-                  const SizedBox(height: 8),
-                  Text('₹${CommonWidgets.formatCurrency(totalCur, privacyMode: _setPrivacyMode)}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _synopsisItem(t('net_gain'), netGain.toDouble(), netPct.toDouble()),
-                      _synopsisItem(t('day_gain'), totalDayGain.toDouble(), dayPct.toDouble()),
-                    ],
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _tabCtl.animateTo(2),
+              splashColor: Colors.white.withOpacity(0.15),
+              highlightColor: Colors.white.withOpacity(0.05),
+              child: Ink(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.indigo[900]!, Colors.indigo[700]!],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CommonWidgets.txt(t('synopsis'), style: const TextStyle(color: Colors.white70, fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
+                    const SizedBox(height: 8),
+                    Text('₹${CommonWidgets.formatCurrency(totalCur, privacyMode: _setPrivacyMode)}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _synopsisItem(t('net_gain'), netGain.toDouble(), netPct.toDouble()),
+                        _synopsisItem(t('day_gain'), totalDayGain.toDouble(), dayPct.toDouble()),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1812,9 +1817,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                           ],
                         ),
                         SizedBox(height: _setCompactLayout ? 4 : 6),
-                        if (gold != null) _rateRow('Gold', gold.bid),
-                        if (silver != null) _rateRow('Silver', silver.bid),
-                        if (usdinr != null) _rateRow('USDINR', usdinr.bid),
+                        if (gold != null) _rateRow('Gold', gold.ask),
+                        if (silver != null) _rateRow('Silver', silver.ask),
+                        if (usdinr != null) _rateRow('USDINR', usdinr.ask),
                         if (_goldRates.isEmpty)
                           Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
                         const Spacer(),

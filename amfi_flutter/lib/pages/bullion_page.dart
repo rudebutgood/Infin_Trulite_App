@@ -68,7 +68,7 @@ class _BullionPageState extends State<BullionPage> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _data.isEmpty
-                    ? const Center(child: Text('No data available'))
+                    ? Center(child: CommonWidgets.txt('No data available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
                     : ListView.separated(
                         itemCount: _data.length,
                         padding: const EdgeInsets.all(12),
@@ -91,7 +91,7 @@ class _BullionPageState extends State<BullionPage> {
         children: [
           CommonWidgets.txt('Real-time Precious Metal Rates', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
           const SizedBox(height: 4),
-          Text('Data sourced from DP Gold. BIS rows represent Indian market rates.', style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+          CommonWidgets.txt('Data sourced from DP Gold. BIS rows represent Indian market rates.', style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
         ],
       ),
     );
@@ -109,10 +109,10 @@ class _BullionPageState extends State<BullionPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(d.symbol, style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 14 : 15, color: Colors.indigo[900])),
+                  CommonWidgets.txt(d.symbol, style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 14 : 15, color: Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                   const SizedBox(height: 2),
                   if (d.info.isNotEmpty)
-                    Text(d.info, style: TextStyle(color: Colors.grey[600], fontSize: widget.setCompactLayout ? 10 : 11, fontStyle: FontStyle.italic)),
+                    CommonWidgets.txt(d.info, style: TextStyle(color: Colors.grey[600], fontSize: widget.setCompactLayout ? 10 : 11, fontStyle: FontStyle.italic), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                   SizedBox(height: widget.setCompactLayout ? 4 : 8),
                   Row(
                     children: [
