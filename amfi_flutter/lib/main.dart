@@ -22,6 +22,9 @@ import 'package:translator/translator.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'indices_page.dart';
+import 'models/amfi_aum_data.dart';
+import 'services/amfi_aum_service.dart';
+import 'pages/amfi_aum_page.dart';
 import 'tabs/funds_tab.dart';
 import 'tabs/portfolio_tab.dart';
 import 'pages/portfolio_charts_page.dart';
@@ -203,6 +206,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   final PortfolioService _portfolio = PortfolioService();
   final FiiDiiService _fiiDiiService = FiiDiiService();
   final IndexService _indexService = IndexService();
+  final AmfiAumService _amfiAumService = AmfiAumService();
   final GiftNiftyService _giftNiftyService = GiftNiftyService();
   final GoldRateService _goldService = GoldRateService();
   final GoogleTranslator _translator = GoogleTranslator();
@@ -226,6 +230,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   bool _fetchingGiftNifty = false;
   List<GoldRateData> _goldRates = [];
   bool _fetchingGold = false;
+  AmfiAumComparison? _amfiAumComparison;
+  bool _fetchingAum = false;
 
   // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
@@ -307,6 +313,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     await _loadPortfolio();
     _fetchFiiDii();
     _fetchIndices();
+    _fetchAmfiAum();
     _fetchGiftNifty();
     _fetchGoldRates();
 
@@ -448,6 +455,19 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
+  Future<void> _fetchAmfiAum({bool force = false}) async {
+    if (_fetchingAum && !force) return;
+    setState(() => _fetchingAum = true);
+    try {
+      final data = await _amfiAumService.fetchAumComparison();
+      if (mounted) setState(() => _amfiAumComparison = data);
+    } catch (e) {
+      debugPrint('AUM Fetch Error: $e');
+    } finally {
+      if (mounted) setState(() => _fetchingAum = false);
+    }
+  }
+
   Future<void> _refresh() async {
     if (mounted) {
       setState(() {
@@ -476,6 +496,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       await _loadPortfolio();
       _fetchFiiDii(force: true);
       _fetchIndices(force: true);
+      _fetchAmfiAum(force: true);
       _fetchGiftNifty(force: true);
       _fetchGoldRates(force: true);
 
@@ -831,6 +852,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         await _loadPortfolio();
         _fetchFiiDii();
         _fetchIndices();
+        _fetchAmfiAum();
       } catch (e) {
         if (mounted) {
           showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('Fetch Failed'), content: Text('Error: $e'), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))]));
@@ -1007,6 +1029,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       await _loadPortfolio();
       _fetchFiiDii(force: true);
       _fetchIndices(force: true);
+      _fetchAmfiAum(force: true);
       _fetchGiftNifty(force: true);
       _fetchGoldRates(force: true);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported $count portfolio items')));
@@ -1324,6 +1347,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           children: [
             _fiiDiiTile(),
             _indicesTile(),
+            _aumTile(),
             _giftNiftyTile(),
             _goldTile(),
           ],
@@ -1891,6 +1915,64 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                   if (nifty != null) _indexRow('Nifty 50', nifty.last, nifty.percentChange),
                   if (nifty500 != null) _indexRow('Nifty 500', nifty500.last, nifty500.percentChange),
                   if (_indicesData.isEmpty)
+                    const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _aumTile() {
+    final data = _amfiAumComparison;
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AmfiAumPage())),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        ),
+        child: _fetchingAum
+            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.pie_chart, color: Colors.indigo[700], size: 16),
+                      const SizedBox(width: 4),
+                      CommonWidgets.txt('MF AUM', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (data != null) ...[
+                    Text(
+                      '₹${(data.current.totalAum / 100000).toStringAsFixed(1)}L Cr',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          data.percentageIncrease >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                          size: 10,
+                          color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
+                        ),
+                        Text(
+                          '${data.percentageIncrease.abs().toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else
                     const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
