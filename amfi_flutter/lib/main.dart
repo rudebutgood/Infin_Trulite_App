@@ -640,8 +640,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             child: StatefulBuilder(
               builder: (ctx, setLocalState) => Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.4),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  color: Colors.white.withOpacity(0.92),
+                  border: Border.all(color: Colors.white.withOpacity(0.5)),
                 ),
                 child: DefaultTabController(
                   length: 4,
