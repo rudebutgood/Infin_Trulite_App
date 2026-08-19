@@ -28,10 +28,13 @@ import 'pages/amfi_aum_page.dart';
 import 'pages/fii_dii_page.dart';
 import 'pages/gift_nifty_page.dart';
 import 'pages/bullion_page.dart';
+import 'pages/market_news_page.dart';
 import 'tabs/funds_tab.dart';
 import 'tabs/portfolio_tab.dart';
 import 'pages/portfolio_charts_page.dart';
 import 'widgets/common_widgets.dart';
+import 'services/market_news_service.dart';
+import 'models/market_news.dart';
 
 /**
  * INFIN TRULITE - Main Entry Point
@@ -212,6 +215,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   final AmfiAumService _amfiAumService = AmfiAumService();
   final GiftNiftyService _giftNiftyService = GiftNiftyService();
   final GoldRateService _goldService = GoldRateService();
+  final MarketNewsService _newsService = MarketNewsService();
   final GoogleTranslator _translator = GoogleTranslator();
 
   // Cache & State
@@ -235,6 +239,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   bool _fetchingGold = false;
   AmfiAumComparison? _amfiAumComparison;
   bool _fetchingAum = false;
+  List<MarketNews> _marketNews = [];
+  bool _fetchingNews = false;
 
   // Last Fetch Timestamps
   DateTime? _fiiDiiLastFetch;
@@ -242,9 +248,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   DateTime? _aumLastFetch;
   DateTime? _giftNiftyLastFetch;
   DateTime? _goldLastFetch;
+  DateTime? _newsLastFetch;
 
   // Tile Order state
-  List<String> _tileIds = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum'];
+  List<String> _tileIds = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews'];
 
   // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
@@ -309,7 +316,19 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _setSyncTime = prefs.getString('setSyncTime') ?? "06:00";
     _setNAVDefaultSort = prefs.getString('setNAVDefaultSort') ?? 'Return \u2193';
     
-    _tileIds = prefs.getStringList('homeTileOrder') ?? ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum'];
+    final List<String> defaultOrder = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews'];
+    final savedOrder = prefs.getStringList('homeTileOrder');
+    if (savedOrder == null) {
+      _tileIds = defaultOrder;
+    } else {
+      // Add any new tiles that aren't in the saved order yet
+      _tileIds = savedOrder;
+      for (var id in defaultOrder) {
+        if (!_tileIds.contains(id)) {
+          _tileIds.add(id);
+        }
+      }
+    }
 
     final themeStr = prefs.getString('setThemeMode') ?? 'system';
     _setThemeMode = ThemeMode.values.firstWhere(
@@ -331,6 +350,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _fetchAmfiAum();
     _fetchGiftNifty();
     _fetchGoldRates();
+    _fetchMarketNews();
 
     // Trigger refresh if no data is present
     if (_portfolioRows.isEmpty) {
@@ -504,6 +524,24 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
+  Future<void> _fetchMarketNews({bool force = false}) async {
+    if (_fetchingNews && !force) return;
+    setState(() => _fetchingNews = true);
+    try {
+      final data = await _newsService.fetchTop10News();
+      if (mounted) {
+        setState(() {
+          _marketNews = data;
+          _newsLastFetch = DateTime.now();
+        });
+      }
+    } catch (e) {
+      debugPrint('News Fetch Error: $e');
+    } finally {
+      if (mounted) setState(() => _fetchingNews = false);
+    }
+  }
+
   Future<void> _refresh() async {
     if (mounted) {
       setState(() {
@@ -535,6 +573,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       _fetchAmfiAum(force: true);
       _fetchGiftNifty(force: true);
       _fetchGoldRates(force: true);
+      _fetchMarketNews(force: true);
 
       if (mounted) {
         setState(() {
@@ -1562,8 +1601,73 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       case 'aum': return _aumTile();
       case 'giftNifty': return _giftNiftyTile();
       case 'gold': return _goldTile();
+      case 'marketNews': return _marketNewsTile();
       default: return const SizedBox.shrink();
     }
+  }
+
+  Widget _marketNewsTile() {
+    MarketNews? top;
+    if (_marketNews.isNotEmpty) top = _marketNews.first;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MarketNewsPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout))),
+            splashColor: Colors.indigo.withOpacity(0.1),
+            child: Padding(
+              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+              child: _fetchingNews
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.auto_awesome, color: Colors.amber[700], size: _setCompactLayout ? 14 : 16),
+                            const SizedBox(width: 4),
+                            CommonWidgets.txt('AI NEWS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                          ],
+                        ),
+                        SizedBox(height: _setCompactLayout ? 4 : 6),
+                        if (top != null)
+                          Expanded(
+                            child: CommonWidgets.txt(top.title, 
+                              style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.w500, color: Colors.black87),
+                              overflow: true, selectedLanguage: _selectedLanguage, translate: _translate),
+                          )
+                        else
+                          Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
+                        const Spacer(),
+                        if (_newsLastFetch != null)
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Text(
+                              'AI \u2022 ${DateFormat('dd MMM HH:mm').format(_newsLastFetch!)}',
+                              style: const TextStyle(fontSize: 8, color: Colors.grey),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 2,
+            right: 2,
+            child: IconButton(
+              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
+              onPressed: () => _fetchMarketNews(force: true),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _fiiDiiTile() {
