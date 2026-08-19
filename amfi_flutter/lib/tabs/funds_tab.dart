@@ -77,7 +77,9 @@ class _FundsTabState extends State<FundsTab> {
   Future<void> _initFilters() async {
     final prefs = await SharedPreferences.getInstance();
     _selectedFundType = prefs.getString('selectedFundType') ?? 'Direct';
-    _searchCtl.text = prefs.getString('lastSearch') ?? '';
+    // Fix: Explicitly check for 'Auto' or empty to prevent ghost text
+    final lastSearch = prefs.getString('lastSearch') ?? '';
+    _searchCtl.text = (lastSearch == 'Auto') ? '' : lastSearch;
     _recentSearches = prefs.getStringList('recentSearches') ?? [];
     
     _amcList = ['All Companies', ...await _repo.getFundCompanies()];
