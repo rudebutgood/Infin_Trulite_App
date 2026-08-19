@@ -233,6 +233,13 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   AmfiAumComparison? _amfiAumComparison;
   bool _fetchingAum = false;
 
+  // Last Fetch Timestamps
+  DateTime? _fiiDiiLastFetch;
+  DateTime? _indicesLastFetch;
+  DateTime? _aumLastFetch;
+  DateTime? _giftNiftyLastFetch;
+  DateTime? _goldLastFetch;
+
   // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
   String _selectedLanguage = 'English';
@@ -408,6 +415,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     setState(() => _fetchingFiiDii = true);
     try {
       _fiiDiiData = await _fiiDiiService.fetchFiiDiiData();
+      _fiiDiiLastFetch = DateTime.now();
     } catch (e) {
       debugPrint('FII/DII Fetch Error: $e');
     } finally {
@@ -421,7 +429,12 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     try {
       final data = await _indexService.fetchIndices();
       data.sort((a, b) => b.percentChange.compareTo(a.percentChange));
-      if (mounted) setState(() => _indicesData = data);
+      if (mounted) {
+        setState(() {
+          _indicesData = data;
+          _indicesLastFetch = DateTime.now();
+        });
+      }
     } catch (e) {
       debugPrint('Index Fetch Error: $e');
     } finally {
@@ -434,7 +447,12 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     setState(() => _fetchingGiftNifty = true);
     try {
       final data = await _giftNiftyService.fetchGiftNiftyData();
-      if (mounted) setState(() => _giftNiftyData = data);
+      if (mounted) {
+        setState(() {
+          _giftNiftyData = data;
+          _giftNiftyLastFetch = DateTime.now();
+        });
+      }
     } catch (e) {
       debugPrint('Gift Nifty Fetch Error: $e');
     } finally {
@@ -447,7 +465,12 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     setState(() => _fetchingGold = true);
     try {
       final data = await _goldService.fetchGoldRates();
-      if (mounted) setState(() => _goldRates = data);
+      if (mounted) {
+        setState(() {
+          _goldRates = data;
+          _goldLastFetch = DateTime.now();
+        });
+      }
     } catch (e) {
       debugPrint('Gold Fetch Error: $e');
     } finally {
@@ -460,7 +483,12 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     setState(() => _fetchingAum = true);
     try {
       final data = await _amfiAumService.fetchAumComparison();
-      if (mounted) setState(() => _amfiAumComparison = data);
+      if (mounted) {
+        setState(() {
+          _amfiAumComparison = data;
+          _aumLastFetch = DateTime.now();
+        });
+      }
     } catch (e) {
       debugPrint('AUM Fetch Error: $e');
     } finally {
@@ -1326,12 +1354,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             CommonWidgets.txt(t('quick_access'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.indigo),
-              onPressed: _refresh,
-              tooltip: 'Refresh All',
-              visualDensity: VisualDensity.compact,
-            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -1504,36 +1526,58 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       } catch (_) {}
     }
 
-    return InkWell(
-      onTap: _showFiiDiiDetails,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-        ),
-        child: _fetchingFiiDii
-            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.swap_horizontal_circle, color: Colors.indigo[700], size: 20),
-                      const SizedBox(width: 6),
-                      CommonWidgets.txt('FII/DII', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (fii != null) _fiiDiiRow(fii.date, 'FII', fii.netValue),
-                  if (dii != null) _fiiDiiRow(dii.date, 'DII', dii.netValue),
-                  if (fii == null && dii == null)
-                    const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                ],
-              ),
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: _showFiiDiiDetails,
+            splashColor: Colors.indigo.withOpacity(0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: _fetchingFiiDii
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.swap_horizontal_circle, color: Colors.indigo[700], size: 16),
+                            const SizedBox(width: 4),
+                            CommonWidgets.txt('FII/DII', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (fii != null) _fiiDiiRow(fii.date, 'FII', fii.netValue),
+                        if (dii != null) _fiiDiiRow(dii.date, 'DII', dii.netValue),
+                        if (fii == null && dii == null)
+                          const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        const Spacer(),
+                        if (_fiiDiiLastFetch != null)
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Text(
+                              'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_fiiDiiLastFetch!)}',
+                              style: const TextStyle(fontSize: 8, color: Colors.grey),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 2,
+            right: 2,
+            child: IconButton(
+              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
+              onPressed: () => _fetchFiiDii(force: true),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1747,36 +1791,58 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       if (_giftNiftyData.length > 1) far = _giftNiftyData[1];
     }
 
-    return InkWell(
-      onTap: _showGiftNiftyDetails,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-        ),
-        child: _fetchingGiftNifty
-            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.public, color: Colors.indigo[700], size: 16),
-                      const SizedBox(width: 4),
-                      CommonWidgets.txt('GIFT NIFTY', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  if (near != null) _giftNiftyRow(near.expiryDate, near.lastPrice, near.percentChange),
-                  if (far != null) _giftNiftyRow(far.expiryDate, far.lastPrice, far.percentChange),
-                  if (_giftNiftyData.isEmpty)
-                    const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                ],
-              ),
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: _showGiftNiftyDetails,
+            splashColor: Colors.indigo.withOpacity(0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: _fetchingGiftNifty
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.public, color: Colors.indigo[700], size: 16),
+                            const SizedBox(width: 4),
+                            CommonWidgets.txt('GIFT NIFTY', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (near != null) _giftNiftyRow(near.expiryDate, near.lastPrice, near.percentChange),
+                        if (far != null) _giftNiftyRow(far.expiryDate, far.lastPrice, far.percentChange),
+                        if (_giftNiftyData.isEmpty)
+                          const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        const Spacer(),
+                        if (_giftNiftyLastFetch != null)
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Text(
+                              'NSE IX \u2022 ${DateFormat('dd MMM HH:mm').format(_giftNiftyLastFetch!)}',
+                              style: const TextStyle(fontSize: 8, color: Colors.grey),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 2,
+            right: 2,
+            child: IconButton(
+              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
+              onPressed: () => _fetchGiftNifty(force: true),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1826,37 +1892,59 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       } catch (_) {}
     }
 
-    return InkWell(
-      onTap: _showGoldDetails,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-        ),
-        child: _fetchingGold
-            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.currency_rupee, color: Colors.amber, size: 16),
-                      const SizedBox(width: 4),
-                      CommonWidgets.txt('BULLION', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  if (gold != null) _rateRow('Gold', gold.bid),
-                  if (silver != null) _rateRow('Silver', silver.bid),
-                  if (usdinr != null) _rateRow('USDINR', usdinr.bid),
-                  if (_goldRates.isEmpty)
-                    const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                ],
-              ),
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: _showGoldDetails,
+            splashColor: Colors.indigo.withOpacity(0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: _fetchingGold
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.currency_rupee, color: Colors.amber, size: 16),
+                            const SizedBox(width: 4),
+                            CommonWidgets.txt('BULLION', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (gold != null) _rateRow('Gold', gold.bid),
+                        if (silver != null) _rateRow('Silver', silver.bid),
+                        if (usdinr != null) _rateRow('USDINR', usdinr.bid),
+                        if (_goldRates.isEmpty)
+                          const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        const Spacer(),
+                        if (_goldLastFetch != null)
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Text(
+                              'DP Gold \u2022 ${DateFormat('dd MMM HH:mm').format(_goldLastFetch!)}',
+                              style: const TextStyle(fontSize: 8, color: Colors.grey),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 2,
+            right: 2,
+            child: IconButton(
+              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
+              onPressed: () => _fetchGoldRates(force: true),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1888,94 +1976,146 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       } catch (_) {}
     }
 
-    return InkWell(
-      onTap: _showIndicesDetails,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-        ),
-        child: _fetchingIndices
-            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.analytics, color: Colors.indigo[700], size: 16),
-                      const SizedBox(width: 4),
-                      CommonWidgets.txt('Indices', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  if (nifty != null) _indexRow('Nifty 50', nifty.last, nifty.percentChange),
-                  if (nifty500 != null) _indexRow('Nifty 500', nifty500.last, nifty500.percentChange),
-                  if (_indicesData.isEmpty)
-                    const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                ],
-              ),
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: _showIndicesDetails,
+            splashColor: Colors.indigo.withOpacity(0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: _fetchingIndices
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.analytics, color: Colors.indigo[700], size: 16),
+                            const SizedBox(width: 4),
+                            CommonWidgets.txt('Indices', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (nifty != null) _indexRow('Nifty 50', nifty.last, nifty.percentChange),
+                        if (nifty500 != null) _indexRow('Nifty 500', nifty500.last, nifty500.percentChange),
+                        if (_indicesData.isEmpty)
+                          const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        const Spacer(),
+                        if (_indicesLastFetch != null)
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Text(
+                              'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_indicesLastFetch!)}',
+                              style: const TextStyle(fontSize: 8, color: Colors.grey),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 2,
+            right: 2,
+            child: IconButton(
+              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
+              onPressed: () => _fetchIndices(force: true),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _aumTile() {
     final data = _amfiAumComparison;
-    return InkWell(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AmfiAumPage())),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-        ),
-        child: _fetchingAum
-            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.pie_chart, color: Colors.indigo[700], size: 16),
-                      const SizedBox(width: 4),
-                      CommonWidgets.txt('MF AUM', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), selectedLanguage: _selectedLanguage, translate: _translate),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  if (data != null) ...[
-                    Text(
-                      '₹${(data.current.totalAum / 100000).toStringAsFixed(1)}L Cr',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AmfiAumPage())),
+            splashColor: Colors.indigo.withOpacity(0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: _fetchingAum
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          data.percentageIncrease >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                          size: 10,
-                          color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
+                        Row(
+                          children: [
+                            Icon(Icons.pie_chart, color: Colors.indigo[700], size: 16),
+                            const SizedBox(width: 4),
+                            CommonWidgets.txt('MF AUM', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: _selectedLanguage, translate: _translate),
+                          ],
                         ),
-                        Text(
-                          '${data.percentageIncrease.abs().toStringAsFixed(1)}%',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
+                        const SizedBox(height: 6),
+                        if (data != null) ...[
+                          Text(data.current.period, style: TextStyle(fontSize: 10, color: Colors.indigo[400], fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                '₹${(data.current.totalAum / 100000).toStringAsFixed(1)}L Cr',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    data.percentageIncrease >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                                    size: 10,
+                                    color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '${data.percentageIncrease.abs().toStringAsFixed(1)}%',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        ),
+                        ] else
+                          const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        const Spacer(),
+                        if (_aumLastFetch != null)
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Text(
+                              'AMFI \u2022 ${DateFormat('dd MMM HH:mm').format(_aumLastFetch!)}',
+                              style: const TextStyle(fontSize: 8, color: Colors.grey),
+                            ),
+                          ),
                       ],
                     ),
-                  ] else
-                    const Text('No Data', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                ],
-              ),
+            ),
+          ),
+          Positioned(
+            top: 2,
+            right: 2,
+            child: IconButton(
+              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
+              onPressed: () => _fetchAmfiAum(force: true),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
       ),
     );
   }

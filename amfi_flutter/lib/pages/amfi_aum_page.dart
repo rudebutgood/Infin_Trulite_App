@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/amfi_aum_data.dart';
 import '../services/amfi_aum_service.dart';
 
@@ -12,6 +13,7 @@ class AmfiAumPage extends StatefulWidget {
 class _AmfiAumPageState extends State<AmfiAumPage> {
   final AmfiAumService _service = AmfiAumService();
   final TextEditingController _searchCtl = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   
   AmfiAumComparison? _data;
   List<AmfiAumGroup> _filteredGroups = [];
@@ -21,7 +23,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
   String _sortBy = 'AUM';
   bool _isAscending = false;
 
-  final List<String> _sortOptions = ['Name', 'AUM', 'Growth'];
+  final List<String> _sortOptions = ['Name', 'AUM', 'Growth', 'AUM Increase'];
 
   @override
   void initState() {
@@ -69,6 +71,8 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
         cmp = a.aum.compareTo(b.aum);
       } else if (_sortBy == 'Growth') {
         cmp = _getGroupGrowth(a).compareTo(_getGroupGrowth(b));
+      } else if (_sortBy == 'AUM Increase') {
+        cmp = _getGroupAumIncrease(a).compareTo(_getGroupAumIncrease(b));
       }
       return _isAscending ? cmp : -cmp;
     });
@@ -106,6 +110,12 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
     return (current.aum - prev.aum) / prev.aum * 100;
   }
 
+  double _getGroupAumIncrease(AmfiAumGroup current) {
+    final prev = _getPreviousGroup(current);
+    if (prev == null) return 0;
+    return (current.aum - prev.aum);
+  }
+
   void _showGroupDetails(AmfiAumGroup group) {
     final prevGroup = _getPreviousGroup(group);
 
@@ -128,9 +138,15 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(group.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('Current Total: ₹${_formatAum(group.aum)} Cr', style: const TextStyle(color: Colors.indigo, fontSize: 13, fontWeight: FontWeight.bold)),
+                        Tooltip(
+                          message: 'Full Value: ₹${_formatAum(group.aum, full: true)} Cr',
+                          child: Text('Current Total: ₹${_formatAum(group.aum)} Cr', style: const TextStyle(color: Colors.indigo, fontSize: 13, fontWeight: FontWeight.bold)),
+                        ),
                         if (prevGroup != null)
-                           Text('Previous Total: ₹${_formatAum(prevGroup.aum)} Cr', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                           Tooltip(
+                             message: 'Full Value: ₹${_formatAum(prevGroup.aum, full: true)} Cr',
+                             child: Text('Previous Total: ₹${_formatAum(prevGroup.aum)} Cr', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                           ),
                       ],
                     ),
                   ),
@@ -170,9 +186,20 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('₹${_formatAum(sch.totalAum)} Cr', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.indigo)),
-                                  if (pSchAum != null)
-                                    Text('(₹${_formatAum(pSchAum)} Cr)', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                  Tooltip(
+                                    message: 'Full Value: ₹${_formatAum(sch.totalAum, full: true)} Cr',
+                                    child: Text('₹${_formatAum(sch.totalAum)} Cr', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.indigo)),
+                                  ),
+                                  if (pSchAum != null) ...[
+                                    Tooltip(
+                                      message: 'Full Value: ₹${_formatAum(pSchAum, full: true)} Cr',
+                                      child: Text('(₹${_formatAum(pSchAum)} Cr)', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                    ),
+                                    Text(
+                                      '${(sch.totalAum - pSchAum) >= 0 ? '+' : ''}₹${_formatAum((sch.totalAum - pSchAum).abs())} Cr',
+                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: (sch.totalAum - pSchAum) >= 0 ? Colors.green : Colors.red),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],
@@ -209,19 +236,26 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey)),
-        Text(val.toStringAsFixed(2), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+        Tooltip(
+          message: 'Full Value: ${val.toStringAsFixed(2)}',
+          child: Text(_formatAum(val), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+        ),
       ],
     );
   }
 
-  String _formatAum(double val) {
-    String res = val.toStringAsFixed(2);
-    var parts = res.split('.');
-    parts[0] = parts[0].replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-    return parts.join('.');
+  String _formatAum(double val, {bool full = false}) {
+    if (full) {
+      return NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 2).format(val).trim();
+    }
+    
+    // For main display, we want to keep it readable but not lose as much info as toStringAsPrecision(4) did
+    // NumberFormat en_IN automatically handles lakhs/crores formatting with commas
+    if (val.abs() >= 1000) {
+      return NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(val).trim();
+    } else {
+      return NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 1).format(val).trim();
+    }
   }
 
   @override
@@ -269,6 +303,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
     final cur = _data!.current;
     final prev = _data!.previous;
     final growth = _data!.percentageIncrease;
+    final absDiff = cur.totalAum - prev.totalAum;
     final color = growth >= 0 ? Colors.greenAccent[400]! : Colors.redAccent[100]!;
 
     return Container(
@@ -299,22 +334,36 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
             ],
           ),
           const SizedBox(height: 12),
-          Text('₹${_formatAum(cur.totalAum)} Cr', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+          Tooltip(
+            message: 'Full Value: ₹${_formatAum(cur.totalAum, full: true)} Cr',
+            child: Text('₹${_formatAum(cur.totalAum)} Cr', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                child: Row(
+              Tooltip(
+                message: 'Absolute Growth: ₹${_formatAum(absDiff, full: true)} Cr',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                  child: Column(
                   children: [
-                    Icon(growth >= 0 ? Icons.trending_up : Icons.trending_down, color: color, size: 18),
-                    const SizedBox(width: 6),
+                    Row(
+                      children: [
+                        Icon(growth >= 0 ? Icons.trending_up : Icons.trending_down, color: color, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(2)}%',
+                          style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ],
+                    ),
                     Text(
-                      '${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(2)}%',
-                      style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14),
+                      '(${absDiff >= 0 ? '+' : ''}₹${_formatAum(absDiff.abs())} Cr)',
+                      style: TextStyle(color: color.withOpacity(0.9), fontWeight: FontWeight.bold, fontSize: 10),
                     ),
                   ],
+                ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -323,7 +372,10 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('vs ${prev.period}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                    Text('₹${_formatAum(prev.totalAum)} Cr', style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.w500)),
+                    Tooltip(
+                      message: 'Full Value: ₹${_formatAum(prev.totalAum, full: true)} Cr',
+                      child: Text('₹${_formatAum(prev.totalAum)} Cr', style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.w500)),
+                    ),
                   ],
                 ),
               ),
@@ -460,6 +512,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
   Widget _buildGroupCard(AmfiAumGroup group) {
     final prevGroup = _getPreviousGroup(group);
     final growth = _getGroupGrowth(group);
+    final absDiff = _getGroupAumIncrease(group);
     final color = growth >= 0 ? Colors.green : Colors.red;
 
     return Card(
@@ -481,9 +534,15 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Text('₹${_formatAum(group.aum)} Cr', style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
+                        Tooltip(
+                          message: 'Full Value: ₹${_formatAum(group.aum, full: true)} Cr',
+                          child: Text('₹${_formatAum(group.aum)} Cr', style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
+                        ),
                         if (prevGroup != null)
-                           Text('  (₹${_formatAum(prevGroup.aum)})', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                           Tooltip(
+                             message: 'Full Value: ₹${_formatAum(prevGroup.aum, full: true)} Cr',
+                             child: Text('  (₹${_formatAum(prevGroup.aum)})', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                           ),
                       ],
                     ),
                   ],
@@ -496,6 +555,13 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                   Text(
                     '${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(2)}%',
                     style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  Tooltip(
+                    message: 'Full Increase: ₹${_formatAum(absDiff, full: true)} Cr',
+                    child: Text(
+                      '(${absDiff >= 0 ? '+' : ''}₹${_formatAum(absDiff.abs())} Cr)',
+                      style: TextStyle(color: color.withOpacity(0.7), fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   const Text('Growth', style: TextStyle(color: Colors.grey, fontSize: 10)),
                 ],
