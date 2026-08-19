@@ -240,6 +240,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   DateTime? _giftNiftyLastFetch;
   DateTime? _goldLastFetch;
 
+  // Tile Order state
+  List<String> _tileIds = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum'];
+
   // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
   String _selectedLanguage = 'English';
@@ -303,6 +306,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _setSyncTime = prefs.getString('setSyncTime') ?? "06:00";
     _setNAVDefaultSort = prefs.getString('setNAVDefaultSort') ?? 'Return \u2193';
     
+    _tileIds = prefs.getStringList('homeTileOrder') ?? ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum'];
+
     final themeStr = prefs.getString('setThemeMode') ?? 'system';
     _setThemeMode = ThemeMode.values.firstWhere(
             (e) => e.toString().split('.').last == themeStr,
@@ -1366,13 +1371,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
           childAspectRatio: 1.5,
-          children: [
-            _fiiDiiTile(),
-            _indicesTile(),
-            _aumTile(),
-            _giftNiftyTile(),
-            _goldTile(),
-          ],
+          children: _tileIds.map((id) => _buildDraggableTile(id)).toList(),
         ),
 
         const SizedBox(height: 32),
@@ -1513,6 +1512,50 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         Text(val.toStringAsFixed(2), style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13)),
       ],
     );
+  }
+
+  Widget _buildDraggableTile(String id) {
+    return DragTarget<String>(
+      onWillAccept: (data) => data != id,
+      onAccept: (data) async {
+        setState(() {
+          final oldIdx = _tileIds.indexOf(data);
+          final newIdx = _tileIds.indexOf(id);
+          final temp = _tileIds[oldIdx];
+          _tileIds[oldIdx] = _tileIds[newIdx];
+          _tileIds[newIdx] = temp;
+        });
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('homeTileOrder', _tileIds);
+      },
+      builder: (context, candidateData, rejectedData) {
+        return LongPressDraggable<String>(
+          data: id,
+          feedback: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: (MediaQuery.of(context).size.width - 48) / 2,
+              height: ((MediaQuery.of(context).size.width - 48) / 2) / 1.5,
+              child: _buildTileById(id),
+            ),
+          ),
+          childWhenDragging: Opacity(opacity: 0.3, child: _buildTileById(id)),
+          child: _buildTileById(id),
+        );
+      },
+    );
+  }
+
+  Widget _buildTileById(String id) {
+    switch (id) {
+      case 'fiiDii': return _fiiDiiTile();
+      case 'indices': return _indicesTile();
+      case 'aum': return _aumTile();
+      case 'giftNifty': return _giftNiftyTile();
+      case 'gold': return _goldTile();
+      default: return const SizedBox.shrink();
+    }
   }
 
   Widget _fiiDiiTile() {
@@ -2337,7 +2380,6 @@ class _CacheExplorerPageState extends State<_CacheExplorerPage> {
     for (var item in master) {
       if (item['type'] == 'table') {
         final name = item['name'] as String;
-        if (name.startsWith('sqlite_')) continue;
         int count = 0;
         try {
           final c = await db.rawQuery("SELECT COUNT(*) as count FROM $name");
@@ -2529,6 +2571,9 @@ class _TableBrowserPageState extends State<_TableBrowserPage> {
   int _totalRows = 0;
   int _currentPage = 1;
   static const int _pageSize = 100;
+  
+  int? _sortColumnIndex;
+  bool _isAscending = true;
 
   @override
   void initState() {
@@ -2574,8 +2619,15 @@ class _TableBrowserPageState extends State<_TableBrowserPage> {
     _totalRows = countRes.first['count'] as int;
 
     final offset = (_currentPage - 1) * _pageSize;
+    
+    String orderBy = "";
+    if (_sortColumnIndex != null && _columns.isNotEmpty) {
+      final colName = _columns[_sortColumnIndex!];
+      orderBy = " ORDER BY $colName ${_isAscending ? "ASC" : "DESC"}";
+    }
+
     final data = await database.rawQuery(
-        "SELECT * FROM ${widget.tableName} $where LIMIT $_pageSize OFFSET $offset",
+        "SELECT * FROM ${widget.tableName} $where $orderBy LIMIT $_pageSize OFFSET $offset",
         args
     );
 
@@ -2727,8 +2779,19 @@ class _TableBrowserPageState extends State<_TableBrowserPage> {
                     showCheckboxColumn: false,
                     headingRowHeight: 45,
                     dataRowHeight: 40,
+                    sortColumnIndex: _sortColumnIndex,
+                    sortAscending: _isAscending,
                     headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo, fontSize: 13),
-                    columns: _columns.map((c) => DataColumn(label: Text(c))).toList(),
+                    columns: _columns.map((c) => DataColumn(
+                      label: Text(c),
+                      onSort: (index, ascending) {
+                        setState(() {
+                          _sortColumnIndex = index;
+                          _isAscending = ascending;
+                        });
+                        _fetchData();
+                      },
+                    )).toList(),
                     rows: _data.map((r) => DataRow(
                         onSelectChanged: (_) => _showRecordDetail(r),
                         cells: _columns.map((c) {
