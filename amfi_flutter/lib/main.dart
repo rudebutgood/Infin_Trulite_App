@@ -1091,6 +1091,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _pickAndImportFile() async {
+
     const typeGroup = XTypeGroup(
       label: 'Excel/CSV',
       extensions: ['xlsx', 'csv'],
@@ -2259,49 +2260,41 @@ class _InfinLogo extends StatelessWidget {
 class _InfinPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final scale = size.width / 108.0;
+    final w = size.width;
+    final h = size.height;
 
     // Background Circle
     final circlePaint = Paint()
       ..color = const Color(0xFF1A237E)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(54 * scale, 54 * scale), 30 * scale, circlePaint);
+    canvas.drawCircle(Offset(w / 2, h / 2), w / 2, circlePaint);
 
-    // Stylized "In"
-    final strokePaint = Paint()
+    // Stylized "I" and "n"
+    final paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6 * scale
+      ..strokeWidth = size.width * 0.12
       ..strokeCap = StrokeCap.round;
 
-    final dotPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
+    final path = Path();
+    // Dot of "i"
+    canvas.drawCircle(Offset(w * 0.25, h * 0.25), size.width * 0.08, Paint()..color = Colors.white);
 
-    // "I"
-    canvas.drawLine(Offset(44 * scale, 45 * scale), Offset(44 * scale, 68 * scale), strokePaint);
+    // Body of "i"
+    path.moveTo(w * 0.25, h * 0.4);
+    path.lineTo(w * 0.25, h * 0.75);
 
-    // "n"
-    final nPath = Path();
-    nPath.moveTo(54 * scale, 68 * scale);
-    nPath.lineTo(54 * scale, 52 * scale);
-    nPath.quadraticBezierTo(57 * scale, 44 * scale, 68 * scale, 44 * scale);
-    nPath.lineTo(68 * scale, 68 * scale);
-    canvas.drawPath(nPath, strokePaint);
+    // "n" shape
+    path.moveTo(w * 0.45, h * 0.75);
+    path.lineTo(w * 0.45, h * 0.45);
+    path.quadraticBezierTo(w * 0.55, h * 0.35, w * 0.75, h * 0.45);
+    path.lineTo(w * 0.75, h * 0.75);
 
-    // Dot for "i"
-    canvas.drawCircle(Offset(44 * scale, 34 * scale), 4 * scale, dotPaint);
+    // Bottom curve
+    path.moveTo(w * 0.15, h * 0.85);
+    path.quadraticBezierTo(w * 0.5, h * 0.95, w * 0.85, h * 0.85);
 
-    // Underline
-    final underlinePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5 * scale
-      ..strokeCap = StrokeCap.round;
-    final uPath = Path();
-    uPath.moveTo(35 * scale, 76 * scale);
-    uPath.quadraticBezierTo(54 * scale, 82 * scale, 73 * scale, 76 * scale);
-    canvas.drawPath(uPath, underlinePaint);
+    canvas.drawPath(path, paint);
   }
 
   @override
