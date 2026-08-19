@@ -25,6 +25,9 @@ import 'indices_page.dart';
 import 'models/amfi_aum_data.dart';
 import 'services/amfi_aum_service.dart';
 import 'pages/amfi_aum_page.dart';
+import 'pages/fii_dii_page.dart';
+import 'pages/gift_nifty_page.dart';
+import 'pages/bullion_page.dart';
 import 'tabs/funds_tab.dart';
 import 'tabs/portfolio_tab.dart';
 import 'pages/portfolio_charts_page.dart';
@@ -1575,7 +1578,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       child: Stack(
         children: [
           InkWell(
-            onTap: _showFiiDiiDetails,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => FiiDiiPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout))),
             splashColor: Colors.indigo.withOpacity(0.1),
             child: Padding(
               padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
@@ -1652,167 +1655,15 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   void _showIndicesDetails() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const IndicesPage()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => IndicesPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
   }
 
   void _showGiftNiftyDetails() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (c, s) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CommonWidgets.txt('GIFT Nifty Details', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), selectedLanguage: _selectedLanguage, translate: _translate),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-                ],
-              ),
-              const Divider(),
-              if (_giftNiftyData.isEmpty)
-                const Expanded(child: Center(child: Text('No Gift Nifty data available.')))
-              else
-                Expanded(
-                  child: ListView.builder(
-                    controller: s,
-                    itemCount: _giftNiftyData.length,
-                    itemBuilder: (context, index) {
-                      final d = _giftNiftyData[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  CommonWidgets.txt('${d.symbol} Future', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), selectedLanguage: _selectedLanguage, translate: _translate),
-                                  Text(d.expiryDate, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  _tradeValueItem('LTP', d.lastPrice, Colors.indigo),
-                                  _tradeValueItem('Change', d.dayChange, d.dayChange >= 0 ? Colors.green : Colors.red),
-                                  _tradeValueItem('% Chg', d.percentChange, d.dayChange >= 0 ? Colors.green : Colors.red),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Updated at:', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-                                  Text(d.timestamp, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              const SizedBox(height: 10),
-              Text('Values in USD. Data from NSE International Exchange.', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
-            ],
-          ),
-        ),
-      ),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => GiftNiftyPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
   }
 
   void _showGoldDetails() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (c, s) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CommonWidgets.txt('Bullion Rates', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), selectedLanguage: _selectedLanguage, translate: _translate),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-                ],
-              ),
-              const Divider(),
-              if (_goldRates.isEmpty)
-                const Expanded(child: Center(child: Text('No bullion data available.')))
-              else
-                Expanded(
-                  child: Scrollbar(
-                    controller: s,
-                    thumbVisibility: true,
-                    child: ListView.builder(
-                      controller: s,
-                      itemCount: _goldRates.length,
-                      itemBuilder: (context, index) {
-                        final d = _goldRates[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(d.symbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.indigo)),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _compactTradeItem('Bid', d.bid, Colors.black87),
-                                    _compactTradeItem('Ask', d.ask, Colors.black87),
-                                    _compactTradeItem('High', d.high, Colors.green),
-                                    _compactTradeItem('Low', d.low, Colors.red),
-                                  ],
-                                ),
-                                if (d.info.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(d.info, style: const TextStyle(fontSize: 9, color: Colors.grey, fontStyle: FontStyle.italic)),
-                                ],
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 10),
-              Text('Data sourced from DP Gold.', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
-            ],
-          ),
-        ),
-      ),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => BullionPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
   }
 
   Widget _compactTradeItem(String label, double val, Color color) {
@@ -2086,7 +1937,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       child: Stack(
         children: [
           InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AmfiAumPage())),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AmfiAumPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout))),
             splashColor: Colors.indigo.withOpacity(0.1),
             child: Padding(
               padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),

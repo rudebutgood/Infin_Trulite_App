@@ -4,7 +4,16 @@ import '../models/amfi_aum_data.dart';
 import '../services/amfi_aum_service.dart';
 
 class AmfiAumPage extends StatefulWidget {
-  const AmfiAumPage({super.key});
+  final String selectedLanguage;
+  final Future<String> Function(String) translate;
+  final bool setCompactLayout;
+
+  const AmfiAumPage({
+    super.key,
+    required this.selectedLanguage,
+    required this.translate,
+    required this.setCompactLayout,
+  });
 
   @override
   State<AmfiAumPage> createState() => _AmfiAumPageState();
@@ -513,7 +522,7 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
     final prevGroup = _getPreviousGroup(group);
     final growth = _getGroupGrowth(group);
     final absDiff = _getGroupAumIncrease(group);
-    final color = growth >= 0 ? Colors.green : Colors.red;
+    final color = growth >= 0 ? Colors.green[700]! : Colors.red[700]!;
 
     return Card(
       elevation: 0,
@@ -523,25 +532,25 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
         onTap: () => _showGroupDetails(group),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(widget.setCompactLayout ? 12 : 16),
           child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(group.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 6),
+                    Text(group.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14, color: Colors.indigo[900])),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Tooltip(
                           message: 'Full Value: ₹${_formatAum(group.aum, full: true)} Cr',
-                          child: Text('₹${_formatAum(group.aum)} Cr', style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
+                          child: Text('₹${_formatAum(group.aum)} Cr', style: TextStyle(color: Colors.black87, fontSize: widget.setCompactLayout ? 12 : 13, fontWeight: FontWeight.w600)),
                         ),
                         if (prevGroup != null)
                            Tooltip(
                              message: 'Full Value: ₹${_formatAum(prevGroup.aum, full: true)} Cr',
-                             child: Text('  (₹${_formatAum(prevGroup.aum)})', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                             child: Text('  (₹${_formatAum(prevGroup.aum)})', style: TextStyle(color: Colors.grey[600], fontSize: widget.setCompactLayout ? 10 : 11)),
                            ),
                       ],
                     ),
@@ -554,20 +563,20 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
                 children: [
                   Text(
                     '${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(2)}%',
-                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14),
                   ),
                   Tooltip(
                     message: 'Full Increase: ₹${_formatAum(absDiff, full: true)} Cr',
                     child: Text(
                       '(${absDiff >= 0 ? '+' : ''}₹${_formatAum(absDiff.abs())} Cr)',
-                      style: TextStyle(color: color.withOpacity(0.7), fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: color.withOpacity(0.8), fontSize: widget.setCompactLayout ? 9 : 10, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  const Text('Growth', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                  Text('Growth', style: TextStyle(color: Colors.grey[600], fontSize: widget.setCompactLayout ? 9 : 10)),
                 ],
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+              Icon(Icons.chevron_right, color: Colors.grey, size: widget.setCompactLayout ? 18 : 20),
             ],
           ),
         ),

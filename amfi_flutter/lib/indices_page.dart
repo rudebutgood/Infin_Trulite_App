@@ -4,7 +4,16 @@ import 'models/index_data.dart';
 import 'services/index_service.dart';
 
 class IndicesPage extends StatefulWidget {
-  const IndicesPage({super.key});
+  final String selectedLanguage;
+  final Future<String> Function(String) translate;
+  final bool setCompactLayout;
+
+  const IndicesPage({
+    super.key,
+    required this.selectedLanguage,
+    required this.translate,
+    required this.setCompactLayout,
+  });
 
   @override
   State<IndicesPage> createState() => _IndicesPageState();
@@ -336,7 +345,7 @@ class _IndicesPageState extends State<IndicesPage> {
     }
 
     if (color == null) {
-      color = (displayChange ?? 0) >= 0 ? Colors.green : Colors.red;
+      color = (displayChange ?? 0) >= 0 ? Colors.green[700] : Colors.red[700];
     }
 
     return Card(
@@ -347,18 +356,21 @@ class _IndicesPageState extends State<IndicesPage> {
         onTap: () => _showFullDetails(d),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: widget.setCompactLayout ? 8 : 12),
           child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(d.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    const SizedBox(height: 4),
-                    Text('Last: ₹${d.last.toStringAsFixed(2)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(d.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 14 : 15, color: Colors.indigo[900])),
+                    const SizedBox(height: 2),
+                    Text('Last: ₹${d.last.toStringAsFixed(2)}', style: TextStyle(color: Colors.black87, fontSize: widget.setCompactLayout ? 12 : 13)),
                     if (d.yearHigh != null && d.yearLow != null)
-                      Text('52W H: ${d.yearHigh} | L: ${d.yearLow}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2.0),
+                        child: Text('52W H: ${d.yearHigh} | L: ${d.yearLow}', style: TextStyle(color: Colors.grey[600], fontSize: widget.setCompactLayout ? 9 : 10)),
+                      ),
                   ],
                 ),
               ),
@@ -367,11 +379,11 @@ class _IndicesPageState extends State<IndicesPage> {
                 children: [
                   Text(
                     '$label${(displayChange ?? 0) >= 0 && !_sortBy.contains('Ratio') ? '+' : ''}${displayChange?.toStringAsFixed(2) ?? 'N/A'}${(_sortBy.contains('%') || _sortBy == 'vs Year High %') ? '%' : ''}',
-                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14),
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14),
                   ),
                   Text(
                     '${d.variation >= 0 ? '+' : ''}${d.variation.toStringAsFixed(2)} pts',
-                    style: TextStyle(color: color.withOpacity(0.7), fontSize: 11),
+                    style: TextStyle(color: color!.withOpacity(0.8), fontSize: widget.setCompactLayout ? 10 : 11, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),

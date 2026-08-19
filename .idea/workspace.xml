@@ -8,9 +8,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/bullion_page.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/fii_dii_page.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/gift_nifty_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/amfi_aum_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/amfi_aum_page.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -259,7 +263,15 @@
       <option name="project" value="LOCAL" />
       <updated>1787168827261</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="initial commit">
+      <option name="closed" value="true" />
+      <created>1787169841941</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1787169841941</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
