@@ -100,26 +100,35 @@ class _PortfolioTabState extends State<PortfolioTab> {
   Future<void> _loadPeriodNavs() async {
     final milestoneDates = _getMilestoneDates(_portfolioPeriod);
     if (milestoneDates.isEmpty) return;
+    
+    // We want the NAV at the START of the period.
     final startDate = milestoneDates.first;
 
     final database = await _repo.db;
-    final isins = _portfolioRows.map((r) => r['isin'] as String).where((i) => i != null).toSet().toList();
+    final isins = _portfolioRows.map((r) => r['isin'] as String?).where((i) => i != null).cast<String>().toSet().toList();
 
     if (isins.isEmpty) return;
 
     final placeholders = List.filled(isins.length, '?').join(',');
+    
+    // Improved query to find the closest NAV ON or BEFORE the start date for each ISIN
     final sql = '''
       SELECT isin, nav_value FROM (
         SELECT isin_div_payout as isin, nav_value, nav_date FROM nav
         UNION ALL
         SELECT isin_reinvestment as isin, nav_value, nav_date FROM nav
-      ) WHERE nav_date <= ? AND isin IN ($placeholders)
+      ) t
+      WHERE nav_date <= ? AND isin IN ($placeholders)
       GROUP BY isin
       HAVING nav_date = MAX(nav_date)
     ''';
 
     final res = await database.rawQuery(sql, [startDate, ...isins]);
-    _periodNavs = { for (var r in res) r['isin'] as String : (r['nav_value'] as num).toDouble() };
+    if (mounted) {
+      setState(() {
+        _periodNavs = { for (var r in res) r['isin'] as String : (r['nav_value'] as num).toDouble() };
+      });
+    }
   }
 
   Future<void> _handlePeriodChange(String pVal) async {
@@ -129,6 +138,7 @@ class _PortfolioTabState extends State<PortfolioTab> {
     });
 
     try {
+      List<String> targetDates = [];
       if (pVal == 'Custom') {
         final picked = await showDateRangePicker(
           context: context,
@@ -137,45 +147,31 @@ class _PortfolioTabState extends State<PortfolioTab> {
         );
         if (picked != null) {
           _customPortfolioRange = picked;
+          targetDates = [
+             DateFormat('yyyy-MM-dd').format(picked.start),
+             DateFormat('yyyy-MM-dd').format(picked.end),
+          ];
         } else {
           setState(() => _fetchingHistorical = false);
           return;
         }
+      } else {
+        targetDates = _getMilestoneDates(pVal);
       }
 
-      final isins = _portfolioRows.map((r) => r['isin'] as String).where((i) => i != null).toList();
-      final schemeCodes = await _repo.getSchemeCodesForIsins(isins);
-
-      if (schemeCodes.isNotEmpty) {
-        final db = await _repo.db;
-        String? latestRefDate;
-
-        for (int i = 0; i < 5; i++) {
-          final target = DateTime.now().subtract(Duration(days: i));
-          if (target.weekday == DateTime.saturday || target.weekday == DateTime.sunday) continue;
-          final fmt = DateFormat('yyyy-MM-dd').format(target);
-          final res = await db.rawQuery('SELECT 1 FROM nav WHERE nav_date = ? LIMIT 1', [fmt]);
-          if (res.isNotEmpty) {
-            latestRefDate = fmt;
-            break;
-          }
-        }
-
-        final base = latestRefDate != null ? DateTime.parse(latestRefDate) : DateTime.now();
-        final start = _getPeriodStartDate(pVal, from: base);
-
-        final List<String> milestoneDates = [];
-        milestoneDates.add(DateFormat('yyyy-MM-dd').format(base));
-
-        for (int i = 0; i < 5; i++) {
-          milestoneDates.add(DateFormat('yyyy-MM-dd').format(start.add(Duration(days: i))));
-        }
-
-        final summary = await _repo.fetchHistoricalForSchemes(schemeCodes, milestoneDates, timeoutSeconds: widget.setApiTimeout);
-        final int count = summary['count'] ?? 0;
+      if (targetDates.isNotEmpty) {
+        // Fetch ALL funds for the start and end dates using the bulk API
+        // This ensures ISIN matching works perfectly as it contains all metadata
+        final count = await _repo.fetchAndImport(
+          specificDates: targetDates, 
+          timeoutSeconds: widget.setApiTimeout,
+          force: true // Force ensures we get the latest AMFI data for these dates
+        );
+        
         if (mounted && count > 0) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Successfully loaded historical data for $pVal period.'),
+            content: Text('Successfully updated $pVal returns data ($count records).'),
+            duration: const Duration(seconds: 2),
           ));
         }
       }
@@ -251,27 +247,33 @@ class _PortfolioTabState extends State<PortfolioTab> {
   List<String> _getMilestoneDates(String period) {
     final now = DateTime.now();
     final dates = <DateTime>[];
+    
+    // Find the latest business day (End of period)
     DateTime latest = now;
     while (latest.weekday == DateTime.saturday || latest.weekday == DateTime.sunday) {
       latest = latest.subtract(const Duration(days: 1));
     }
-
     dates.add(latest);
+
     if (period == 'Custom' && _customPortfolioRange != null) {
       dates.add(_customPortfolioRange!.start);
       dates.add(_customPortfolioRange!.end);
     } else {
-      dates.add(_getPeriodStartDate(period, from: latest));
+      // Find the start of the period
+      DateTime start = _getPeriodStartDate(period, from: latest);
+      dates.add(start);
     }
 
-    final sorted = dates.toSet().toList()..sort();
-    return sorted.map((d) {
+    final formatted = dates.map((d) {
       var bd = d;
+      // Adjust weekend to previous Friday for milestone identification
       while (bd.weekday == DateTime.saturday || bd.weekday == DateTime.sunday) {
         bd = bd.subtract(const Duration(days: 1));
       }
       return DateFormat('yyyy-MM-dd').format(bd);
     }).toSet().toList()..sort();
+    
+    return formatted;
   }
 
   DateTime _getPeriodStartDate(String period, {DateTime? from}) {
