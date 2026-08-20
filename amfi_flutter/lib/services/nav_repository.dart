@@ -21,7 +21,7 @@ class NavRepository {
     if (_db != null) return _db!;
     final databasesPath = await getDatabasesPath();
     final path = p.join(databasesPath, 'nav.db');
-    _db = await openDatabase(path, version: 6, onCreate: (d, v) async {
+    _db = await openDatabase(path, version: 7, onCreate: (d, v) async {
       await d.execute('''
         CREATE TABLE nav (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,16 +68,18 @@ class NavRepository {
           description TEXT
         );
       ''');
-      await d.insert('app_apis', {'name': 'daily_refresh', 'url': 'https://www.amfiindia.com/api/nav-history?query_type=all_for_date&from_date='});
-      await d.insert('app_apis', {'name': 'historical', 'url': 'https://www.amfiindia.com/api/nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}'});
+      await _insertDefaultApis(d);
     }, onUpgrade: (d, oldV, newV) async {
       if (oldV < 6) {
         await d.execute('CREATE TABLE IF NOT EXISTS app_apis (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, url TEXT, description TEXT)');
-        await d.insert('app_apis', {'name': 'daily_refresh', 'url': 'https://www.amfiindia.com/api/nav-history?query_type=all_for_date&from_date='}, conflictAlgorithm: ConflictAlgorithm.ignore);
-        await d.insert('app_apis', {'name': 'historical', 'url': 'https://www.amfiindia.com/api/nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}'}, conflictAlgorithm: ConflictAlgorithm.ignore);
         try { await d.execute('ALTER TABLE sync_logs ADD COLUMN api_url TEXT'); } catch(_) {}
       }
-    }, onOpen: (d) async {
+      if (oldV < 7) {
+        await d.execute('CREATE TABLE IF NOT EXISTS app_apis (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, url TEXT, description TEXT)');
+        await _insertDefaultApis(d);
+      }
+    },
+onOpen: (d) async {
       try {
         await d.rawQuery('PRAGMA journal_mode=WAL');
         await d.rawQuery('PRAGMA synchronous=NORMAL');
@@ -86,6 +88,22 @@ class NavRepository {
       }
     });
     return _db!;
+  }
+
+  Future<void> _insertDefaultApis(Database d) async {
+    final apis = [
+      {'name': 'daily_refresh', 'url': 'https://www.amfiindia.com/api/nav-history?query_type=all_for_date&from_date=', 'description': 'Main AMFI NAV daily refresh API'},
+      {'name': 'historical', 'url': 'https://www.amfiindia.com/api/nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}', 'description': 'Historical NAV data per scheme'},
+      {'name': 'news', 'url': 'https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms', 'description': 'Economic Times Markets RSS feed'},
+      {'name': 'fii_dii', 'url': 'https://www.nseindia.com/api/fiidiiTradeNse', 'description': 'NSE FII/DII daily trade data'},
+      {'name': 'indices', 'url': 'https://www.nseindia.com/api/allIndices', 'description': 'NSE Real-time indices data'},
+      {'name': 'aum', 'url': 'https://www.amfiindia.com/api/average-aum-schemewise?strType=Categorywise&MF_ID=0', 'description': 'AMFI Average AUM data'},
+      {'name': 'gift_nifty', 'url': 'https://www.nseix.com/api/market-rate?type=derivatives', 'description': 'Gift Nifty (NSEIX) live derivatives'},
+      {'name': 'gold', 'url': 'https://statewisebcast.dpgold.in:7768/VOTSBroadcastStreaming/Services/xml/GetLiveRateByTemplateID/dpgold', 'description': 'DP Gold real-time spot rates'},
+    ];
+    for (var api in apis) {
+      await d.insert('app_apis', api, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
   }
 
   Future<String> _getApiUrl(String name, {String fallback = ''}) async {

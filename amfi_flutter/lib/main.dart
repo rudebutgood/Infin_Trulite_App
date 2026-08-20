@@ -1071,7 +1071,16 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
       if (confirm == true) {
         final count = await _repo.clearDataInRange(from, to);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted $count records')));
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Success'),
+              content: Text('Deleted $count records between $from and $to.'),
+              actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+            ),
+          );
+        }
         setState(() {
           _refreshCount++;
         });
@@ -1097,7 +1106,16 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
     if (confirm == true) {
       final count = await _repo.clearDataOlderThan(cutoffStr);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Purged $count old records')));
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Success'),
+            content: Text('Purged $count old records (older than $cutoffStr).'),
+            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+          ),
+        );
+      }
       setState(() {
         _refreshCount++;
       });
@@ -1192,7 +1210,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       leading: Icon(icon, color: Colors.indigo, size: 20),
       title: CommonWidgets.txt(title, style: const TextStyle(fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
       onTap: () {
-        Navigator.pop(context);
         onTap();
       },
     );
