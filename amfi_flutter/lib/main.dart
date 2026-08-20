@@ -1752,16 +1752,17 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                           children: [
                             Icon(Icons.auto_awesome, color: Colors.amber[700], size: _setCompactLayout ? 14 : 16),
                             const SizedBox(width: 4),
-                            CommonWidgets.txt('AI NEWS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                            CommonWidgets.txt('Market News', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
                           ],
                         ),
                         SizedBox(height: _setCompactLayout ? 4 : 6),
-                        if (top != null)
-                          Expanded(
-                            child: CommonWidgets.txt(top.title, 
-                              style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.w500, color: Colors.black87),
+                        if (_marketNews.isNotEmpty)
+                          ..._marketNews.take(2).map((n) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4.0),
+                            child: CommonWidgets.txt(n.title, 
+                              style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, fontWeight: FontWeight.w500, color: Colors.black87),
                               overflow: true, selectedLanguage: _selectedLanguage, translate: _translate),
-                          )
+                          ))
                         else
                           Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
                         const Spacer(),

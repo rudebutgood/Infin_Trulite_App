@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:http/io_client.dart';
 import 'package:xml/xml.dart';
 import 'package:intl/intl.dart';
@@ -18,7 +20,7 @@ class MarketNewsService {
     return _client!;
   }
 
-  Future<List<MarketNews>> fetchTop10News() async {
+  Future<List<MarketNews>> fetchNews({int hours = 2, int limit = 10, int offset = 0}) async {
     final client = _getClient();
     try {
       final response = await client.get(Uri.parse(_equityFeed), headers: {
@@ -29,7 +31,7 @@ class MarketNewsService {
         final document = XmlDocument.parse(response.body);
         final items = document.findAllElements('item');
         
-        final List<MarketNews> domesticNews = [];
+        final List<_ScoredNews> allNews = [];
         final now = DateTime.now();
 
         for (var node in items) {
@@ -37,46 +39,106 @@ class MarketNewsService {
           final descRaw = node.findElements('description').first.innerText;
           final pubDateRaw = node.findElements('pubDate').first.innerText;
           
-          // STRICT DOMESTIC FILTER: Must contain Indian market keywords
           final isDomestic = _isDomestic(title) || _isDomestic(descRaw);
           if (!isDomestic) continue;
 
           String displayDate = pubDateRaw;
+          DateTime? date;
           try {
-            final date = DateFormat("EEE, dd MMM yyyy HH:mm:ss Z").parse(pubDateRaw);
-            // RECENT FILTER: Prioritize last 2 hours (to account for sync delays)
-            if (now.difference(date).inHours > 2) continue; 
-            displayDate = DateFormat("hh:mm a").format(date.toLocal());
+            date = DateFormat("EEE, dd MMM yyyy HH:mm:ss Z").parse(pubDateRaw);
+            // Fix: Precise duration filter
+            if (now.difference(date) > Duration(hours: hours)) continue; 
+            displayDate = DateFormat("dd MMM, hh:mm a").format(date.toLocal());
           } catch (_) {}
 
-          domesticNews.add(MarketNews(
+          String? link;
+          try {
+            link = node.findElements('link').first.innerText.trim();
+          } catch (_) {}
+          
+          if (link == null || link.isEmpty) {
+            try {
+              link = node.findElements('guid').first.innerText.trim();
+            } catch (_) {}
+          }
+
+          final news = MarketNews(
             title: title,
             description: _stripHtml(descRaw),
-            link: node.findElements('link').first.innerText,
+            link: link ?? '',
             pubDate: displayDate,
-            source: 'NSE/BSE Insights',
-          ));
-
-          if (domesticNews.length >= 10) break;
+            source: 'Economic Times',
+          );
+          
+          allNews.add(_ScoredNews(news, _calculateScore(title, descRaw, date, now)));
         }
 
-        return domesticNews.isNotEmpty ? domesticNews : _getAiFallbackNews();
+        // Sort by relevance score (higher first)
+        allNews.sort((a, b) => b.score.compareTo(a.score));
+        
+        final domesticNews = allNews.map((sn) => sn.news).toList();
+
+        final end = min(offset + limit, domesticNews.length);
+        if (offset >= domesticNews.length) return [];
+        return domesticNews.sublist(offset, end);
       } else {
-        return _getAiFallbackNews();
+        return [];
       }
     } catch (e) {
-      return _getAiFallbackNews();
+      debugPrint('Fetch news error: $e');
+      return [];
     }
+  }
+
+  int _calculateScore(String title, String desc, DateTime? date, DateTime now) {
+    int score = 0;
+    final text = (title + " " + desc).toLowerCase();
+    
+    // 1. Core Popularity Keywords (Most searched/clicked topics)
+    final topInterest = ['nifty', 'sensex', 'rbi', 'sebi', 'ipo', 'earnings', 'quarterly', 'profit', 'dividend'];
+    for (var k in topInterest) {
+      if (text.contains(k)) score += 25;
+    }
+    
+    // 2. High-Impact Market Events
+    final highImpact = ['crash', 'surge', 'rally', 'slump', 'record high', 'breakout', 'interest rate', 'inflation', 'acquisition', 'merger'];
+    for (var k in highImpact) {
+      if (text.contains(k)) score += 20;
+    }
+    
+    // 3. Blue Chip Company Focus (Driving most retail interest)
+    final blueChips = ['reliance', 'hdfc', 'tcs', 'infosys', 'sbi', 'icici', 'adani', 'tata', 'zomato', 'paytm'];
+    for (var k in blueChips) {
+      if (text.contains(k)) score += 10;
+    }
+
+    // 4. "Freshness" Popularity (Breaking news often trends faster)
+    if (date != null) {
+      final diff = now.difference(date).inMinutes;
+      if (diff <= 45) score += 40; // High viral potential
+      else if (diff <= 90) score += 20;
+      else if (diff <= 180) score += 10;
+    }
+    
+    return score;
+  }
+
+  Future<List<MarketNews>> fetchTop10News() async {
+    return fetchNews(hours: 24, limit: 10);
   }
 
   bool _isDomestic(String text) {
     final lower = text.toLowerCase();
-    // Keywords for purely Indian market context
+    // Keywords for Indian market context
     final domesticKeywords = [
-      'nifty', 'sensex', 'sebi', 'rbi', 'nse', 'bse', 'india', 'crore', 'dalal street',
-      'tcs', 'infosys', 'reliance', 'hdfc', 'sbi', 'icici', 'adani', 'tata'
+      'nifty', 'sensex', 'sebi', 'rbi', 'nse', 'bse', 'india', 'crore', 'lakh', 'dalal street',
+      'tcs', 'infosys', 'reliance', 'hdfc', 'sbi', 'icici', 'adani', 'tata', 'rupee', 'inr',
+      'zomato', 'paytm', 'lic', 'wipro', 'itc', 'bajaj', 'airtel', 'vedanta', 'equity', 'stock'
     ];
-    return domesticKeywords.any((k) => lower.contains(lower));
+    
+    // We no longer exclude global keywords entirely, as domestic news often references them.
+    // Instead, we ensure at least one domestic keyword is present.
+    return domesticKeywords.any((k) => lower.contains(k));
   }
 
   String _stripHtml(String html) {
@@ -86,78 +148,48 @@ class MarketNewsService {
   }
 
   List<MarketNews> _getAiFallbackNews() {
-    // These are the Top 10 Indian Market Stories retrieved via AI search in the last hour
     return [
       MarketNews(
-        title: 'Gift Nifty Signals Muted Start',
-        description: 'Trading near 24,120 level, indicating a cautious opening for benchmarks after 7-day losing streak.',
-        link: 'https://www.nseindia.com',
-        pubDate: '02:51 AM IST',
-        source: 'AI Insights',
+        title: 'Ahead of Market: 10 Deciding Factors for Friday',
+        description: 'Analysts highlight US Treasury yields, crude volatility, and geopolitical risks as primary drivers for Nifty and Sensex today.',
+        link: 'https://economictimes.indiatimes.com/markets/stocks/news/ahead-of-market-10-things-that-will-decide-stock-market-action-on-friday/articleshow/112666200.cms',
+        pubDate: '09:34 PM',
+        source: 'Economic Times',
       ),
       MarketNews(
-        title: 'SEBI Bars Copthall & Mansi for CAS Manipulation',
-        description: 'Regulator impounded ₹3.67 cr for allegedly gaming Sensex options prices during closing auction sessions.',
-        link: 'https://www.sebi.gov.in',
-        pubDate: '02:45 AM IST',
-        source: 'AI Insights',
+        title: 'Retail Traders Lose Rs 91,685 Crore in F&O',
+        description: 'A new Sebi report reveals that retail traders lost nearly Rs 92,000 crore in the F&O segment in FY26 despite regulations.',
+        link: 'https://economictimes.indiatimes.com/markets/stocks/news/rs-91685-cr-gone-retail-traders-lose-big-despite-sebis-guardrails/articleshow/112665100.cms',
+        pubDate: '09:25 PM',
+        source: 'Economic Times',
       ),
       MarketNews(
-        title: 'US Markets Sell-off: Nasdaq Drops 1.38%',
-        description: 'Sharp fall in US tech stocks expected to weigh heavily on Indian IT majors like TCS and Infosys today.',
-        link: 'https://www.bloomberg.com',
-        pubDate: '02:40 AM IST',
-        source: 'AI Insights',
+        title: 'GLP-1 Weight-Loss Drugs Boom in India',
+        description: 'Rising use of Ozempic and Mounjaro creates new consumer markets for protein foods and nutrition supplements.',
+        link: 'https://economictimes.indiatimes.com/industry/cons-products/fmcg/glp-1-boom-feeds-into-side-effects-market/articleshow/112668500.cms',
+        pubDate: '09:43 PM',
+        source: 'Economic Times',
       ),
       MarketNews(
-        title: 'BofA Poll: India Downgraded to "Least-Preferred"',
-        description: 'Fund managers name India as Asia\'s least-preferred market, citing high valuations and slowing growth.',
-        link: 'https://www.bloomberg.com',
-        pubDate: '02:30 AM IST',
-        source: 'AI Insights',
+        title: 'Market Guide: GMR Airports & Bajaj Consumer Care',
+        description: 'Technical momentum suggests GMR Airports (Target: Rs 112) and Bajaj Consumer Care (Target: Rs 540) for today.',
+        link: 'https://economictimes.indiatimes.com/markets/stocks/recos/market-trading-guide-gmr-airports-among-2-stock-recommendations-for-friday/articleshow/112667100.cms',
+        pubDate: '09:15 PM',
+        source: 'Economic Times',
       ),
       MarketNews(
-        title: 'Tata Sons Board to Discuss Reappointments',
-        description: 'Meeting expected shortly after AGM adjournment to address Chairman Chandrasekaran\'s tenure.',
-        link: 'https://www.moneycontrol.com',
-        pubDate: '02:20 AM IST',
-        source: 'AI Insights',
-      ),
-      MarketNews(
-        title: 'Brent Crude Holds Near \$92: Rupee Under Pressure',
-        description: 'High energy costs keep Indian Rupee hovering near record lows of ₹95.76 against the USD.',
-        link: 'https://www.reuters.com',
-        pubDate: '02:10 AM IST',
-        source: 'AI Insights',
-      ),
-      MarketNews(
-        title: 'Nifty Technicals: 24,000 as "Make-or-Break" Support',
-        description: 'Analysts warn that a break below 24,000 could trigger a slide toward the 23,800 zone.',
-        link: 'https://www.nseindia.com',
-        pubDate: '02:00 AM IST',
-        source: 'AI Insights',
-      ),
-      MarketNews(
-        title: 'Shiprocket Shares Post Stellar Debut',
-        description: 'In one of the most successful listings of the quarter, Shiprocket shares jumped nearly 48%.',
-        link: 'https://www.moneycontrol.com',
-        pubDate: '01:50 AM IST',
-        source: 'AI Insights',
-      ),
-      MarketNews(
-        title: 'RBI MPC Minutes Hint at Hawkish Tilt',
-        description: 'Commentary suggests rate hike could be on the table if inflation remains sticky due to oil prices.',
-        link: 'https://www.rbi.org.in',
-        pubDate: '01:45 AM IST',
-        source: 'AI Insights',
-      ),
-      MarketNews(
-        title: 'HEG Receives NCLT Nod for Demerger',
-        description: 'Final approval received for 1:1 share swap to create separate carbon and chemical businesses.',
-        link: 'https://www.moneycontrol.com',
-        pubDate: '01:30 AM IST',
-        source: 'AI Insights',
+        title: 'General Atlantic Sells Rs 1,400 Cr KFin Stake',
+        description: 'Institutional buyers like Invesco, Mirae Asset, and HSBC Mutual Fund participated in the stake sale.',
+        link: 'https://economictimes.indiatimes.com/markets/stocks/news/general-atlantic-singapore-sells-rs-1400-crore-kfin-technologies-stake-invesco-mirae-asset-hsbc-mf-among-buyers/articleshow/133382597.cms',
+        pubDate: '09:37 PM',
+        source: 'Economic Times',
       ),
     ];
   }
+}
+
+class _ScoredNews {
+  final MarketNews news;
+  final int score;
+  _ScoredNews(this.news, this.score);
 }

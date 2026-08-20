@@ -23,6 +23,7 @@ dependencies:
   translator: ^0.1.7
   url_launcher: ^6.2.0
   xml: ^6.3.0
+  webview_flutter: ^4.4.2
 
 dev_dependencies:
   flutter_test:
