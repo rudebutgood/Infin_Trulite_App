@@ -62,8 +62,9 @@ void callbackDispatcher() {
       final repo = NavRepository();
       final prefs = await SharedPreferences.getInstance();
       final timeout = prefs.getInt('setApiTimeout') ?? 40;
-      // Fetch data for last 3 business days
-      await repo.fetchAndImport(businessDays: 3, timeoutSeconds: timeout);
+      final days = prefs.getInt('setRefreshDays') ?? 3;
+      // Fetch data for configured business days, with force=true to ensure latest data
+      await repo.fetchAndImport(businessDays: days, timeoutSeconds: timeout, force: true);
       return true;
     } catch (e) {
       debugPrint('Background sync failed: $e');
@@ -204,7 +205,7 @@ class MainScreen extends StatefulWidget {
   _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
+class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // Controllers & Services
   late TabController _tabCtl;
   int _currentIndex = 0;
@@ -275,9 +276,39 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   String _setNAVDefaultSort = 'Return \u2193';
   ThemeMode _setThemeMode = ThemeMode.system;
 
+  Future<void> _rescheduleSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    await Workmanager().cancelByUniqueName("dailySyncTask_v1");
+
+    if (prefs.getBool('setEnableBackgroundSync') ?? true) {
+      final syncTimeStr = prefs.getString('setSyncTime') ?? "06:00";
+      final parts = syncTimeStr.split(":");
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+
+      final now = DateTime.now();
+      var scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
+      if (scheduledTime.isBefore(now)) {
+        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      }
+      final delay = scheduledTime.difference(now);
+
+      await Workmanager().registerPeriodicTask(
+        "dailySyncTask_v1",
+        "dailySyncTask",
+        frequency: const Duration(hours: 24),
+        initialDelay: delay,
+        constraints: Constraints(networkType: NetworkType.connected),
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
+      );
+      debugPrint('Rescheduled sync for $syncTimeStr (delay: ${delay.inHours}h ${delay.inMinutes % 60}m)');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabCtl = TabController(length: 3, vsync: this);
     _tabCtl.addListener(() {
       if (!_tabCtl.indexIsChanging) {
@@ -286,6 +317,42 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     });
 
     _initStateAsync();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _tabCtl.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkBackgroundSyncUpdates();
+    }
+  }
+
+  Future<void> _checkBackgroundSyncUpdates() async {
+    final log = await _repo.getLastSyncLog();
+    if (log != null && (_lastSyncLog == null || log['end_time'] != _lastSyncLog!['end_time'])) {
+      debugPrint('Detected background sync update, refreshing UI...');
+      final importedAt = await _repo.lastImportedAt();
+      final apiTs = await _repo.lastApiTimestamp();
+      
+      if (mounted) {
+        setState(() {
+          _lastSyncLog = log;
+          _lastImportedAt = importedAt;
+          _lastApiTimestamp = apiTs;
+          if (importedAt != null) {
+            try { _lastImportedAtDt = DateTime.parse(importedAt); } catch (_) {}
+          }
+          _refreshCount++;
+        });
+        _loadPortfolio();
+      }
+    }
   }
 
   Future<void> _initStateAsync() async {
@@ -578,6 +645,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       if (mounted) {
         setState(() {
           _refreshCount++;
+          _lastSyncLog = _lastSyncLog; // Trigger UI update if needed, though already loaded
         });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Successfully fetched $count records in ${end.difference(start).inSeconds}s')
@@ -623,7 +691,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
   // --- UI WIDGETS & MODALS ---
 
-  void _showSettingsMenu() {
+  void _showSettingsMenu() async {
+    _lastSyncLog = await _repo.getLastSyncLog();
+    if (mounted) setState(() {});
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -754,6 +825,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('setEnableBackgroundSync', v);
           setState(() => _setEnableBackgroundSync = v);
+          await _rescheduleSync();
           setLocalState(() {});
         }),
         ListTile(
@@ -769,8 +841,44 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString('setSyncTime', newTime);
               setState(() => _setSyncTime = newTime);
+              await _rescheduleSync();
               setLocalState(() {});
             }
+          },
+        ),
+        if (_lastSyncLog != null)
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.indigo[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.indigo[100]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 14, color: Colors.indigo[900]),
+                    const SizedBox(width: 8),
+                    Text('Last Background Sync', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.indigo[900])),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text('Status: ${_lastSyncLog!['status']}', style: const TextStyle(fontSize: 11)),
+                Text('Completed: ${DateFormat('dd MMM, hh:mm a').format(DateTime.parse(_lastSyncLog!['end_time']))}', style: const TextStyle(fontSize: 11)),
+                Text('Rows: ${_lastSyncLog!['rows_fetched']} | Duration: ${(_lastSyncLog!['duration_ms'] / 1000).toStringAsFixed(1)}s', style: const TextStyle(fontSize: 11)),
+              ],
+            ),
+          ),
+        ListTile(
+          title: CommonWidgets.txt('Sync Now', style: const TextStyle(fontSize: 14, color: Colors.indigo, fontWeight: FontWeight.bold), selectedLanguage: _selectedLanguage, translate: _translate),
+          subtitle: const Text('Manually trigger a full refresh of all NAVs', style: const TextStyle(fontSize: 11)),
+          trailing: const Icon(Icons.refresh, color: Colors.indigo),
+          onTap: () async {
+            Navigator.pop(context); // Close settings
+            _refresh(); 
           },
         ),
         ListTile(
@@ -1217,6 +1325,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     return SelectionArea(
       child: Scaffold(
         appBar: AppBar(
+          bottom: _loading ? const PreferredSize(
+            preferredSize: Size.fromHeight(2),
+            child: LinearProgressIndicator(minHeight: 2),
+          ) : null,
           title: Row(
             children: [
               _InfinLogo(size: 32),
@@ -2195,11 +2307,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     );
   }
 
-  @override
-  void dispose() {
-    _tabCtl.dispose();
-    super.dispose();
-  }
 
   // --- HELPER METHODS ---
 

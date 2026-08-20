@@ -73,7 +73,7 @@ class _FundsTabState extends State<FundsTab> {
       _load();
     }
     if (widget.lastSyncLog != oldWidget.lastSyncLog) {
-      setState(() => _loading = false);
+      _load();
     }
   }
 
@@ -253,43 +253,54 @@ class _FundsTabState extends State<FundsTab> {
       children: [
         if (_loading) const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent),
         Expanded(
-          child: Scrollbar(
-            controller: _scrollCtl,
-            interactive: true,
-            thickness: 6,
-            radius: const Radius.circular(3),
-            child: ListView.separated(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              if (widget.onRefreshTriggered != null) {
+                widget.onRefreshTriggered!();
+                // Wait a bit for the main refresh to trigger rebuild or finish
+                await Future.delayed(const Duration(seconds: 1));
+              } else {
+                await _load();
+              }
+            },
+            child: Scrollbar(
               controller: _scrollCtl,
-              padding: const EdgeInsets.all(12.0),
-              itemCount: _items.length + 1,
-              separatorBuilder: (context, index) => index == 0 ? const SizedBox() : Divider(height: 1, thickness: 0.5, color: Colors.grey[200]),
-              itemBuilder: (c, i) {
-                if (i == 0) return _buildHeader();
-                if (_items.isEmpty && i == 1) return SizedBox(height: 300, child: Center(child: CommonWidgets.txt(widget.t('no_data'), selectedLanguage: widget.selectedLanguage, translate: widget.translate)));
+              interactive: true,
+              thickness: 6,
+              radius: const Radius.circular(3),
+              child: ListView.separated(
+                controller: _scrollCtl,
+                padding: const EdgeInsets.all(12.0),
+                itemCount: _items.length + 1,
+                separatorBuilder: (context, index) => index == 0 ? const SizedBox() : Divider(height: 1, thickness: 0.5, color: Colors.grey[200]),
+                itemBuilder: (c, i) {
+                  if (i == 0) return _buildHeader();
+                  if (_items.isEmpty && i == 1) return SizedBox(height: 300, child: Center(child: CommonWidgets.txt(widget.t('no_data'), selectedLanguage: widget.selectedLanguage, translate: widget.translate)));
 
-                final it = _items[i - 1];
-                return ListTile(
-                  dense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                  visualDensity: widget.setCompactLayout ? VisualDensity.compact : VisualDensity.standard,
-                  onTap: () => _showDetails(it),
-                  title: CommonWidgets.txt(it.schemeName ?? '-', style: TextStyle(fontSize: widget.setCompactLayout ? 13 : 14, fontWeight: it.isFavorite ? FontWeight.w700 : FontWeight.w500, color: Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
-                  subtitle: Row(children: [
-                      Expanded(child: Text('${it.navDate ?? ''} \u2022 ${it.apiTimestamp != null ? CommonWidgets.formatImportedAt(it.apiTimestamp!) : ''}', style: TextStyle(fontSize: widget.setCompactLayout ? 10 : 11, color: Colors.grey[600]))),
-                      if (widget.setShowIconsInNav) ...[
-                        if (it.isHeld) Padding(padding: const EdgeInsets.only(right: 6.0), child: Icon(Icons.account_balance_wallet, size: 12, color: Colors.indigo[400])),
-                        if (it.isFavorite) Icon(Icons.star, size: 12, color: Colors.amber[700]),
-                      ],
-                  ]),
-                  trailing: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(it.navValue?.toString() ?? '-', style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14)),
-                    if (it.prevNavValue != null) Builder(builder: (ctx) {
-                      final d = (it.navValue ?? 0) - (it.prevNavValue ?? 0);
-                      final p = (it.prevNavValue != 0) ? (d / it.prevNavValue! * 100) : null;
-                      return Text('${d >= 0 ? '+' : ''}${d.toStringAsFixed(4)} ${p != null ? '(${p.toStringAsFixed(2)}%)' : ''}', style: TextStyle(color: d >= 0 ? Colors.green[700] : Colors.red[700], fontSize: widget.setCompactLayout ? 10 : 11));
-                    }),
-                  ]),
-                );
-              },
+                  final it = _items[i - 1];
+                  return ListTile(
+                    dense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    visualDensity: widget.setCompactLayout ? VisualDensity.compact : VisualDensity.standard,
+                    onTap: () => _showDetails(it),
+                    title: CommonWidgets.txt(it.schemeName ?? '-', style: TextStyle(fontSize: widget.setCompactLayout ? 13 : 14, fontWeight: it.isFavorite ? FontWeight.w700 : FontWeight.w500, color: Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                    subtitle: Row(children: [
+                        Expanded(child: Text('${it.navDate ?? ''} \u2022 ${it.apiTimestamp != null ? CommonWidgets.formatImportedAt(it.apiTimestamp!) : ''}', style: TextStyle(fontSize: widget.setCompactLayout ? 10 : 11, color: Colors.grey[600]))),
+                        if (widget.setShowIconsInNav) ...[
+                          if (it.isHeld) Padding(padding: const EdgeInsets.only(right: 6.0), child: Icon(Icons.account_balance_wallet, size: 12, color: Colors.indigo[400])),
+                          if (it.isFavorite) Icon(Icons.star, size: 12, color: Colors.amber[700]),
+                        ],
+                    ]),
+                    trailing: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text(it.navValue?.toString() ?? '-', style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14)),
+                      if (it.prevNavValue != null) Builder(builder: (ctx) {
+                        final d = (it.navValue ?? 0) - (it.prevNavValue ?? 0);
+                        final p = (it.prevNavValue != 0) ? (d / it.prevNavValue! * 100) : null;
+                        return Text('${d >= 0 ? '+' : ''}${d.toStringAsFixed(4)} ${p != null ? '(${p.toStringAsFixed(2)}%)' : ''}', style: TextStyle(color: d >= 0 ? Colors.green[700] : Colors.red[700], fontSize: widget.setCompactLayout ? 10 : 11));
+                      }),
+                    ]),
+                  );
+                },
+              ),
             ),
           ),
         ),
