@@ -79,7 +79,11 @@ class AmfiAumService {
       
       double valExcl = _toDouble(aumObj?['ExcludingFundOfFundsDomesticButIncludingFundOfFundsOverseas']);
       double valFoF = _toDouble(aumObj?['FundOfFundsDomestic']);
-      double total = valExcl + valFoF;
+      
+      // API returns values in Lakhs, convert to Crores
+      double total = (valExcl + valFoF) / 100.0;
+      valExcl = valExcl / 100.0;
+      valFoF = valFoF / 100.0;
 
       if (amc == 'Grand Total') {
         grandTotal = total;
@@ -88,8 +92,8 @@ class AmfiAumService {
         final List<dynamic> apiSchemes = item['schemes'] ?? [];
         List<AmfiSchemeDetail> schemeDetails = apiSchemes.map((s) {
           final sAumObj = s['AverageAumForTheMonth'];
-          double sExcl = _toDouble(sAumObj?['ExcludingFundOfFundsDomesticButIncludingFundOfFundsOverseas']);
-          double sFoF = _toDouble(sAumObj?['FundOfFundsDomestic']);
+          double sExcl = _toDouble(sAumObj?['ExcludingFundOfFundsDomesticButIncludingFundOfFundsOverseas']) / 100.0;
+          double sFoF = _toDouble(sAumObj?['FundOfFundsDomestic']) / 100.0;
           return AmfiSchemeDetail(
             schemeName: s['SchemeNAVName'] ?? 'Unknown',
             amfiCode: s['AMFI_Code'] ?? 0,

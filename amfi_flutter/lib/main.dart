@@ -1091,13 +1091,15 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _pickAndImportFile() async {
-
+    // Enhanced UTIs for better iOS support
     const typeGroup = XTypeGroup(
       label: 'Excel/CSV',
-      extensions: ['xlsx', 'csv'],
+      extensions: ['xlsx', 'csv', 'xls'],
       uniformTypeIdentifiers: [
-        'org.openxmlformats.officedocument.spreadsheetml.sheet',
-        'public.comma-separated-values-text'
+        'org.openxmlformats.officedocument.spreadsheetml.sheet', // .xlsx
+        'com.microsoft.excel.xls', // .xls
+        'public.comma-separated-values-text', // .csv
+        'public.csv',
       ],
     );
     
