@@ -160,19 +160,34 @@ class _PortfolioTabState extends State<PortfolioTab> {
       }
 
       if (targetDates.isNotEmpty) {
-        // Fetch ALL funds for the start and end dates using the bulk API
-        // This ensures ISIN matching works perfectly as it contains all metadata
-        final count = await _repo.fetchAndImport(
-          specificDates: targetDates, 
-          timeoutSeconds: widget.setApiTimeout,
-          force: true // Force ensures we get the latest AMFI data for these dates
+        final database = await _repo.db;
+        
+        // 1. Check which dates already have data in the local DB
+        final String placeholders = List.filled(targetDates.length, '?').join(',');
+        final List<Map<String, dynamic>> existing = await database.rawQuery(
+          'SELECT DISTINCT nav_date FROM nav WHERE nav_date IN ($placeholders)',
+          targetDates
         );
         
-        if (mounted && count > 0) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Successfully updated $pVal returns data ($count records).'),
-            duration: const Duration(seconds: 2),
-          ));
+        final Set<String> cachedDates = existing.map((r) => r['nav_date'] as String).toSet();
+        final List<String> missingDates = targetDates.where((d) => !cachedDates.contains(d)).toList();
+
+        if (missingDates.isNotEmpty) {
+          // 2. Only fetch missing dates from the API
+          final count = await _repo.fetchAndImport(
+            specificDates: missingDates,
+            timeoutSeconds: widget.setApiTimeout,
+            force: true
+          );
+          
+          if (mounted && count > 0) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Fetched ${missingDates.length} business days from AMFI ($count records).'),
+              duration: const Duration(seconds: 2),
+            ));
+          }
+        } else {
+          debugPrint('All required dates for $pVal are already available in cache.');
         }
       }
       await _loadPortfolio();

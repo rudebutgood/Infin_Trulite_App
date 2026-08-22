@@ -50,6 +50,22 @@ class PortfolioService {
         FOREIGN KEY (import_id) REFERENCES portfolio_imports (id) ON DELETE CASCADE
       );
     ''');
+    await d.execute('''
+      CREATE TABLE IF NOT EXISTS portfolio_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        import_id INTEGER,
+        fund_name TEXT,
+        isin TEXT,
+        transaction_date TEXT,
+        transaction_type TEXT,
+        units REAL,
+        nav REAL,
+        amount REAL,
+        folio_number TEXT,
+        raw_data TEXT,
+        FOREIGN KEY (import_id) REFERENCES portfolio_imports (id) ON DELETE CASCADE
+      );
+    ''');
     await d.execute('CREATE INDEX IF NOT EXISTS idx_portfolio_isin ON portfolio(isin)');
     await d.execute('CREATE INDEX IF NOT EXISTS idx_portfolio_import_id ON portfolio(import_id)');
   }
@@ -326,7 +342,7 @@ class PortfolioService {
       queryArgs.addAll(baseArgs);
 
       final whereClause = filters.isNotEmpty ? 'AND ${filters.join(' AND ')}' : '';
-      
+
       final sql = '''
         SELECT SUM(p.total_units * n.nav_value) as total_val
         FROM portfolio p
