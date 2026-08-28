@@ -66,11 +66,11 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     _currentPage = 0;
     _hasMore = true;
     try {
-      final res = await _service.fetchNews(hours: _selectedHours, limit: 10, offset: 0, force: !silent);
+      final res = await _service.fetchNews(hours: _selectedHours, limit: 20, offset: 0, force: !silent);
       if (mounted) {
         setState(() {
           _news = res;
-          if (res.length < 10) _hasMore = false;
+          if (res.length < 20) _hasMore = false;
         });
       }
     } catch (e) {
@@ -87,14 +87,14 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     setState(() => _loadingMore = true);
     _currentPage++;
     try {
-      final res = await _service.fetchNews(hours: _selectedHours, limit: 10, offset: _currentPage * 10);
+      final res = await _service.fetchNews(hours: _selectedHours, limit: 20, offset: _currentPage * 20);
       if (mounted) {
         setState(() {
           if (res.isEmpty) {
             _hasMore = false;
           } else {
             _news.addAll(res);
-            if (res.length < 10) _hasMore = false;
+            if (res.length < 20) _hasMore = false;
           }
         });
       }

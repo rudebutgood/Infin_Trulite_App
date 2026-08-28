@@ -14,8 +14,12 @@ class MarketNewsService {
       'source': 'Economic Times'
     },
     {
-      'url': 'https://www.moneycontrol.com/rss/buzzingstocks.xml',
+      'url': 'https://news.google.com/rss/search?q=site:moneycontrol.com+India+Market&hl=en-IN&gl=IN&ceid=IN:en',
       'source': 'MoneyControl'
+    },
+    {
+      'url': 'https://news.google.com/rss/search?q=site:financialexpress.com+India+Stock+Market&hl=en-IN&gl=IN&ceid=IN:en',
+      'source': 'Financial Express'
     },
     {
       'url': 'https://www.business-standard.com/rss/markets-106.rss',
@@ -26,20 +30,12 @@ class MarketNewsService {
       'source': 'LiveMint'
     },
     {
-      'url': 'https://www.financialexpress.com/market/stock-market/feed/',
-      'source': 'Financial Express'
-    },
-    {
       'url': 'https://feeds.feedburner.com/ndtvprofit-latest',
       'source': 'NDTV Profit'
     },
     {
-      'url': 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pKVGlnQVAB?hl=en-IN&gl=IN&ceid=IN:en',
+      'url': 'https://news.google.com/rss/search?q=India+Stock+Market&hl=en-IN&gl=IN&ceid=IN:en',
       'source': 'Google News'
-    },
-    {
-      'url': 'https://www.bloomberg.com/asia/rss',
-      'source': 'Bloomberg Asia'
     },
   ];
 
@@ -114,19 +110,39 @@ class MarketNewsService {
   ) async {
     try {
       final response = await client.get(Uri.parse(url), headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-      }).timeout(const Duration(seconds: 10)); // Increased timeout to 10s
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36',
+        'Accept': 'application/xml,text/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+      }).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        debugPrint('Feed $sourceName ($url) returned status ${response.statusCode}');
+        return [];
+      }
 
-      final document = XmlDocument.parse(response.body);
+      // Pre-process body to fix common XML issues
+      String cleanedBody = response.body
+          .replaceAll(RegExp(r'&(?!(amp|lt|gt|quot|apos|#))'), '&amp;')
+          .replaceAll(RegExp(r'<[^>]+(?=[^>]*<)'), ''); // Strip broken tags that miss closing >
+
+      XmlDocument document;
+      try {
+        document = XmlDocument.parse(cleanedBody);
+      } catch (e) {
+        // Ultimate fallback: if XML parsing still fails, try to scrape manually with Regex
+        return _manualScrape(cleanedBody, sourceName, hours, now);
+      }
+
       final items = document.findAllElements('item');
       final List<_ScoredNews> feedNews = [];
+
+      debugPrint('Source $sourceName: Found ${items.length} items');
 
       // Whitelisted sources are already 100% Indian Market focused
       final isWhitelisted = [
         'Economic Times', 'MoneyControl', 'Business Standard', 
-        'LiveMint', 'Financial Express', 'NDTV Profit'
+        'LiveMint', 'Financial Express', 'NDTV Profit', 'Google News'
       ].contains(sourceName);
 
       for (var node in items) {
@@ -195,20 +211,33 @@ class MarketNewsService {
   List<_ScoredNews> _deduplicate(List<_ScoredNews> news) {
     final Map<String, _ScoredNews> unique = {};
     for (var sn in news) {
-      // Normalize title for keying: lowercase and remove non-alphanumeric
-      final key = sn.news.title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      // Use the URL as the unique key for 100% reliable deduplication
+      final key = sn.news.link.trim().toLowerCase();
       if (key.isEmpty) continue;
       
       if (!unique.containsKey(key)) {
         unique[key] = sn;
       } else {
-        // If duplicate found, keep the one with the higher score
+        // If duplicate URL found, keep the one with the higher score
         if (sn.score > unique[key]!.score) {
           unique[key] = sn;
         }
       }
     }
-    return unique.values.toList();
+    
+    // Optional: Second pass for very similar titles (95% match)
+    final List<_ScoredNews> result = [];
+    final Set<String> seenTitles = {};
+    
+    for (var sn in unique.values) {
+      final titleKey = sn.news.title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if (seenTitles.contains(titleKey)) continue;
+      
+      seenTitles.add(titleKey);
+      result.add(sn);
+    }
+
+    return result;
   }
 
   int _calculateScore(String title, String desc, DateTime? date, DateTime now, String source) {
@@ -241,14 +270,47 @@ class MarketNewsService {
       else if (diff <= 180) score += 15;
     }
 
-    // 5. Source Weighting (Small bias for established domestic terminals)
-    if (source == 'MoneyControl') score += 5; // Good for intra-day buzzing stocks
+    // No source bias - let the content and freshness decide the rank
     
     return score;
   }
 
+  List<_ScoredNews> _manualScrape(String body, String source, int hours, DateTime now) {
+    debugPrint('Manual scraping $source due to XML failure');
+    final List<_ScoredNews> newsList = [];
+    final itemMatches = RegExp(r'<item>(.*?)<\/item>', dotAll: true).allMatches(body);
+
+    for (var match in itemMatches) {
+      String itemContent = match.group(1)!;
+      String title = _regexExtract(itemContent, r'<title>(.*?)<\/title>');
+      String link = _regexExtract(itemContent, r'<link>(.*?)<\/link>');
+      String desc = _regexExtract(itemContent, r'<description>(.*?)<\/description>');
+      String pubDate = _regexExtract(itemContent, r'<pubDate>(.*?)<\/pubDate>');
+
+      if (title.isEmpty) continue;
+
+      DateTime? date = _parseDate(pubDate);
+      if (date != null && now.difference(date).inHours > hours) continue;
+
+      final news = MarketNews(
+        title: title.replaceAll('<![CDATA[', '').replaceAll(']]>', '').trim(),
+        description: _stripHtml(desc.replaceAll('<![CDATA[', '').replaceAll(']]>', '')),
+        link: link.replaceAll('<![CDATA[', '').replaceAll(']]>', '').trim(),
+        pubDate: date != null ? DateFormat("dd MMM, hh:mm a").format(date.toLocal()) : pubDate,
+        source: source,
+      );
+      newsList.add(_ScoredNews(news, _calculateScore(title, desc, date, now, source)));
+    }
+    return newsList;
+  }
+
+  String _regexExtract(String content, String pattern) {
+    final match = RegExp(pattern, dotAll: true).firstMatch(content);
+    return match?.group(1) ?? '';
+  }
+
   Future<List<MarketNews>> fetchTop10News({bool force = false}) async {
-    return fetchNews(hours: 24, limit: 10, force: force);
+    return fetchNews(hours: 24, limit: 20, force: force);
   }
 
   bool _isDomestic(String text) {

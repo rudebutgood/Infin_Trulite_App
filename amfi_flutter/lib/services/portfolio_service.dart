@@ -249,6 +249,8 @@ class PortfolioService {
       else if (orderBy == 'current_asc') orderSql = '(n.nav_value * p.total_units) ASC';
       else if (orderBy == 'return_desc') orderSql = '((n.nav_value * p.total_units - p.invested_value) / p.invested_value) DESC';
       else if (orderBy == 'return_asc') orderSql = '((n.nav_value * p.total_units - p.invested_value) / p.invested_value) ASC';
+      else if (orderBy == '1d_desc') orderSql = '((n.nav_value - (SELECT nav_value FROM (SELECT isin_div_payout as isin, nav_value, nav_date FROM nav UNION ALL SELECT isin_reinvestment as isin, nav_value, nav_date FROM nav) pn WHERE pn.isin = p.isin AND pn.nav_date < n.nav_date ORDER BY pn.nav_date DESC LIMIT 1)) / (SELECT nav_value FROM (SELECT isin_div_payout as isin, nav_value, nav_date FROM nav UNION ALL SELECT isin_reinvestment as isin, nav_value, nav_date FROM nav) pn WHERE pn.isin = p.isin AND pn.nav_date < n.nav_date ORDER BY pn.nav_date DESC LIMIT 1)) DESC';
+      else if (orderBy == '1d_asc') orderSql = '((n.nav_value - (SELECT nav_value FROM (SELECT isin_div_payout as isin, nav_value, nav_date FROM nav UNION ALL SELECT isin_reinvestment as isin, nav_value, nav_date FROM nav) pn WHERE pn.isin = p.isin AND pn.nav_date < n.nav_date ORDER BY pn.nav_date DESC LIMIT 1)) / (SELECT nav_value FROM (SELECT isin_div_payout as isin, nav_value, nav_date FROM nav UNION ALL SELECT isin_reinvestment as isin, nav_value, nav_date FROM nav) pn WHERE pn.isin = p.isin AND pn.nav_date < n.nav_date ORDER BY pn.nav_date DESC LIMIT 1)) ASC';
       else if (orderBy == 'name_desc') orderSql = 'p.fund_name DESC';
       else if (orderBy == 'name_asc') orderSql = 'p.fund_name ASC';
     }

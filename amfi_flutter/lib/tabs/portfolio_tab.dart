@@ -206,6 +206,8 @@ class _PortfolioTabState extends State<PortfolioTab> {
         return _isPortfolioAscending ? 'current_asc' : 'current_desc';
       case 'Return':
         return _isPortfolioAscending ? 'return_asc' : 'return_desc';
+      case '1D Return':
+        return _isPortfolioAscending ? '1d_asc' : '1d_desc';
       case 'Name':
         return _isPortfolioAscending ? 'name_asc' : 'name_desc';
       default:
@@ -409,7 +411,7 @@ class _PortfolioTabState extends State<PortfolioTab> {
                           value: _portfolioSortOption,
                           style: const TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.bold),
                           items: [
-                            'Invested', 'Value', 'Return', 'Name'
+                            'Invested', 'Value', 'Return', '1D Return', 'Name'
                           ].map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
                           onChanged: (vVal) {
                             if (vVal == null) return;
