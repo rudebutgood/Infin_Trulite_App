@@ -438,28 +438,13 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     if (_translationCache.containsKey(cacheKey)) return _translationCache[cacheKey]!;
 
     try {
-      final code = _getLangCode(_selectedLanguage);
+      final code = CommonWidgets.getLangCode(_selectedLanguage);
       final translation = await _translator.translate(text, to: code);
       _translationCache[cacheKey] = translation.text;
       return translation.text;
     } catch (e) {
       debugPrint('Translation error for $text: $e');
       return text;
-    }
-  }
-
-  String _getLangCode(String lang) {
-    switch (lang) {
-      case 'Hindi': return 'hi';
-      case 'Marathi': return 'mr';
-      case 'Gujarati': return 'gu';
-      case 'Tamil': return 'ta';
-      case 'Telugu': return 'te';
-      case 'Kannada': return 'kn';
-      case 'Bengali': return 'bn';
-      case 'Malayalam': return 'ml';
-      case 'Punjabi': return 'pa';
-      default: return 'en';
     }
   }
 
@@ -778,7 +763,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           onTap: () {
             showDialog(context: context, builder: (ctx) => AlertDialog(
               title: CommonWidgets.txt('Choose Language', selectedLanguage: _selectedLanguage, translate: _translate),
-              content: Column(mainAxisSize: MainAxisSize.min, children: ['English', 'Hindi', 'Marathi', 'Gujarati', 'Tamil', 'Telugu', 'Kannada', 'Bengali', 'Malayalam', 'Punjabi'].map((l) => RadioListTile<String>(
+              content: Column(mainAxisSize: MainAxisSize.min, children: CommonWidgets.languageCodes.keys.map((l) => RadioListTile<String>(
                   title: Text(l), value: l, groupValue: _selectedLanguage,
                   onChanged: (v) async {
                     final prefs = await SharedPreferences.getInstance();
@@ -2533,10 +2518,17 @@ class _CacheExplorerPageState extends State<_CacheExplorerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            widget.txt('Cache Explorer', style: const TextStyle(fontSize: 16)),
+            Row(
+              children: [
+                const Icon(Icons.storage, size: 18),
+                const SizedBox(width: 8),
+                widget.txt('Cache Explorer', style: const TextStyle(fontSize: 16)),
+              ],
+            ),
             Text('Total DB Size: $_totalSize', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.normal)),
           ],
         ),

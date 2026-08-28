@@ -105,30 +105,33 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     }
   }
 
-  void _showNewsPopup(String url, String title) {
+  void _showNewsPopup(MarketNews news) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _NewsWebViewPopup(url: url, title: title),
+      builder: (ctx) => _NewsWebViewPopup(
+        news: news,
+        selectedLanguage: widget.selectedLanguage,
+        translate: widget.translate,
+      ),
     );
   }
 
   Future<void> _launchInBrowser(String url) async {
+    final cleanUrl = url.trim();
+    if (cleanUrl.isEmpty) return;
     try {
-      final Uri uri = Uri.parse(url.trim());
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not launch the news in browser.')),
-          );
-        }
+      final Uri uri = Uri.parse(cleanUrl);
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
       debugPrint('Error launching URL: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: Invalid news link.')),
+          const SnackBar(content: Text('Error: Invalid news link.')),
         );
       }
     }
@@ -144,7 +147,14 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: CommonWidgets.txt('AI Market Insights', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            const Icon(Icons.auto_awesome, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: CommonWidgets.txt('AI Market Insights', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
+          ],
+        ),
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [
@@ -168,7 +178,13 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                           if (index == _news.length) {
                             return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)));
                           }
-                          return _buildNewsCard(_news[index]);
+                          return _ExpandableNewsCard(
+                            news: _news[index],
+                            selectedLanguage: widget.selectedLanguage,
+                            translate: widget.translate,
+                            setCompactLayout: widget.setCompactLayout,
+                            onTap: () => _showNewsPopup(_news[index]),
+                          );
                         },
                       ),
           ),
@@ -224,13 +240,38 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
       ),
     );
   }
+}
 
-  Widget _buildNewsCard(MarketNews d) {
+class _ExpandableNewsCard extends StatefulWidget {
+  final MarketNews news;
+  final String selectedLanguage;
+  final Future<String> Function(String) translate;
+  final bool setCompactLayout;
+  final VoidCallback onTap;
+
+  const _ExpandableNewsCard({
+    required this.news,
+    required this.selectedLanguage,
+    required this.translate,
+    required this.setCompactLayout,
+    required this.onTap,
+  });
+
+  @override
+  State<_ExpandableNewsCard> createState() => _ExpandableNewsCardState();
+}
+
+class _ExpandableNewsCardState extends State<_ExpandableNewsCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = widget.news;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!)),
       child: InkWell(
-        onTap: () => _showNewsPopup(d.link, d.title),
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: EdgeInsets.all(widget.setCompactLayout ? 12 : 16),
@@ -245,30 +286,38 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14, color: Colors.indigo[900]),
                       selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                   ),
-                  const SizedBox(width: 4),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _launchInBrowser(d.link),
-                      borderRadius: BorderRadius.circular(20),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4.0),
-                        child: Icon(Icons.open_in_new, size: 16, color: Colors.grey),
-                      ),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 8),
-              CommonWidgets.txt(d.description,
-                style: TextStyle(fontSize: widget.setCompactLayout ? 11 : 12, color: Colors.black87),
-                selectedLanguage: widget.selectedLanguage, translate: widget.translate),
-              const SizedBox(height: 12),
+              InkWell(
+                onTap: () => setState(() => _isExpanded = !_isExpanded),
+                child: CommonWidgets.txt(d.description,
+                  style: TextStyle(fontSize: widget.setCompactLayout ? 11 : 12, color: Colors.black87),
+                  maxLines: _isExpanded ? null : 3,
+                  overflow: _isExpanded ? false : true,
+                  selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+              ),
+
+              const SizedBox(height: 8),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(d.source, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.indigo[300])),
+                  const SizedBox(width: 8),
                   Text(d.pubDate, style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+                  const Spacer(),
+                  if (d.description.length > 50)
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => setState(() => _isExpanded = !_isExpanded),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, 
+                            size: 16, color: Colors.grey),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -280,10 +329,15 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
 }
 
 class _NewsWebViewPopup extends StatefulWidget {
-  final String url;
-  final String title;
+  final MarketNews news;
+  final String selectedLanguage;
+  final Future<String> Function(String) translate;
 
-  const _NewsWebViewPopup({required this.url, required this.title});
+  const _NewsWebViewPopup({
+    required this.news,
+    required this.selectedLanguage,
+    required this.translate,
+  });
 
   @override
   State<_NewsWebViewPopup> createState() => _NewsWebViewPopupState();
@@ -292,10 +346,20 @@ class _NewsWebViewPopup extends StatefulWidget {
 class _NewsWebViewPopupState extends State<_NewsWebViewPopup> {
   late final WebViewController _controller;
   bool _isLoading = true;
+  bool _showTranslated = true;
+
+  String _getTranslatedUrl(String originalUrl) {
+    if (widget.selectedLanguage == 'English') return originalUrl;
+    final code = CommonWidgets.getLangCode(widget.selectedLanguage);
+    return 'https://translate.google.com/translate?sl=auto&tl=$code&u=${Uri.encodeComponent(originalUrl)}';
+  }
 
   @override
   void initState() {
     super.initState();
+    _showTranslated = widget.selectedLanguage != 'English';
+    final initialUrl = _showTranslated ? _getTranslatedUrl(widget.news.link) : widget.news.link;
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setUserAgent("Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36")
@@ -304,7 +368,7 @@ class _NewsWebViewPopupState extends State<_NewsWebViewPopup> {
         onPageFinished: (_) => setState(() => _isLoading = false),
         onWebResourceError: (error) => setState(() => _isLoading = false),
       ))
-      ..loadRequest(Uri.parse(widget.url));
+      ..loadRequest(Uri.parse(initialUrl));
   }
 
   @override
@@ -333,21 +397,28 @@ class _NewsWebViewPopupState extends State<_NewsWebViewPopup> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    widget.title,
+                  child: CommonWidgets.txt(
+                    widget.news.title,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
-                    overflow: TextOverflow.ellipsis,
+                    overflow: true,
+                    selectedLanguage: widget.selectedLanguage,
+                    translate: widget.translate,
                   ),
                 ),
                 Row(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.open_in_new, color: Colors.white, size: 20),
-                      onPressed: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+                      onPressed: () async {
+                        final uri = Uri.parse(widget.news.link);
+                        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                          await launchUrl(uri, mode: LaunchMode.platformDefault);
+                        }
+                      },
                       tooltip: 'Open in Browser',
                     ),
                     IconButton(

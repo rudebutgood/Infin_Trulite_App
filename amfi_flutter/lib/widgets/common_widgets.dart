@@ -2,9 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class CommonWidgets {
-  static Widget txt(String text, {TextStyle? style, bool overflow = false, TextAlign? align, String selectedLanguage = 'English', Future<String> Function(String)? translate}) {
+  static const Map<String, String> languageCodes = {
+    'English': 'en',
+    'Hindi': 'hi',
+    'Marathi': 'mr',
+    'Gujarati': 'gu',
+    'Tamil': 'ta',
+    'Telugu': 'te',
+    'Kannada': 'kn',
+    'Bengali': 'bn',
+    'Malayalam': 'ml',
+    'Punjabi': 'pa',
+  };
+
+  static String getLangCode(String lang) => languageCodes[lang] ?? 'en';
+
+  static Widget txt(String text, {TextStyle? style, bool overflow = false, int? maxLines, TextAlign? align, String selectedLanguage = 'English', Future<String> Function(String)? translate}) {
     if (selectedLanguage == 'English') {
-      return Text(text, style: style, overflow: overflow ? TextOverflow.ellipsis : null, textAlign: align);
+      return Text(text, style: style, overflow: overflow ? TextOverflow.ellipsis : null, maxLines: maxLines, textAlign: align);
     }
     return FutureBuilder<String>(
       future: translate?.call(text),
@@ -12,6 +27,7 @@ class CommonWidgets {
         snapshot.data ?? text,
         style: style,
         overflow: overflow ? TextOverflow.ellipsis : null,
+        maxLines: maxLines,
         textAlign: align,
       ),
     );

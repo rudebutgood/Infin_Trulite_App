@@ -126,7 +126,14 @@ class _PortfolioChartsPageState extends State<PortfolioChartsPage> {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     return Scaffold(
       appBar: AppBar(
-        title: CommonWidgets.txt('Portfolio Analytics', selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            const Icon(Icons.pie_chart, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: CommonWidgets.txt('Portfolio Analytics', selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
+          ],
+        ),
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
       ),

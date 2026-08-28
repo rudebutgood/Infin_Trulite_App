@@ -202,7 +202,14 @@ class _IndicesPageState extends State<IndicesPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: CommonWidgets.txt('Market Indices', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            const Icon(Icons.analytics, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: CommonWidgets.txt('Market Indices', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
+          ],
+        ),
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [

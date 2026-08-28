@@ -7,8 +7,41 @@ import 'package:intl/intl.dart';
 import '../models/market_news.dart';
 
 class MarketNewsService {
-  // Using a more domestic-focused feed for Indian equity markets
-  static const String _equityFeed = 'https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms';
+  // List of high-quality financial RSS feeds
+  final List<Map<String, String>> _feeds = [
+    {
+      'url': 'https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms',
+      'source': 'Economic Times'
+    },
+    {
+      'url': 'https://www.moneycontrol.com/rss/buzzingstocks.xml',
+      'source': 'MoneyControl'
+    },
+    {
+      'url': 'https://www.business-standard.com/rss/markets-106.rss',
+      'source': 'Business Standard'
+    },
+    {
+      'url': 'https://www.livemint.com/rss/markets',
+      'source': 'LiveMint'
+    },
+    {
+      'url': 'https://www.financialexpress.com/market/stock-market/feed/',
+      'source': 'Financial Express'
+    },
+    {
+      'url': 'https://feeds.feedburner.com/ndtvprofit-latest',
+      'source': 'NDTV Profit'
+    },
+    {
+      'url': 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pKVGlnQVAB?hl=en-IN&gl=IN&ceid=IN:en',
+      'source': 'Google News'
+    },
+    {
+      'url': 'https://www.bloomberg.com/asia/rss',
+      'source': 'Bloomberg Asia'
+    },
+  ];
 
   IOClient? _client;
 
@@ -22,103 +55,166 @@ class MarketNewsService {
 
   Future<List<MarketNews>> fetchNews({int hours = 2, int limit = 10, int offset = 0}) async {
     final client = _getClient();
+    final now = DateTime.now();
+    
     try {
-      final response = await client.get(Uri.parse(_equityFeed), headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-      });
+      // 1. Fetch from all sources in parallel
+      final results = await Future.wait(
+        _feeds.map((f) => _fetchSingleFeed(client, f['url']!, f['source']!, hours, now))
+      );
 
-      if (response.statusCode == 200) {
-        final document = XmlDocument.parse(response.body);
-        final items = document.findAllElements('item');
-        
-        final List<_ScoredNews> allNews = [];
-        final now = DateTime.now();
-
-        for (var node in items) {
-          final title = node.findElements('title').first.innerText;
-          final descRaw = node.findElements('description').first.innerText;
-          final pubDateRaw = node.findElements('pubDate').first.innerText;
-          
-          final isDomestic = _isDomestic(title) || _isDomestic(descRaw);
-          if (!isDomestic) continue;
-
-          String displayDate = pubDateRaw;
-          DateTime? date;
-          try {
-            date = DateFormat("EEE, dd MMM yyyy HH:mm:ss Z").parse(pubDateRaw);
-            // Fix: Precise duration filter
-            if (now.difference(date) > Duration(hours: hours)) continue; 
-            displayDate = DateFormat("dd MMM, hh:mm a").format(date.toLocal());
-          } catch (_) {}
-
-          String? link;
-          try {
-            link = node.findElements('link').first.innerText.trim();
-          } catch (_) {}
-          
-          if (link == null || link.isEmpty) {
-            try {
-              link = node.findElements('guid').first.innerText.trim();
-            } catch (_) {}
-          }
-
-          final news = MarketNews(
-            title: title,
-            description: _stripHtml(descRaw),
-            link: link ?? '',
-            pubDate: displayDate,
-            source: 'Economic Times',
-          );
-          
-          allNews.add(_ScoredNews(news, _calculateScore(title, descRaw, date, now)));
-        }
-
-        // Sort by relevance score (higher first)
-        allNews.sort((a, b) => b.score.compareTo(a.score));
-        
-        final domesticNews = allNews.map((sn) => sn.news).toList();
-
-        final end = min(offset + limit, domesticNews.length);
-        if (offset >= domesticNews.length) return [];
-        return domesticNews.sublist(offset, end);
-      } else {
-        return [];
+      // 2. Aggregate all news
+      List<_ScoredNews> allScored = [];
+      for (var list in results) {
+        allScored.addAll(list);
       }
+
+      // 3. Simple Deduplication (by title similarity)
+      allScored = _deduplicate(allScored);
+
+      // 4. Global Sorting by relevance score
+      allScored.sort((a, b) => b.score.compareTo(a.score));
+      
+      final finalNews = allScored.map((sn) => sn.news).toList();
+
+      // 5. Pagination
+      final end = min(offset + limit, finalNews.length);
+      if (offset >= finalNews.length) return [];
+      return finalNews.sublist(offset, end);
     } catch (e) {
-      debugPrint('Fetch news error: $e');
+      debugPrint('Multi-source fetch news error: $e');
       return [];
     }
   }
 
-  int _calculateScore(String title, String desc, DateTime? date, DateTime now) {
+  Future<List<_ScoredNews>> _fetchSingleFeed(
+    IOClient client, 
+    String url, 
+    String sourceName, 
+    int hours, 
+    DateTime now
+  ) async {
+    try {
+      final response = await client.get(Uri.parse(url), headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+      });
+
+      if (response.statusCode != 200) return [];
+
+      final document = XmlDocument.parse(response.body);
+      final items = document.findAllElements('item');
+      final List<_ScoredNews> feedNews = [];
+
+      for (var node in items) {
+        String title = _getNodeText(node, 'title');
+        String descRaw = _getNodeText(node, 'description');
+        if (descRaw.isEmpty) descRaw = _getNodeText(node, 'content:encoded');
+        
+        String pubDateRaw = _getNodeText(node, 'pubDate');
+        
+        final isDomestic = _isDomestic(title) || _isDomestic(descRaw);
+        if (!isDomestic) continue;
+
+        DateTime? date = _parseDate(pubDateRaw);
+        if (date != null) {
+          if (now.difference(date) > Duration(hours: hours)) continue;
+        }
+
+        String displayDate = date != null ? DateFormat("dd MMM, hh:mm a").format(date.toLocal()) : pubDateRaw;
+
+        String? link = _getNodeText(node, 'link');
+        if (link.isEmpty) link = _getNodeText(node, 'guid');
+        
+        final news = MarketNews(
+          title: title.trim(),
+          description: _stripHtml(descRaw),
+          link: link.trim(),
+          pubDate: displayDate,
+          source: sourceName,
+        );
+        
+        feedNews.add(_ScoredNews(news, _calculateScore(title, descRaw, date, now, sourceName)));
+      }
+      return feedNews;
+    } catch (e) {
+      debugPrint('Error fetching $sourceName: $e');
+      return [];
+    }
+  }
+
+  String _getNodeText(XmlElement node, String name) {
+    try {
+      return node.findElements(name).first.innerText.trim();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  DateTime? _parseDate(String raw) {
+    try {
+      // Try standard RSS format first
+      return DateFormat("EEE, dd MMM yyyy HH:mm:ss Z").parse(raw);
+    } catch (_) {
+      try {
+        // Try fallback for some feeds that might use different zones
+        return DateTime.parse(raw);
+      } catch (_) {
+        return null;
+      }
+    }
+  }
+
+  List<_ScoredNews> _deduplicate(List<_ScoredNews> news) {
+    final Map<String, _ScoredNews> unique = {};
+    for (var sn in news) {
+      // Normalize title for keying: lowercase and remove non-alphanumeric
+      final key = sn.news.title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if (key.isEmpty) continue;
+      
+      if (!unique.containsKey(key)) {
+        unique[key] = sn;
+      } else {
+        // If duplicate found, keep the one with the higher score
+        if (sn.score > unique[key]!.score) {
+          unique[key] = sn;
+        }
+      }
+    }
+    return unique.values.toList();
+  }
+
+  int _calculateScore(String title, String desc, DateTime? date, DateTime now, String source) {
     int score = 0;
     final text = (title + " " + desc).toLowerCase();
     
-    // 1. Core Popularity Keywords (Most searched/clicked topics)
+    // 1. Core Popularity Keywords
     final topInterest = ['nifty', 'sensex', 'rbi', 'sebi', 'ipo', 'earnings', 'quarterly', 'profit', 'dividend'];
     for (var k in topInterest) {
       if (text.contains(k)) score += 25;
     }
     
     // 2. High-Impact Market Events
-    final highImpact = ['crash', 'surge', 'rally', 'slump', 'record high', 'breakout', 'interest rate', 'inflation', 'acquisition', 'merger'];
+    final highImpact = ['crash', 'surge', 'rally', 'slump', 'record high', 'breakout', 'interest rate', 'inflation', 'merger'];
     for (var k in highImpact) {
       if (text.contains(k)) score += 20;
     }
     
-    // 3. Blue Chip Company Focus (Driving most retail interest)
+    // 3. Blue Chip Company Focus
     final blueChips = ['reliance', 'hdfc', 'tcs', 'infosys', 'sbi', 'icici', 'adani', 'tata', 'zomato', 'paytm'];
     for (var k in blueChips) {
       if (text.contains(k)) score += 10;
     }
 
-    // 4. "Freshness" Popularity (Breaking news often trends faster)
+    // 4. Freshness
     if (date != null) {
       final diff = now.difference(date).inMinutes;
-      if (diff <= 45) score += 40; // High viral potential
-      else if (diff <= 90) score += 20;
-      else if (diff <= 180) score += 10;
+      if (diff <= 30) score += 50; 
+      else if (diff <= 60) score += 30;
+      else if (diff <= 180) score += 15;
     }
+
+    // 5. Source Weighting (Small bias for established domestic terminals)
+    if (source == 'MoneyControl') score += 5; // Good for intra-day buzzing stocks
     
     return score;
   }
@@ -129,62 +225,19 @@ class MarketNewsService {
 
   bool _isDomestic(String text) {
     final lower = text.toLowerCase();
-    // Keywords for Indian market context
     final domesticKeywords = [
       'nifty', 'sensex', 'sebi', 'rbi', 'nse', 'bse', 'india', 'crore', 'lakh', 'dalal street',
       'tcs', 'infosys', 'reliance', 'hdfc', 'sbi', 'icici', 'adani', 'tata', 'rupee', 'inr',
       'zomato', 'paytm', 'lic', 'wipro', 'itc', 'bajaj', 'airtel', 'vedanta', 'equity', 'stock'
     ];
-    
-    // We no longer exclude global keywords entirely, as domestic news often references them.
-    // Instead, we ensure at least one domestic keyword is present.
     return domesticKeywords.any((k) => lower.contains(k));
   }
 
   String _stripHtml(String html) {
     String text = html.replaceAll(RegExp(r'<[^>]*>|&nbsp;'), ' ').trim();
-    if (text.length > 130) text = text.substring(0, 127) + "...";
+    // Keep more content for the popup summary, but still clean
+    if (text.length > 500) text = text.substring(0, 497) + "...";
     return text;
-  }
-
-  List<MarketNews> _getAiFallbackNews() {
-    return [
-      MarketNews(
-        title: 'Ahead of Market: 10 Deciding Factors for Friday',
-        description: 'Analysts highlight US Treasury yields, crude volatility, and geopolitical risks as primary drivers for Nifty and Sensex today.',
-        link: 'https://economictimes.indiatimes.com/markets/stocks/news/ahead-of-market-10-things-that-will-decide-stock-market-action-on-friday/articleshow/112666200.cms',
-        pubDate: '09:34 PM',
-        source: 'Economic Times',
-      ),
-      MarketNews(
-        title: 'Retail Traders Lose Rs 91,685 Crore in F&O',
-        description: 'A new Sebi report reveals that retail traders lost nearly Rs 92,000 crore in the F&O segment in FY26 despite regulations.',
-        link: 'https://economictimes.indiatimes.com/markets/stocks/news/rs-91685-cr-gone-retail-traders-lose-big-despite-sebis-guardrails/articleshow/112665100.cms',
-        pubDate: '09:25 PM',
-        source: 'Economic Times',
-      ),
-      MarketNews(
-        title: 'GLP-1 Weight-Loss Drugs Boom in India',
-        description: 'Rising use of Ozempic and Mounjaro creates new consumer markets for protein foods and nutrition supplements.',
-        link: 'https://economictimes.indiatimes.com/industry/cons-products/fmcg/glp-1-boom-feeds-into-side-effects-market/articleshow/112668500.cms',
-        pubDate: '09:43 PM',
-        source: 'Economic Times',
-      ),
-      MarketNews(
-        title: 'Market Guide: GMR Airports & Bajaj Consumer Care',
-        description: 'Technical momentum suggests GMR Airports (Target: Rs 112) and Bajaj Consumer Care (Target: Rs 540) for today.',
-        link: 'https://economictimes.indiatimes.com/markets/stocks/recos/market-trading-guide-gmr-airports-among-2-stock-recommendations-for-friday/articleshow/112667100.cms',
-        pubDate: '09:15 PM',
-        source: 'Economic Times',
-      ),
-      MarketNews(
-        title: 'General Atlantic Sells Rs 1,400 Cr KFin Stake',
-        description: 'Institutional buyers like Invesco, Mirae Asset, and HSBC Mutual Fund participated in the stake sale.',
-        link: 'https://economictimes.indiatimes.com/markets/stocks/news/general-atlantic-singapore-sells-rs-1400-crore-kfin-technologies-stake-invesco-mirae-asset-hsbc-mf-among-buyers/articleshow/133382597.cms',
-        pubDate: '09:37 PM',
-        source: 'Economic Times',
-      ),
-    ];
   }
 }
 

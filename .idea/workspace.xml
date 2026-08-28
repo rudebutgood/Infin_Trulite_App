@@ -8,8 +8,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
+      <change beforePath="$PROJECT_DIR$/.idea/planningMode.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/planningMode.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/amfi_aum_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/amfi_aum_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/bullion_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/bullion_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/fii_dii_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/fii_dii_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/gift_nifty_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/gift_nifty_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/market_news_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/market_news_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/portfolio_charts_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/portfolio_charts_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/market_news_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/market_news_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/widgets/common_widgets.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/widgets/common_widgets.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -376,7 +386,15 @@
       <option name="project" value="LOCAL" />
       <updated>1787268069522</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="initial commit">
+      <option name="closed" value="true" />
+      <created>1787934034414</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1787934034414</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

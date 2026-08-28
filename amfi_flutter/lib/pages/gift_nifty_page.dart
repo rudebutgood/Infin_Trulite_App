@@ -54,7 +54,14 @@ class _GiftNiftyPageState extends State<GiftNiftyPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: CommonWidgets.txt('GIFT Nifty Futures', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            const Icon(Icons.public, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: CommonWidgets.txt('GIFT Nifty Futures', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
+          ],
+        ),
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [

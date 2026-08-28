@@ -298,7 +298,14 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: CommonWidgets.txt('MF Industry AUM', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            const Icon(Icons.pie_chart, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: CommonWidgets.txt('MF Industry AUM', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
+          ],
+        ),
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [
