@@ -66,7 +66,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     _currentPage = 0;
     _hasMore = true;
     try {
-      final res = await _service.fetchNews(hours: _selectedHours, limit: 10, offset: 0);
+      final res = await _service.fetchNews(hours: _selectedHours, limit: 10, offset: 0, force: !silent);
       if (mounted) {
         setState(() {
           _news = res;

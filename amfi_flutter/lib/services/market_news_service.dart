@@ -53,23 +53,37 @@ class MarketNewsService {
     return _client!;
   }
 
-  Future<List<MarketNews>> fetchNews({int hours = 2, int limit = 10, int offset = 0}) async {
+  // Static cache for faster app-internal navigation
+  static List<MarketNews> _cachedNews = [];
+  static DateTime? _lastFetchTime;
+
+  Future<List<MarketNews>> fetchNews({int hours = 2, int limit = 10, int offset = 0, bool force = false}) async {
+    // Return cache if it's fresh (last 5 minutes)
+    if (!force && _cachedNews.isNotEmpty && _lastFetchTime != null) {
+      if (DateTime.now().difference(_lastFetchTime!).inMinutes < 5) {
+        final end = min(offset + limit, _cachedNews.length);
+        if (offset >= _cachedNews.length) return [];
+        return _cachedNews.sublist(offset, end);
+      }
+    }
+
     final client = _getClient();
     final now = DateTime.now();
     
     try {
-      // 1. Fetch from all sources in parallel
-      final results = await Future.wait(
+      // 1. Fetch from all sources in parallel with individual timeouts
+      // Future.wait will catch all results that finish within their internal timeouts
+      final List<List<_ScoredNews>> results = await Future.wait(
         _feeds.map((f) => _fetchSingleFeed(client, f['url']!, f['source']!, hours, now))
       );
 
-      // 2. Aggregate all news
+      // 2. Aggregate all news from successful responses
       List<_ScoredNews> allScored = [];
       for (var list in results) {
         allScored.addAll(list);
       }
 
-      // 3. Simple Deduplication (by title similarity)
+      // 3. Simple Deduplication
       allScored = _deduplicate(allScored);
 
       // 4. Global Sorting by relevance score
@@ -77,13 +91,17 @@ class MarketNewsService {
       
       final finalNews = allScored.map((sn) => sn.news).toList();
 
-      // 5. Pagination
+      // 5. Update Cache
+      _cachedNews = finalNews;
+      _lastFetchTime = DateTime.now();
+
+      // 6. Pagination
       final end = min(offset + limit, finalNews.length);
       if (offset >= finalNews.length) return [];
       return finalNews.sublist(offset, end);
     } catch (e) {
       debugPrint('Multi-source fetch news error: $e');
-      return [];
+      return _cachedNews; // Return stale cache on total failure
     }
   }
 
@@ -97,13 +115,19 @@ class MarketNewsService {
     try {
       final response = await client.get(Uri.parse(url), headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-      });
+      }).timeout(const Duration(seconds: 10)); // Increased timeout to 10s
 
       if (response.statusCode != 200) return [];
 
       final document = XmlDocument.parse(response.body);
       final items = document.findAllElements('item');
       final List<_ScoredNews> feedNews = [];
+
+      // Whitelisted sources are already 100% Indian Market focused
+      final isWhitelisted = [
+        'Economic Times', 'MoneyControl', 'Business Standard', 
+        'LiveMint', 'Financial Express', 'NDTV Profit'
+      ].contains(sourceName);
 
       for (var node in items) {
         String title = _getNodeText(node, 'title');
@@ -112,8 +136,12 @@ class MarketNewsService {
         
         String pubDateRaw = _getNodeText(node, 'pubDate');
         
-        final isDomestic = _isDomestic(title) || _isDomestic(descRaw);
-        if (!isDomestic) continue;
+        // For Aggregators (Google/Bloomberg), verify it's a domestic story
+        // For Whitelisted portals, accept everything to avoid missing company specific news
+        if (!isWhitelisted) {
+          final isDomestic = _isDomestic(title) || _isDomestic(descRaw);
+          if (!isDomestic) continue;
+        }
 
         DateTime? date = _parseDate(pubDateRaw);
         if (date != null) {
@@ -219,8 +247,8 @@ class MarketNewsService {
     return score;
   }
 
-  Future<List<MarketNews>> fetchTop10News() async {
-    return fetchNews(hours: 24, limit: 10);
+  Future<List<MarketNews>> fetchTop10News({bool force = false}) async {
+    return fetchNews(hours: 24, limit: 10, force: force);
   }
 
   bool _isDomestic(String text) {
@@ -228,7 +256,9 @@ class MarketNewsService {
     final domesticKeywords = [
       'nifty', 'sensex', 'sebi', 'rbi', 'nse', 'bse', 'india', 'crore', 'lakh', 'dalal street',
       'tcs', 'infosys', 'reliance', 'hdfc', 'sbi', 'icici', 'adani', 'tata', 'rupee', 'inr',
-      'zomato', 'paytm', 'lic', 'wipro', 'itc', 'bajaj', 'airtel', 'vedanta', 'equity', 'stock'
+      'zomato', 'paytm', 'lic', 'wipro', 'itc', 'bajaj', 'airtel', 'vedanta', 'equity', 'stock',
+      'market', 'share', 'mutual fund', 'nav', 'ipo', 'dividend', 'gst', 'finmin', 'finance', 
+      'investor', 'trade', 'q1', 'q2', 'q3', 'q4', 'bonus', 'buyback', 'portfolio', 'investment'
     ];
     return domesticKeywords.any((k) => lower.contains(k));
   }

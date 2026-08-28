@@ -580,7 +580,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     if (_fetchingNews && !force) return;
     setState(() => _fetchingNews = true);
     try {
-      final data = await _newsService.fetchTop10News();
+      final data = await _newsService.fetchTop10News(force: force);
       if (mounted) {
         setState(() {
           _marketNews = data;
