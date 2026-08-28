@@ -339,7 +339,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       debugPrint('Detected background sync update, refreshing UI...');
       final importedAt = await _repo.lastImportedAt();
       final apiTs = await _repo.lastApiTimestamp();
-      
+
       if (mounted) {
         setState(() {
           _lastSyncLog = log;
@@ -382,7 +382,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _setApiTimeout = prefs.getInt('setApiTimeout') ?? 40;
     _setSyncTime = prefs.getString('setSyncTime') ?? "06:00";
     _setNAVDefaultSort = prefs.getString('setNAVDefaultSort') ?? 'Return \u2193';
-    
+
     final List<String> defaultOrder = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews'];
     final savedOrder = prefs.getStringList('homeTileOrder');
     if (savedOrder == null) {
@@ -863,7 +863,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           trailing: const Icon(Icons.refresh, color: Colors.indigo),
           onTap: () async {
             Navigator.pop(context); // Close settings
-            _refresh(); 
+            _refresh();
           },
         ),
         ListTile(
@@ -1212,7 +1212,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         'public.csv',
       ],
     );
-    
+
     try {
       final file = await openFile(acceptedTypeGroups: [typeGroup]);
       if (file == null) return;
@@ -1761,7 +1761,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                         if (_marketNews.isNotEmpty)
                           ..._marketNews.take(2).map((n) => Padding(
                             padding: const EdgeInsets.only(bottom: 4.0),
-                            child: CommonWidgets.txt(n.title, 
+                            child: CommonWidgets.txt(n.title,
                               style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, fontWeight: FontWeight.w500, color: Colors.black87),
                               overflow: true, selectedLanguage: _selectedLanguage, translate: _translate),
                           ))
@@ -1781,8 +1781,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ),
           ),
           Positioned(
-            top: 2,
-            right: 2,
+            top: 0,
+            right: 0,
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
               onPressed: () => _fetchMarketNews(force: true),
@@ -1848,8 +1848,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ),
           ),
           Positioned(
-            top: 2,
-            right: 2,
+            top: 0,
+            right: 0,
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
               onPressed: () => _fetchFiiDii(force: true),
@@ -1880,7 +1880,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             children: [
               Text(label, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: Colors.black54)),
               const SizedBox(width: 4),
-              Text('${value > 0 ? '+' : ''}${value.toInt()}',
+              Text('${value > 0 ? '+' : ''}${value.toInt()} Cr',
                   style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.bold, color: value >= 0 ? Colors.green : Colors.red)),
             ],
           ),
@@ -1914,10 +1914,14 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   Widget _giftNiftyTile() {
+    List<GiftNiftyData> sorted = List.from(_giftNiftyData);
+    // Sort by timestamp descending to show latest first
+    sorted.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
     GiftNiftyData? near, far;
-    if (_giftNiftyData.isNotEmpty) {
-      near = _giftNiftyData.first;
-      if (_giftNiftyData.length > 1) far = _giftNiftyData[1];
+    if (sorted.isNotEmpty) {
+      near = sorted.first;
+      if (sorted.length > 1) far = sorted[1];
     }
 
     return Card(
@@ -1961,8 +1965,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ),
           ),
           Positioned(
-            top: 2,
-            right: 2,
+            top: 0,
+            right: 0,
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
               onPressed: () => _fetchGiftNifty(force: true),
@@ -2066,8 +2070,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ),
           ),
           Positioned(
-            top: 2,
-            right: 2,
+            top: 0,
+            right: 0,
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
               onPressed: () => _fetchGoldRates(force: true),
@@ -2149,8 +2153,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ),
           ),
           Positioned(
-            top: 2,
-            right: 2,
+            top: 0,
+            right: 0,
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
               onPressed: () => _fetchIndices(force: true),
@@ -2237,8 +2241,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ),
           ),
           Positioned(
-            top: 2,
-            right: 2,
+            top: 0,
+            right: 0,
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
               onPressed: () => _fetchAmfiAum(force: true),
@@ -2309,9 +2313,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       ),
     );
   }
-
-
-  // --- HELPER METHODS ---
 
   Widget _featureItem(IconData icon, String title, String desc) {
     return Padding(
@@ -2662,7 +2663,7 @@ class _TableBrowserPageState extends State<_TableBrowserPage> {
   int _totalRows = 0;
   int _currentPage = 1;
   static const int _pageSize = 100;
-  
+
   int? _sortColumnIndex;
   bool _isAscending = true;
 
@@ -2710,7 +2711,7 @@ class _TableBrowserPageState extends State<_TableBrowserPage> {
     _totalRows = countRes.first['count'] as int;
 
     final offset = (_currentPage - 1) * _pageSize;
-    
+
     String orderBy = "";
     if (_sortColumnIndex != null && _columns.isNotEmpty) {
       final colName = _columns[_sortColumnIndex!];

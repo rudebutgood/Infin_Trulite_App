@@ -39,6 +39,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     {'label': 'Last 24 hrs', 'value': 24},
     {'label': 'Last 2 days', 'value': 48},
     {'label': 'Last 7 days', 'value': 168},
+    {'label': 'Saved', 'value': -1},
   ];
 
   @override
@@ -66,6 +67,16 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     _currentPage = 0;
     _hasMore = true;
     try {
+      if (_selectedHours == -1) {
+        final res = await _service.fetchSavedNews();
+        if (mounted) {
+          setState(() {
+            _news = res;
+            _hasMore = false;
+          });
+        }
+        return;
+      }
       final res = await _service.fetchNews(hours: _selectedHours, limit: 20, offset: 0, force: !silent);
       if (mounted) {
         setState(() {
@@ -158,6 +169,14 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: Icon(_selectedHours == -1 ? Icons.bookmark : Icons.bookmark_border),
+            onPressed: () {
+              setState(() => _selectedHours = _selectedHours == -1 ? 24 : -1);
+              _fetch();
+            },
+            tooltip: 'View Saved Articles',
+          ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch),
         ],
       ),
@@ -184,6 +203,15 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                             translate: widget.translate,
                             setCompactLayout: widget.setCompactLayout,
                             onTap: () => _showNewsPopup(_news[index]),
+                            onBookmarkToggle: () async {
+                              await _service.toggleSave(_news[index]);
+                              setState(() {
+                                _news[index] = _news[index].copyWith(isSaved: !_news[index].isSaved);
+                                if (_selectedHours == -1 && !_news[index].isSaved) {
+                                  _news.removeAt(index);
+                                }
+                              });
+                            },
                           );
                         },
                       ),
@@ -248,6 +276,7 @@ class _ExpandableNewsCard extends StatefulWidget {
   final Future<String> Function(String) translate;
   final bool setCompactLayout;
   final VoidCallback onTap;
+  final VoidCallback onBookmarkToggle;
 
   const _ExpandableNewsCard({
     required this.news,
@@ -255,6 +284,7 @@ class _ExpandableNewsCard extends StatefulWidget {
     required this.translate,
     required this.setCompactLayout,
     required this.onTap,
+    required this.onBookmarkToggle,
   });
 
   @override
@@ -285,6 +315,22 @@ class _ExpandableNewsCardState extends State<_ExpandableNewsCard> {
                     child: CommonWidgets.txt(d.title,
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14, color: Colors.indigo[900]),
                       selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                  ),
+                  const SizedBox(width: 8),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.onBookmarkToggle,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(
+                          d.isSaved ? Icons.bookmark : Icons.bookmark_border,
+                          size: 20,
+                          color: d.isSaved ? Colors.amber[700] : Colors.grey,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

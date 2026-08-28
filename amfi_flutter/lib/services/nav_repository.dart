@@ -21,7 +21,7 @@ class NavRepository {
     if (_db != null) return _db!;
     final databasesPath = await getDatabasesPath();
     final path = p.join(databasesPath, 'nav.db');
-    _db = await openDatabase(path, version: 7, onCreate: (d, v) async {
+    _db = await openDatabase(path, version: 8, onCreate: (d, v) async {
       await d.execute('''
         CREATE TABLE nav (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,6 +68,17 @@ class NavRepository {
           description TEXT
         );
       ''');
+      await d.execute('''
+        CREATE TABLE saved_news (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT,
+          description TEXT,
+          link TEXT UNIQUE,
+          pub_date TEXT,
+          source TEXT,
+          saved_at TEXT
+        );
+      ''');
       await _insertDefaultApis(d);
     }, onUpgrade: (d, oldV, newV) async {
       if (oldV < 6) {
@@ -77,6 +88,19 @@ class NavRepository {
       if (oldV < 7) {
         await d.execute('CREATE TABLE IF NOT EXISTS app_apis (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, url TEXT, description TEXT)');
         await _insertDefaultApis(d);
+      }
+      if (oldV < 8) {
+        await d.execute('''
+          CREATE TABLE IF NOT EXISTS saved_news (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            description TEXT,
+            link TEXT UNIQUE,
+            pub_date TEXT,
+            source TEXT,
+            saved_at TEXT
+          );
+        ''');
       }
     },
 onOpen: (d) async {

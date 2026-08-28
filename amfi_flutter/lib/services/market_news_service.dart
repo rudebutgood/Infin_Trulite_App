@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/io_client.dart';
 import 'package:xml/xml.dart';
 import 'package:intl/intl.dart';
+import 'package:sqflite/sqflite.dart';
 import '../models/market_news.dart';
+import 'nav_repository.dart';
 
 class MarketNewsService {
   // List of high-quality financial RSS feeds
@@ -82,10 +84,20 @@ class MarketNewsService {
       // 3. Simple Deduplication
       allScored = _deduplicate(allScored);
 
-      // 4. Global Sorting by relevance score
+      // 4. Best Ranking First: Sort all news by their AI impact score
       allScored.sort((a, b) => b.score.compareTo(a.score));
-      
-      final finalNews = allScored.map((sn) => sn.news).toList();
+
+      final List<MarketNews> finalNews = [];
+      final Set<String> addedUrls = {};
+
+      for (var sn in allScored) {
+        if (!addedUrls.contains(sn.news.link)) {
+          finalNews.add(sn.news.copyWith(score: sn.score));
+          addedUrls.add(sn.news.link);
+        }
+        // Limit to top 60 relevant stories
+        if (finalNews.length >= 60) break;
+      }
 
       // 5. Update Cache
       _cachedNews = finalNews;
@@ -94,10 +106,68 @@ class MarketNewsService {
       // 6. Pagination
       final end = min(offset + limit, finalNews.length);
       if (offset >= finalNews.length) return [];
-      return finalNews.sublist(offset, end);
+      
+      final paginated = finalNews.sublist(offset, end);
+      return await _checkSavedStatus(paginated);
     } catch (e) {
       debugPrint('Multi-source fetch news error: $e');
-      return _cachedNews; // Return stale cache on total failure
+      return await _checkSavedStatus(_cachedNews); 
+    }
+  }
+
+  Future<List<MarketNews>> _checkSavedStatus(List<MarketNews> newsList) async {
+    if (newsList.isEmpty) return [];
+    try {
+      final db = await NavRepository().db;
+      final links = newsList.map((n) => n.link).toList();
+      final placeholders = List.filled(links.length, '?').join(',');
+      
+      final res = await db.rawQuery(
+        'SELECT link FROM saved_news WHERE link IN ($placeholders)',
+        links
+      );
+      
+      final savedLinks = res.map((r) => r['link'] as String).toSet();
+      return newsList.map((n) => n.copyWith(isSaved: savedLinks.contains(n.link))).toList();
+    } catch (e) {
+      debugPrint('Error checking saved status: $e');
+      return newsList;
+    }
+  }
+
+  Future<void> toggleSave(MarketNews news) async {
+    final db = await NavRepository().db;
+    if (news.isSaved) {
+      await db.delete('saved_news', where: 'link = ?', whereArgs: [news.link]);
+    } else {
+      await db.insert('saved_news', {
+        'title': news.title,
+        'description': news.description,
+        'link': news.link,
+        'pub_date': news.pubDate,
+        'source': news.source,
+        'saved_at': DateTime.now().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+  }
+
+  Future<List<MarketNews>> fetchSavedNews() async {
+    try {
+      final db = await NavRepository().db;
+      final res = await db.query('saved_news', orderBy: 'saved_at DESC');
+      
+      return res.map((r) => MarketNews(
+        title: r['title'] as String,
+        description: r['description'] as String,
+        link: r['link'] as String,
+        pubDate: r['pub_date'] as String,
+        source: r['source'] as String,
+        isSaved: true,
+        score: 0,
+      )).toList();
+    } catch (e) {
+      debugPrint('Error fetching saved news: $e');
+      return [];
     }
   }
 
