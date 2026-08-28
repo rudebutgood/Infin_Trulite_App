@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/market_news.dart';
 import '../services/market_news_service.dart';
@@ -104,70 +106,37 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
   }
 
   void _showNewsPopup(String url, String title) {
-    final controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setUserAgent("Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36")
-      ..loadRequest(Uri.parse(url));
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setPopupState) {
-          bool loading = true;
-          controller.setNavigationDelegate(NavigationDelegate(
-            onPageStarted: (_) => setPopupState(() => loading = true),
-            onPageFinished: (_) => setPopupState(() => loading = false),
-          ));
-
-          return Container(
-            height: MediaQuery.of(ctx).size.height * 0.9,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.indigo[900],
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.open_in_new, color: Colors.white, size: 20),
-                            onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
-                            tooltip: 'Open in Browser',
-                          ),
-                          IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(ctx)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (loading) const LinearProgressIndicator(minHeight: 2),
-                Expanded(child: WebViewWidget(controller: controller)),
-              ],
-            ),
-          );
-        }
-      ),
+      builder: (ctx) => _NewsWebViewPopup(url: url, title: title),
     );
   }
 
-  Future<void> _launchUrl(String url) async {
-    // Legacy fallback if needed, but we use _showNewsPopup now
-    final uri = Uri.tryParse(url);
-    if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.inAppWebView);
+  Future<void> _launchInBrowser(String url) async {
+    try {
+      final Uri uri = Uri.parse(url.trim());
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not launch the news in browser.')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: Invalid news link.')),
+        );
+      }
     }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    // Legacy fallback
+    _launchInBrowser(url);
   }
 
   @override
@@ -272,7 +241,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: CommonWidgets.txt(d.title, 
+                    child: CommonWidgets.txt(d.title,
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14, color: Colors.indigo[900]),
                       selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                   ),
@@ -280,7 +249,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => launchUrl(Uri.parse(d.link), mode: LaunchMode.externalApplication),
+                      onTap: () => _launchInBrowser(d.link),
                       borderRadius: BorderRadius.circular(20),
                       child: const Padding(
                         padding: EdgeInsets.all(4.0),
@@ -291,7 +260,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                 ],
               ),
               const SizedBox(height: 8),
-              CommonWidgets.txt(d.description, 
+              CommonWidgets.txt(d.description,
                 style: TextStyle(fontSize: widget.setCompactLayout ? 11 : 12, color: Colors.black87),
                 selectedLanguage: widget.selectedLanguage, translate: widget.translate),
               const SizedBox(height: 12),
@@ -305,6 +274,102 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _NewsWebViewPopup extends StatefulWidget {
+  final String url;
+  final String title;
+
+  const _NewsWebViewPopup({required this.url, required this.title});
+
+  @override
+  State<_NewsWebViewPopup> createState() => _NewsWebViewPopupState();
+}
+
+class _NewsWebViewPopupState extends State<_NewsWebViewPopup> {
+  late final WebViewController _controller;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent("Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36")
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (_) => setState(() => _isLoading = true),
+        onPageFinished: (_) => setState(() => _isLoading = false),
+        onWebResourceError: (error) => setState(() => _isLoading = false),
+      ))
+      ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.indigo[900],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.open_in_new, color: Colors.white, size: 20),
+                      onPressed: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+                      tooltip: 'Open in Browser',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (_isLoading) const LinearProgressIndicator(minHeight: 2),
+          Expanded(
+            child: WebViewWidget(
+              controller: _controller,
+              gestureRecognizers: {
+                Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer()),
+                Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
