@@ -8,12 +8,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/.artifacts/5269b394-7eb8-487e-8e44-58c2beb2ee2d/scratch/check_indices.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/.artifacts/5269b394-7eb8-487e-8e44-58c2beb2ee2d/scratch/check_raw_data.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/models/factor_performance_data.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/factor_performance_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/models/market_news.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/models/market_news.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/market_news_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/market_news_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/market_news_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/market_news_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -412,7 +412,15 @@
       <option name="project" value="LOCAL" />
       <updated>1787946092830</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="initial commit">
+      <option name="closed" value="true" />
+      <created>1787949330668</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1787949330668</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

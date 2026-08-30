@@ -35,6 +35,8 @@ import 'pages/portfolio_charts_page.dart';
 import 'widgets/common_widgets.dart';
 import 'services/market_news_service.dart';
 import 'models/market_news.dart';
+import 'pages/factor_performance_page.dart';
+import 'models/factor_performance_data.dart';
 
 /**
  * INFIN TRULITE - Main Entry Point
@@ -252,7 +254,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   DateTime? _newsLastFetch;
 
   // Tile Order state
-  List<String> _tileIds = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews'];
+  List<String> _tileIds = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews', 'factorPerf'];
 
   // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
@@ -383,7 +385,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _setSyncTime = prefs.getString('setSyncTime') ?? "06:00";
     _setNAVDefaultSort = prefs.getString('setNAVDefaultSort') ?? 'Return \u2193';
 
-    final List<String> defaultOrder = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews'];
+    final List<String> defaultOrder = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews', 'factorPerf'];
     final savedOrder = prefs.getStringList('homeTileOrder');
     if (savedOrder == null) {
       _tileIds = defaultOrder;
@@ -1727,6 +1729,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       case 'giftNifty': return _giftNiftyTile();
       case 'gold': return _goldTile();
       case 'marketNews': return _marketNewsTile();
+      case 'factorPerf': return _factorPerfTile();
       default: return const SizedBox.shrink();
     }
   }
@@ -1786,6 +1789,94 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
               onPressed: () => _fetchMarketNews(force: true),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _factorPerfTile() {
+    List<FactorPerformanceData> factors = [];
+    for (var index in _indicesData) {
+      final key = FactorPerformanceData.normalize(index.name);
+      if (FactorPerformanceData.factorMapping.containsKey(key)) {
+        final map = FactorPerformanceData.factorMapping[key]!;
+        factors.add(FactorPerformanceData.fromIndexData(
+          index,
+          map['name']!,
+          map['desc']!,
+        ));
+      }
+    }
+
+    if (factors.isEmpty) {
+      return Card(
+        margin: EdgeInsets.zero,
+        child: Center(
+          child: Text('Loading...', style: TextStyle(fontSize: 10, color: Colors.grey)),
+        ),
+      );
+    }
+
+    // Sort by 1D return for the tile
+    factors.sort((a, b) => b.dayReturn.compareTo(a.dayReturn));
+    final topTwo = factors.take(2).toList();
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => FactorPerformancePage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout, initialData: _indicesData))),
+            splashColor: Colors.indigo.withOpacity(0.1),
+            child: Padding(
+              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.analytics, color: Colors.purple[700], size: _setCompactLayout ? 14 : 16),
+                      const SizedBox(width: 4),
+                      CommonWidgets.txt('Factor Analysis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                    ],
+                  ),
+                  SizedBox(height: _setCompactLayout ? 4 : 6),
+                  ...topTwo.map((f) => Padding(
+                    padding: const EdgeInsets.only(bottom: 2.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: Text(f.factorName, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, fontWeight: FontWeight.w500, color: Colors.black87), overflow: TextOverflow.ellipsis)),
+                        Text('${f.dayReturn >= 0 ? '+' : ''}${f.dayReturn.toStringAsFixed(1)}%',
+                             style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: f.dayReturn >= 0 ? Colors.green[700] : Colors.red[700], fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  )),
+                  const Spacer(),
+                  if (_indicesLastFetch != null)
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Text(
+                        'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_indicesLastFetch!)}',
+                        style: const TextStyle(fontSize: 8, color: Colors.grey),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
+              onPressed: () => _fetchIndices(force: true),
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
