@@ -240,7 +240,7 @@ class MarketNewsService {
         if (link.isEmpty) link = _getNodeText(node, 'guid');
         
         final news = MarketNews(
-          title: title.trim(),
+          title: _decodeHtmlEntities(title.trim()),
           description: _stripHtml(descRaw),
           link: link.trim(),
           pubDate: displayDate,
@@ -363,7 +363,7 @@ class MarketNewsService {
       if (date != null && now.difference(date).inHours > hours) continue;
 
       final news = MarketNews(
-        title: title.replaceAll('<![CDATA[', '').replaceAll(']]>', '').trim(),
+        title: _decodeHtmlEntities(title.replaceAll('<![CDATA[', '').replaceAll(']]>', '').trim()),
         description: _stripHtml(desc.replaceAll('<![CDATA[', '').replaceAll(']]>', '')),
         link: link.replaceAll('<![CDATA[', '').replaceAll(']]>', '').trim(),
         pubDate: date != null ? DateFormat("dd MMM, hh:mm a").format(date.toLocal()) : pubDate,
@@ -395,9 +395,43 @@ class MarketNewsService {
     return domesticKeywords.any((k) => lower.contains(k));
   }
 
+  String _decodeHtmlEntities(String text) {
+    if (!text.contains('&')) return text;
+    
+    return text
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&apos;', "'")
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&#8377;', '₹')
+      .replaceAll('&rupee;', '₹')
+      .replaceAllMapped(RegExp(r'&#(\d+);'), (match) {
+        try {
+          final charCode = int.parse(match.group(1)!);
+          return String.fromCharCode(charCode);
+        } catch (_) { return match.group(0)!; }
+      })
+      .replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (match) {
+        try {
+          final charCode = int.parse(match.group(1)!, radix: 16);
+          return String.fromCharCode(charCode);
+        } catch (_) { return match.group(0)!; }
+      });
+  }
+
   String _stripHtml(String html) {
-    String text = html.replaceAll(RegExp(r'<[^>]*>|&nbsp;'), ' ').trim();
-    // Keep more content for the popup summary, but still clean
+    // 1. Remove HTML tags
+    String text = html.replaceAll(RegExp(r'<[^>]*>'), ' ');
+    
+    // 2. Decode HTML entities
+    text = _decodeHtmlEntities(text);
+    
+    // 3. Clean up whitespace
+    text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    
+    // 4. Truncate if too long for preview
     if (text.length > 500) text = text.substring(0, 497) + "...";
     return text;
   }

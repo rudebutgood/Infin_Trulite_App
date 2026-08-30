@@ -21,6 +21,7 @@ class BullionPage extends StatefulWidget {
 
 class _BullionPageState extends State<BullionPage> {
   final GoldRateService _service = GoldRateService();
+  final ScrollController _scrollCtl = ScrollController();
   List<GoldRateData> _data = [];
   bool _loading = true;
 
@@ -28,6 +29,12 @@ class _BullionPageState extends State<BullionPage> {
   void initState() {
     super.initState();
     _fetch();
+  }
+
+  @override
+  void dispose() {
+    _scrollCtl.dispose();
+    super.dispose();
   }
 
   Future<void> _fetch() async {
@@ -76,11 +83,18 @@ class _BullionPageState extends State<BullionPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : _data.isEmpty
                     ? Center(child: CommonWidgets.txt('No data available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
-                    : ListView.separated(
-                        itemCount: _data.length,
-                        padding: const EdgeInsets.all(12),
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) => _buildRow(_data[index]),
+                    : Scrollbar(
+                        controller: _scrollCtl,
+                        interactive: true,
+                        thickness: 6,
+                        radius: const Radius.circular(3),
+                        child: ListView.separated(
+                          controller: _scrollCtl,
+                          itemCount: _data.length,
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) => _buildRow(_data[index]),
+                        ),
                       ),
           ),
         ],

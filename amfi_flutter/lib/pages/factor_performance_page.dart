@@ -26,6 +26,7 @@ class FactorPerformancePage extends StatefulWidget {
 class _FactorPerformancePageState extends State<FactorPerformancePage> {
   final IndexService _service = IndexService();
   final TextEditingController _searchCtl = TextEditingController();
+  final ScrollController _scrollCtl = ScrollController();
   
   List<FactorPerformanceData> _allFactors = [];
   List<FactorPerformanceData> _filteredFactors = [];
@@ -50,6 +51,7 @@ class _FactorPerformancePageState extends State<FactorPerformancePage> {
   @override
   void dispose() {
     _searchCtl.dispose();
+    _scrollCtl.dispose();
     super.dispose();
   }
 
@@ -273,12 +275,19 @@ class _FactorPerformancePageState extends State<FactorPerformancePage> {
               ? const Center(child: CircularProgressIndicator())
               : _filteredFactors.isEmpty
                   ? Center(child: CommonWidgets.txt('No data available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
-                  : ListView.builder(
-                      itemCount: _filteredFactors.length,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      itemBuilder: (context, index) {
-                        return _buildFactorCard(_filteredFactors[index]);
-                      },
+                  : Scrollbar(
+                      controller: _scrollCtl,
+                      interactive: true,
+                      thickness: 6,
+                      radius: const Radius.circular(3),
+                      child: ListView.builder(
+                        controller: _scrollCtl,
+                        itemCount: _filteredFactors.length,
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
+                        itemBuilder: (context, index) {
+                          return _buildFactorCard(_filteredFactors[index]);
+                        },
+                      ),
                     ),
           ),
         ],

@@ -22,6 +22,7 @@ class FiiDiiPage extends StatefulWidget {
 
 class _FiiDiiPageState extends State<FiiDiiPage> {
   final FiiDiiService _service = FiiDiiService();
+  final ScrollController _scrollCtl = ScrollController();
   List<FiiDiiData> _data = [];
   bool _loading = true;
 
@@ -31,6 +32,12 @@ class _FiiDiiPageState extends State<FiiDiiPage> {
     _fetch();
   }
 
+  @override
+  void dispose() {
+    _scrollCtl.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetch() async {
     if (!mounted) return;
     setState(() => _loading = true);
@@ -38,6 +45,12 @@ class _FiiDiiPageState extends State<FiiDiiPage> {
       final res = await _service.fetchFiiDiiData();
       if (mounted) {
         setState(() {
+          // Sort to show FII first, then DII
+          res.sort((a, b) {
+            if (a.category.contains('FII') && b.category.contains('DII')) return -1;
+            if (a.category.contains('DII') && b.category.contains('FII')) return 1;
+            return 0;
+          });
           _data = res;
         });
       }
@@ -77,11 +90,18 @@ class _FiiDiiPageState extends State<FiiDiiPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : _data.isEmpty
                     ? const Center(child: Text('No data available'))
-                    : ListView.separated(
-                        itemCount: _data.length,
-                        padding: const EdgeInsets.all(12),
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) => _buildRow(_data[index]),
+                    : Scrollbar(
+                        controller: _scrollCtl,
+                        interactive: true,
+                        thickness: 6,
+                        radius: const Radius.circular(3),
+                        child: ListView.separated(
+                          controller: _scrollCtl,
+                          itemCount: _data.length,
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) => _buildRow(_data[index]),
+                        ),
                       ),
           ),
         ],

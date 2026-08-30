@@ -188,32 +188,38 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : _news.isEmpty
                     ? Center(child: CommonWidgets.txt('No news available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
-                    : ListView.separated(
+                    : Scrollbar(
                         controller: _scrollCtl,
-                        itemCount: _news.length + (_hasMore ? 1 : 0),
-                        padding: const EdgeInsets.all(12),
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          if (index == _news.length) {
-                            return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)));
-                          }
-                          return _ExpandableNewsCard(
-                            news: _news[index],
-                            selectedLanguage: widget.selectedLanguage,
-                            translate: widget.translate,
-                            setCompactLayout: widget.setCompactLayout,
-                            onTap: () => _showNewsPopup(_news[index]),
-                            onBookmarkToggle: () async {
-                              await _service.toggleSave(_news[index]);
-                              setState(() {
-                                _news[index] = _news[index].copyWith(isSaved: !_news[index].isSaved);
-                                if (_selectedHours == -1 && !_news[index].isSaved) {
-                                  _news.removeAt(index);
-                                }
-                              });
-                            },
-                          );
-                        },
+                        interactive: true,
+                        thickness: 6,
+                        radius: const Radius.circular(3),
+                        child: ListView.separated(
+                          controller: _scrollCtl,
+                          itemCount: _news.length + (_hasMore ? 1 : 0),
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            if (index == _news.length) {
+                              return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)));
+                            }
+                            return _ExpandableNewsCard(
+                              news: _news[index],
+                              selectedLanguage: widget.selectedLanguage,
+                              translate: widget.translate,
+                              setCompactLayout: widget.setCompactLayout,
+                              onTap: () => _showNewsPopup(_news[index]),
+                              onBookmarkToggle: () async {
+                                await _service.toggleSave(_news[index]);
+                                setState(() {
+                                  _news[index] = _news[index].copyWith(isSaved: !_news[index].isSaved);
+                                  if (_selectedHours == -1 && !_news[index].isSaved) {
+                                    _news.removeAt(index);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        ),
                       ),
           ),
         ],

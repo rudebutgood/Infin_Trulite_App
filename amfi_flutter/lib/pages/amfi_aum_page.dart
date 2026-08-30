@@ -317,8 +317,13 @@ class _AmfiAumPageState extends State<AmfiAumPage> {
           : _data == null
               ? Center(child: CommonWidgets.txt('No data available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
               : Scrollbar(
+                  controller: _scrollController,
+                  interactive: true,
+                  thickness: 6,
+                  radius: const Radius.circular(3),
                   thumbVisibility: true,
                   child: CustomScrollView(
+                    controller: _scrollController,
                     slivers: [
                       SliverToBoxAdapter(child: _buildSummaryCard()),
                       SliverToBoxAdapter(child: _buildSearchAndSort()),

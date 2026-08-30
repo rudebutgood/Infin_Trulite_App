@@ -27,7 +27,17 @@ class GiftNiftyService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> body = json.decode(response.body);
         final List<dynamic> data = body['data'] ?? [];
-        return data.map((json) => GiftNiftyData.fromJson(json)).toList();
+        final List<GiftNiftyData> list = data.map((json) => GiftNiftyData.fromJson(json)).toList();
+
+        // Deduplicate by Symbol + ExpiryDate to prevent duplicate rows
+        final Map<String, GiftNiftyData> uniqueMap = {};
+        for (var item in list) {
+          final key = '${item.symbol}_${item.expiryDate}';
+          if (!uniqueMap.containsKey(key)) {
+            uniqueMap[key] = item;
+          }
+        }
+        return uniqueMap.values.toList();
       } else {
         throw Exception('Failed to fetch Gift Nifty data: ${response.statusCode}');
       }

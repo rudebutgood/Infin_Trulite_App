@@ -487,7 +487,7 @@ class _PortfolioTabState extends State<PortfolioTab> {
             radius: const Radius.circular(3),
             child: ListView.separated(
               controller: _portfolioScrollCtl,
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
               itemCount: groupedIsins.length + 1,
               separatorBuilder: (context, index) => index == 0 ? const SizedBox() : Divider(height: 1, thickness: 0.5, color: Colors.grey[300]),
               itemBuilder: (c, i) {

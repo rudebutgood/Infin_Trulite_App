@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'models/factor_performance_data.dart';
 import 'models/index_data.dart';
 import 'services/index_service.dart';
 import 'widgets/common_widgets.dart';
@@ -23,9 +24,12 @@ class IndicesPage extends StatefulWidget {
 class _IndicesPageState extends State<IndicesPage> {
   final IndexService _service = IndexService();
   final TextEditingController _searchCtl = TextEditingController();
+  final ScrollController _scrollCtl = ScrollController();
   List<IndexData> _data = [];
   List<IndexData> _filteredData = [];
+  List<String> _keys = ['All'];
   bool _loading = true;
+  String _selectedKey = 'All';
   String _sortBy = 'Change %';
   bool _isAscending = false;
 
@@ -45,6 +49,13 @@ class _IndicesPageState extends State<IndicesPage> {
     _fetch();
   }
 
+  @override
+  void dispose() {
+    _searchCtl.dispose();
+    _scrollCtl.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetch() async {
     if (!mounted) return;
     setState(() => _loading = true);
@@ -53,6 +64,7 @@ class _IndicesPageState extends State<IndicesPage> {
       if (mounted) {
         setState(() {
           _data = res;
+          _keys = ['All', ...res.map((e) => e.rawData['key']?.toString() ?? 'Others').toSet().where((k) => k != 'null' && k.isNotEmpty).toList()..sort()];
           _sort();
         });
       }
@@ -105,15 +117,26 @@ class _IndicesPageState extends State<IndicesPage> {
   void _filter() {
     final query = _searchCtl.text.toLowerCase().trim();
     setState(() {
-      if (query.isEmpty) {
-        _filteredData = List.from(_data);
-      } else {
-        _filteredData = _data.where((d) => d.name.toLowerCase().contains(query)).toList();
-      }
+      _filteredData = _data.where((d) {
+        final matchesQuery = query.isEmpty || d.name.toLowerCase().contains(query);
+        final matchesKey = _selectedKey == 'All' || (d.rawData['key']?.toString() ?? 'Others') == _selectedKey;
+        return matchesQuery && matchesKey;
+      }).toList();
     });
   }
 
   void _showFullDetails(IndexData d) {
+    final key = FactorPerformanceData.normalize(d.name);
+    final factorInfo = FactorPerformanceData.factorMapping[key];
+    final String description = factorInfo?['desc'] ?? '';
+    
+    // Calculate 1W return if possible
+    double? weekReturn;
+    final oneWeekAgoVal = _toDouble(d.rawData['oneWeekAgoVal']);
+    if (oneWeekAgoVal > 0) {
+      weekReturn = ((d.last - oneWeekAgoVal) / oneWeekAgoVal * 100);
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -128,7 +151,16 @@ class _IndicesPageState extends State<IndicesPage> {
               padding: const EdgeInsets.all(20.0),
               child: Row(
                 children: [
-                  Expanded(child: Text(d.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(d.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        if (d.rawData['key'] != null)
+                          Text(d.rawData['key'].toString(), style: TextStyle(fontSize: 11, color: Colors.indigo[300], fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
@@ -141,21 +173,95 @@ class _IndicesPageState extends State<IndicesPage> {
                 child: ListView(
                   controller: s,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  children: d.rawData.entries.map((e) {
-                    final valueStr = e.value?.toString() ?? '-';
-                    final isUrl = valueStr.startsWith('http');
-                    return _detailRow(
-                      _formatKey(e.key),
-                      valueStr,
-                      isUrl: isUrl,
-                      onUrlTap: isUrl ? () => _launchUrl(valueStr) : null,
-                    );
-                  }).toList(),
+                  children: [
+                    if (description.isNotEmpty) ...[
+                      CommonWidgets.txt('Description', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                      const SizedBox(height: 4),
+                      Text(description, style: const TextStyle(fontSize: 13, height: 1.4)),
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                    ],
+                    
+                    CommonWidgets.txt('Returns Matrix', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _returnBoxDetail('1D', d.percentChange),
+                        if (weekReturn != null) _returnBoxDetail('1W', weekReturn),
+                        if (d.perChange30d != null) _returnBoxDetail('1M', d.perChange30d!),
+                        if (d.perChange365d != null) _returnBoxDetail('1Y', d.perChange365d!),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    
+                    CommonWidgets.txt('Key Statistics', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                    const SizedBox(height: 8),
+                    _detailRow('Last Value', '₹${d.last.toStringAsFixed(2)}'),
+                    _detailRow('Variation', '${d.variation >= 0 ? '+' : ''}${d.variation.toStringAsFixed(2)} pts'),
+                    if (d.pe != null) _detailRow('P/E Ratio', d.pe!.toStringAsFixed(2)),
+                    if (d.pb != null) _detailRow('P/B Ratio', d.pb!.toStringAsFixed(2)),
+                    if (d.yearHigh != null) _detailRow('52W High', d.yearHigh!.toString()),
+                    if (d.yearLow != null) _detailRow('52W Low', d.yearLow!.toString()),
+                    if (d.diffFromYearHigh != null) _detailRow('vs 52W High', '${d.diffFromYearHigh!.toStringAsFixed(2)}%'),
+                    
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    CommonWidgets.txt('Raw Index Data', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                    const SizedBox(height: 8),
+                    ...d.rawData.entries.map((e) {
+                      final valueStr = e.value?.toString() ?? '-';
+                      final isUrl = valueStr.startsWith('http');
+                      // Skip internal fields already shown
+                      if (['index', 'last', 'variation', 'percentChange', 'key'].contains(e.key)) return const SizedBox.shrink();
+                      
+                      return _detailRow(
+                        _formatKey(e.key),
+                        valueStr,
+                        isUrl: isUrl,
+                        onUrlTap: isUrl ? () => _launchUrl(valueStr) : null,
+                      );
+                    }).toList(),
+                  ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  double _toDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val.replaceAll(',', '')) ?? 0.0;
+    return 0.0;
+  }
+
+  Widget _returnBoxDetail(String label, double value) {
+    final color = value >= 0 ? Colors.green[700]! : Colors.red[700]!;
+    return Container(
+      width: 70,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(
+            '${value >= 0 ? '+' : ''}${value.toStringAsFixed(1)}%',
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ],
       ),
     );
   }
@@ -224,13 +330,20 @@ class _IndicesPageState extends State<IndicesPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredData.isEmpty
                     ? Center(child: CommonWidgets.txt('No data available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
-                    : ListView.builder(
-                        itemCount: _filteredData.length,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemBuilder: (context, index) {
-                          final d = _filteredData[index];
-                          return _buildIndexCard(d);
-                        },
+                    : Scrollbar(
+                        controller: _scrollCtl,
+                        interactive: true,
+                        thickness: 6,
+                        radius: const Radius.circular(3),
+                        child: ListView.builder(
+                          controller: _scrollCtl,
+                          itemCount: _filteredData.length,
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                          itemBuilder: (context, index) {
+                            final d = _filteredData[index];
+                            return _buildIndexCard(d);
+                          },
+                        ),
                       ),
           ),
         ],
@@ -274,43 +387,84 @@ class _IndicesPageState extends State<IndicesPage> {
             ),
           ),
           const SizedBox(height: 8),
-          // Sorting Dropdown
+          // Period & Sorting Row
           Row(
             children: [
-              CommonWidgets.txt('Sort:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
-              const SizedBox(width: 8),
               Expanded(
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _sortBy,
-                    isExpanded: true,
-                    style: const TextStyle(color: Colors.black, fontSize: 14),
-                    items: _sortOptions.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: CommonWidgets.txt(value, selectedLanguage: widget.selectedLanguage, translate: widget.translate),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _sortBy = val;
-                          _sort();
-                        });
-                      }
-                    },
-                  ),
+                flex: 4,
+                child: Row(
+                  children: [
+                    CommonWidgets.txt('Filter:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedKey,
+                            isExpanded: true,
+                            style: const TextStyle(color: Colors.black, fontSize: 13),
+                            items: _keys.map((p) => DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)))).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _selectedKey = val;
+                                  _filter();
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              IconButton(
-                icon: Icon(_isAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 20),
-                onPressed: () {
-                  setState(() {
-                    _isAscending = !_isAscending;
-                    _sort();
-                  });
-                },
-                tooltip: _isAscending ? 'Ascending' : 'Descending',
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: Row(
+                  children: [
+                    CommonWidgets.txt('Sort:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _sortBy,
+                            isExpanded: true,
+                            style: const TextStyle(color: Colors.black, fontSize: 13),
+                            items: _sortOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)))).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _sortBy = val;
+                                  _sort();
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(_isAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 20, color: Colors.indigo[700]),
+                      onPressed: () {
+                        setState(() {
+                          _isAscending = !_isAscending;
+                          _sort();
+                        });
+                      },
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

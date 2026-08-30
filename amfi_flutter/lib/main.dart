@@ -1504,7 +1504,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     final dayPct = (totalCur - totalDayGain > 0) ? (totalDayGain / (totalCur - totalDayGain) * 100) : 0;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       children: [
         // Portfolio Overview Card
         Card(
@@ -2205,7 +2205,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         children: [
           Text(label, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: Colors.grey, fontWeight: FontWeight.w500)),
           Text(
-            label == 'USDINR' ? value.toStringAsFixed(2) : value.toInt().toString(),
+            label == 'USDINR' ? '\u20b9${value.toStringAsFixed(2)}' : '\u20b9${value.toInt().toString()}',
             style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.bold, color: Colors.black87),
           ),
         ],

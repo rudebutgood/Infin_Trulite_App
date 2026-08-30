@@ -24,6 +24,7 @@ class PortfolioChartsPage extends StatefulWidget {
 class _PortfolioChartsPageState extends State<PortfolioChartsPage> {
   int _touchedIndex = -1;
   bool _loading = true;
+  final ScrollController _scrollCtl = ScrollController();
 
   List<MapEntry<String, double>> _amcData = [];
   List<MapEntry<String, double>> _investorData = [];
@@ -122,6 +123,12 @@ class _PortfolioChartsPageState extends State<PortfolioChartsPage> {
   }
 
   @override
+  void dispose() {
+    _scrollCtl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     return Scaffold(
@@ -138,7 +145,12 @@ class _PortfolioChartsPageState extends State<PortfolioChartsPage> {
         foregroundColor: Colors.white,
       ),
       body: Scrollbar(
+        controller: _scrollCtl,
+        interactive: true,
+        thickness: 6,
+        radius: const Radius.circular(3),
         child: ListView(
+          controller: _scrollCtl,
           padding: const EdgeInsets.all(20.0),
           children: [
             if (_historyData.isNotEmpty) ...[

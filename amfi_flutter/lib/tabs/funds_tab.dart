@@ -270,7 +270,7 @@ class _FundsTabState extends State<FundsTab> {
               radius: const Radius.circular(3),
               child: ListView.separated(
                 controller: _scrollCtl,
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
                 itemCount: _items.length + 1,
                 separatorBuilder: (context, index) => index == 0 ? const SizedBox() : Divider(height: 1, thickness: 0.5, color: Colors.grey[200]),
                 itemBuilder: (c, i) {
