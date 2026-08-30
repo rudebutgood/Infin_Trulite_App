@@ -95,8 +95,8 @@ class MarketNewsService {
           finalNews.add(sn.news.copyWith(score: sn.score));
           addedUrls.add(sn.news.link);
         }
-        // Limit to top 60 relevant stories
-        if (finalNews.length >= 60) break;
+        // Limit to top 150 relevant stories to allow for deeper scrolling
+        if (finalNews.length >= 150) break;
       }
 
       // 5. Update Cache
