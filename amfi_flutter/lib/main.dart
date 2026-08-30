@@ -1794,7 +1794,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                           Align(
                             alignment: Alignment.bottomRight,
                             child: Text(
-                              'AI \u2022 ${DateFormat('dd MMM HH:mm').format(_newsLastFetch!)}',
+                              'News \u2022 ${DateFormat('dd MMM HH:mm').format(_newsLastFetch!)}',
                               style: const TextStyle(fontSize: 8, color: Colors.grey),
                             ),
                           ),

@@ -163,7 +163,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
           children: [
             const Icon(Icons.auto_awesome, size: 20),
             const SizedBox(width: 8),
-            Expanded(child: CommonWidgets.txt('AI Market Insights', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
+            Expanded(child: CommonWidgets.txt('Market Insights', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
           ],
         ),
         backgroundColor: Colors.indigo[900],
@@ -235,7 +235,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
               children: [
                 CommonWidgets.txt('Top Market Stories', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                 const SizedBox(height: 2),
-                Text('India market news summarized by AI.', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+                Text('India market news curated from top sources.', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
               ],
             ),
           ),
