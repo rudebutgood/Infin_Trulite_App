@@ -141,8 +141,8 @@ class FactorPerformanceData {
       'desc': 'Tracks stocks that have lower price fluctuations than the broader market.'
     },
     normalize('NIFTY ALPHA 50'): {
-      'name': 'Alpha',
-      'desc': 'Tracks 50 stocks with high Jensen Alpha (excess return over market).'
+      'name': 'Alpha (Sentiment Proxy)',
+      'desc': 'Tracks stocks with high excess return. High Alpha often indicates strong market sentiment and smart money flow.'
     },
     normalize('NIFTY DIVIDEND OPPORTUNITIES 50'): {
       'name': 'Dividend Yield',
@@ -175,6 +175,34 @@ class FactorPerformanceData {
     normalize('NIFTY MIDSMALLCAP 400'): {
       'name': 'Mid-Small Cap',
       'desc': 'Tracks the performance of combined mid and small cap companies.'
+    },
+    normalize('NIFTY 100 ESG'): {
+      'name': 'Management (Governance)',
+      'desc': 'Focuses on companies with high Environmental, Social, and Governance (ESG) scores, a strong proxy for clean management.'
+    },
+    normalize('NIFTY100 ESG'): {
+      'name': 'Management (Governance)',
+      'desc': 'Focuses on companies with high Environmental, Social, and Governance (ESG) scores, a strong proxy for clean management.'
+    },
+    normalize('NIFTY GROWTH SECTORS 15'): {
+      'name': 'Growth',
+      'desc': 'Focuses on companies in sectors with high growth potential and historical earnings speed.'
+    },
+    normalize('NIFTY 100 LIQUID 15'): {
+      'name': 'Liquidity',
+      'desc': 'Tracks the most liquid stocks in the Nifty 100 universe, ensuring ease of entry and exit.'
+    },
+    normalize('NIFTY100 LIQUID 15'): {
+      'name': 'Liquidity',
+      'desc': 'Tracks the most liquid stocks in the Nifty 100 universe, ensuring ease of entry and exit.'
+    },
+    normalize('NIFTY 500 MULTICAP MOMENTUM QUALITY 50'): {
+      'name': 'Sentiment (Proxy)',
+      'desc': 'Combines Momentum and Quality factors across market caps to identify stocks with strong positive market sentiment.'
+    },
+    normalize('NIFTY500 MULTICAP MOMENTUM QUALITY 50'): {
+      'name': 'Sentiment (Proxy)',
+      'desc': 'Combines Momentum and Quality factors across market caps to identify stocks with strong positive market sentiment.'
     },
   };
 }

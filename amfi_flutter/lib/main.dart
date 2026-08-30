@@ -244,6 +244,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   bool _fetchingAum = false;
   List<MarketNews> _marketNews = [];
   bool _fetchingNews = false;
+  bool _fetchingFactors = false;
 
   // Last Fetch Timestamps
   DateTime? _fiiDiiLastFetch;
@@ -502,6 +503,24 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       debugPrint('FII/DII Fetch Error: $e');
     } finally {
       if (mounted) setState(() => _fetchingFiiDii = false);
+    }
+  }
+
+  Future<void> _fetchFactorsOnly() async {
+    if (_fetchingFactors) return;
+    setState(() => _fetchingFactors = true);
+    try {
+      final data = await _indexService.fetchIndices();
+      if (mounted) {
+        setState(() {
+          _indicesData = data;
+          _indicesLastFetch = DateTime.now();
+        });
+      }
+    } catch (e) {
+      debugPrint('Factor Indices Fetch Error: $e');
+    } finally {
+      if (mounted) setState(() => _fetchingFactors = false);
     }
   }
 
@@ -1836,7 +1855,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             splashColor: Colors.indigo.withOpacity(0.1),
             child: Padding(
               padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
-              child: Column(
+              child: _fetchingFactors 
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                  : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -1876,7 +1897,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             right: 0,
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
-              onPressed: () => _fetchIndices(force: true),
+              onPressed: _fetchFactorsOnly,
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

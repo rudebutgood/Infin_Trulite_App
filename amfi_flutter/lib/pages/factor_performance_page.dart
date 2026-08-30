@@ -30,7 +30,7 @@ class _FactorPerformancePageState extends State<FactorPerformancePage> {
   List<FactorPerformanceData> _allFactors = [];
   List<FactorPerformanceData> _filteredFactors = [];
   bool _loading = false;
-  String _selectedPeriod = '1 Year';
+  String _selectedPeriod = '1 Day';
   String _sortBy = 'Return';
   bool _isAscending = false;
 
