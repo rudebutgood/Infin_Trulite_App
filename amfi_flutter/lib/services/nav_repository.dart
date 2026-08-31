@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
+import 'package:intl/intl.dart';
 import '../models/nav_item.dart';
 
 const String NAV_API_URL = 'https://www.amfiindia.com/api/nav-history?query_type=all_for_date&from_date=';
@@ -342,17 +343,17 @@ onOpen: (d) async {
     if (fundType != null && fundType.isNotEmpty && fundType != 'All') {
       final ft = fundType.toLowerCase();
       if (ft == 'direct') {
-        filters.add("UPPER(n.scheme_name) LIKE ? AND NOT (UPPER(n.scheme_name) LIKE ? OR UPPER(n.scheme_name) LIKE ?)");
-        args.addAll(['%DIRECT%', '%REGULAR%', '%IDCW%']);
+        filters.add("(UPPER(n.plan) LIKE ? AND UPPER(n.nav_option) LIKE ?)");
+        args.addAll(['%DIRECT%', '%GROWTH%']);
       } else if (ft == 'regular') {
-        filters.add("UPPER(n.scheme_name) LIKE ? AND NOT (UPPER(n.scheme_name) LIKE ? OR UPPER(n.scheme_name) LIKE ?)");
-        args.addAll(['%REGULAR%', '%DIRECT%', '%IDCW%']);
+        filters.add("(UPPER(n.plan) LIKE ? AND UPPER(n.nav_option) LIKE ?)");
+        args.addAll(['%REGULAR%', '%GROWTH%']);
       } else if (ft == 'idcw') {
-        filters.add('UPPER(n.scheme_name) LIKE ?');
-        args.add('%IDCW%');
+        filters.add("NOT ((UPPER(n.plan) LIKE ? AND UPPER(n.nav_option) LIKE ?) OR (UPPER(n.plan) LIKE ? AND UPPER(n.nav_option) LIKE ?)) AND UPPER(n.nav_option) LIKE ?");
+        args.addAll(['%DIRECT%', '%GROWTH%', '%REGULAR%', '%GROWTH%', '%IDCW%']);
       } else if (ft == 'others') {
-        filters.add('NOT (UPPER(n.scheme_name) LIKE ? OR UPPER(n.scheme_name) LIKE ? OR UPPER(n.scheme_name) LIKE ?)');
-        args.addAll(['%DIRECT%', '%REGULAR%', '%IDCW%']);
+        filters.add("NOT ((UPPER(n.plan) LIKE ? AND UPPER(n.nav_option) LIKE ?) OR (UPPER(n.plan) LIKE ? AND UPPER(n.nav_option) LIKE ?) OR (UPPER(n.nav_option) LIKE ?))");
+        args.addAll(['%DIRECT%', '%GROWTH%', '%REGULAR%', '%GROWTH%', '%IDCW%']);
       }
     }
 
@@ -689,6 +690,98 @@ onOpen: (d) async {
       'plan': finalPlan,
       'option': finalOption,
     };
+  }
+
+  Future<List<Map<String, dynamic>>> getHistoryForScheme(String schemeCode, {int months = 12}) async {
+    final database = await db;
+    final now = DateTime.now();
+    final fromDate = now.subtract(Duration(days: months * 30));
+    final fromDateStr = _formatDate(fromDate);
+    
+    // Check local data first
+    final localRes = await database.query(
+      'nav', 
+      where: 'scheme_code = ? AND nav_date >= ?', 
+      whereArgs: [schemeCode, fromDateStr],
+      orderBy: 'nav_date ASC'
+    );
+    
+    // If we have enough data (at least 100 points for a year?), return it.
+    if (localRes.length > 100) {
+      return localRes;
+    }
+
+    // Fetch from API if not enough data
+    final baseUrl = await _getApiUrl('historical', fallback: 'https://www.amfiindia.com/api/nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}');
+    final url = baseUrl
+        .replaceAll('{from}', DateFormat('dd-MMM-yyyy').format(fromDate))
+        .replaceAll('{to}', DateFormat('dd-MMM-yyyy').format(now))
+        .replaceAll('{sd_id}', schemeCode);
+
+    HttpClient httpClient = HttpClient();
+    httpClient.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    final ioClient = IOClient(httpClient);
+
+    try {
+      final resp = await ioClient.get(Uri.parse(url), headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 40));
+
+      if (resp.statusCode == 200) {
+        final body = resp.body;
+        if (body.isNotEmpty && body.trim() != "null") {
+          final j = json.decode(body);
+          if (j is Map<String, dynamic> && j.containsKey('data')) {
+            final data = j['data'];
+            final navGroups = data['nav_groups'];
+            if (navGroups is List) {
+              final List<Map<String, dynamic>> allPoints = [];
+              final nowStr = DateTime.now().toIso8601String();
+              
+              await database.transaction((txn) async {
+                final batch = txn.batch();
+                for (final group in navGroups) {
+                  final records = group['historical_records'];
+                  if (records is List) {
+                    for (final rec in records) {
+                      final navVal = rec['nav'];
+                      final dateVal = rec['date'];
+                      if (navVal != null && dateVal != null) {
+                        final map = {
+                          'scheme_code': schemeCode,
+                          'isin_div_payout': group['isin_payout'],
+                          'isin_reinvestment': group['isin_reinvest'],
+                          'scheme_name': data['scheme_name'],
+                          'nav_value': double.tryParse(navVal.toString()),
+                          'nav_date': dateVal.toString(),
+                          'api_timestamp': nowStr,
+                          'mf_name': data['mf_name'],
+                          'category_name': data['category_name'],
+                          'plan': data['Plan'] ?? (data['scheme_name']?.toString().toUpperCase().contains('DIRECT') == true ? 'Direct' : 'Regular'),
+                          'nav_option': group['nav_name'] ?? data['Option'] ?? (data['scheme_name']?.toString().toUpperCase().contains('GROWTH') == true ? 'Growth' : 'IDCW'),
+                        };
+                        allPoints.add(map);
+                        batch.insert('nav', map, conflictAlgorithm: ConflictAlgorithm.replace);
+                      }
+                    }
+                  }
+                }
+                await batch.commit(noResult: true);
+              });
+              allPoints.sort((a, b) => a['nav_date'].compareTo(b['nav_date']));
+              return allPoints;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching historical for $schemeCode: $e');
+    } finally {
+      ioClient.close();
+    }
+
+    return localRes;
   }
 }
 

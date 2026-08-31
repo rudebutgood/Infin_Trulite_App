@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../models/nav_item.dart';
 import '../services/nav_repository.dart';
 import '../widgets/common_widgets.dart';
@@ -49,10 +50,6 @@ class _FundsTabState extends State<FundsTab> {
   String _selectedFundType = 'Direct';
   String _selectedCompany = 'All Companies';
   List<String> _amcList = ['All Companies'];
-  String _selectedPlan = 'All Plans';
-  List<String> _planList = ['All Plans'];
-  String _selectedOption = 'All Options';
-  List<String> _optionList = ['All Options'];
   String _sortOption = 'Return';
   bool _isNavAscending = false;
 
@@ -84,7 +81,9 @@ class _FundsTabState extends State<FundsTab> {
   Future<void> _initFilters() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _selectedFundType = prefs.getString('selectedFundType') ?? 'Direct';
+      
+      // Always default to Direct when opening the page
+      _selectedFundType = 'Direct';
       
       // Aggressive ghost text cleanup
       String last = (prefs.getString('lastSearch') ?? '').trim();
@@ -98,20 +97,10 @@ class _FundsTabState extends State<FundsTab> {
       _recentSearches = prefs.getStringList('recentSearches') ?? [];
       
       final amcs = await _repo.getFundCompanies();
-      final plans = await _repo.getUniquePlans();
-      final options = await _repo.getUniqueOptions();
 
       if (mounted) {
         setState(() {
           _amcList = ['All Companies', ...amcs].toSet().toList();
-          _planList = ['All Plans', ...plans].toSet().toList();
-          _optionList = ['All Options', ...options].toSet().toList();
-          
-          _selectedPlan = prefs.getString('selectedPlan') ?? 'All Plans';
-          _selectedOption = prefs.getString('selectedOption') ?? 'All Options';
-          
-          if (!_planList.contains(_selectedPlan)) _selectedPlan = 'All Plans';
-          if (!_optionList.contains(_selectedOption)) _selectedOption = 'All Options';
         });
       }
       
@@ -151,8 +140,6 @@ class _FundsTabState extends State<FundsTab> {
         q: _searchCtl.text,
         fundType: _selectedFundType,
         amc: _selectedCompany,
-        plan: _selectedPlan,
-        option: _selectedOption,
         orderBy: orderBy,
         date: widget.selectedFilterDate != null ? DateFormat('yyyy-MM-dd').format(widget.selectedFilterDate!) : null,
         prioritizeHeldAndFav: widget.setPrioritizeHeldAndFav,
@@ -172,8 +159,6 @@ class _FundsTabState extends State<FundsTab> {
   Future<void> _savePrefs() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('selectedFundType', _selectedFundType);
-    await prefs.setString('selectedPlan', _selectedPlan);
-    await prefs.setString('selectedOption', _selectedOption);
     await prefs.setString('lastSearch', _searchCtl.text);
     if (_recentSearches.length > 10) _recentSearches = _recentSearches.sublist(0, 10);
     await prefs.setStringList('recentSearches', _recentSearches);
@@ -199,33 +184,64 @@ class _FundsTabState extends State<FundsTab> {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
+        initialChildSize: 0.8,
         maxChildSize: 0.9,
+        minChildSize: 0.5,
         expand: false,
-        builder: (c, s) => ListView(
+        builder: (c, s) => Scrollbar(
           controller: s,
-          padding: const EdgeInsets.all(20),
-          children: [
-            Row(
-              children: [
-                Expanded(child: CommonWidgets.txt(it.schemeName ?? '-', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
-                IconButton(icon: Icon(it.isFavorite ? Icons.star : Icons.star_border, color: Colors.amber), onPressed: () { Navigator.pop(ctx); _toggleFavorite(it); }),
+          interactive: true,
+          thickness: 6,
+          radius: const Radius.circular(3),
+          child: ListView(
+            controller: s,
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+            children: [
+              Row(
+                children: [
+                  Expanded(child: CommonWidgets.txt(it.schemeName ?? '-', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
+                  IconButton(icon: Icon(it.isFavorite ? Icons.star : Icons.star_border, color: Colors.amber), onPressed: () { Navigator.pop(ctx); _toggleFavorite(it); }),
+                ],
+              ),
+              const SizedBox(height: 16),
+              FundHistorySection(
+                schemeCode: it.schemeCode!,
+                schemeName: it.schemeName ?? '',
+                selectedLanguage: widget.selectedLanguage,
+                translate: widget.translate,
+              ),
+              const Divider(height: 40),
+              CommonWidgets.detailRow('Scheme Code', it.schemeCode),
+              CommonWidgets.detailRow('AMC', it.mfName),
+              CommonWidgets.detailRow('Category', it.category),
+              CommonWidgets.detailRow('Plan', it.plan),
+              CommonWidgets.detailRow('Option', it.option),
+              CommonWidgets.detailRow('ISIN (Payout)', it.isinDivPayout),
+              CommonWidgets.detailRow('ISIN (Reinvest)', it.isinReinvestment),
+              const Divider(),
+              CommonWidgets.detailRow('NAV Value', it.navValue?.toString(), color: Colors.indigo, trailing: const Text('INR', style: TextStyle(fontSize: 10, color: Colors.grey))),
+              CommonWidgets.detailRow('NAV Date', it.navDate),
+              if (it.prevNavValue != null) ...[
+                CommonWidgets.detailRow('Prev NAV', it.prevNavValue?.toString()),
+                CommonWidgets.detailRow('Prev Date', it.prevNavDate),
+                Builder(builder: (ctx) {
+                  final d = (it.navValue ?? 0) - (it.prevNavValue ?? 0);
+                  final p = (it.prevNavValue != 0) ? (d / it.prevNavValue! * 100) : null;
+                  return CommonWidgets.detailRow('Change', '${d >= 0 ? '+' : ''}${d.toStringAsFixed(4)} ${p != null ? '(${p.toStringAsFixed(2)}%)' : ''}', color: d >= 0 ? Colors.green : Colors.red);
+                }),
               ],
-            ),
-            const Divider(),
-            CommonWidgets.detailRow('Scheme Code', it.schemeCode),
-            CommonWidgets.detailRow('AMC', it.mfName),
-            CommonWidgets.detailRow('Category', it.category),
-            CommonWidgets.detailRow('Plan', it.plan),
-            CommonWidgets.detailRow('Option', it.option),
-            CommonWidgets.detailRow('NAV Value', it.navValue?.toString()),
-            CommonWidgets.detailRow('NAV Date', it.navDate),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () => launchUrl(Uri.parse('https://www.google.com/search?q=${it.schemeName}'), mode: LaunchMode.externalApplication),
-              icon: const Icon(Icons.search), label: const Text('Search on Web'),
-            ),
-          ],
+              const Divider(),
+              CommonWidgets.detailRow('Imported At', it.importedAt != null ? CommonWidgets.formatImportedAt(it.importedAt!) : null),
+              CommonWidgets.detailRow('API Timestamp', it.apiTimestamp != null ? CommonWidgets.formatImportedAt(it.apiTimestamp!) : null),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () => launchUrl(Uri.parse('https://www.google.com/search?q=${it.schemeName}'), mode: LaunchMode.externalApplication),
+                icon: const Icon(Icons.search), label: const Text('Search on Web'),
+              ),
+              const SizedBox(height: 20),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
@@ -251,11 +267,29 @@ class _FundsTabState extends State<FundsTab> {
           ],
         ),
         const SizedBox(height: 8),
-        SizedBox(height: 45, child: TextField(controller: _searchCtl, focusNode: _searchFocus, onSubmitted: (v) => _updateSearchHistory(v), onChanged: (v) { _load(silent: true); },
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-            decoration: InputDecoration(hintText: widget.t('search'), isDense: true, prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _searchCtl.text.isNotEmpty ? IconButton(icon: const Icon(Icons.cancel, size: 20), onPressed: () { _searchCtl.clear(); _savePrefs(); _load(); }) : null,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Colors.white))),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 45, child: TextField(controller: _searchCtl, focusNode: _searchFocus, onSubmitted: (v) => _updateSearchHistory(v), onChanged: (v) { setState(() {}); _load(silent: true); },
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                decoration: InputDecoration(hintText: widget.t('search'), isDense: true, prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: _searchCtl.text.isNotEmpty ? IconButton(icon: const Icon(Icons.cancel, size: 20), onPressed: () { _searchCtl.clear(); _savePrefs(); _load(); }) : null,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Colors.white))),
+            if (_showSuggestions && _recentSearches.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]),
+                child: Column(
+                  children: _recentSearches.take(10).map((s) => ListTile(
+                    dense: true, visualDensity: VisualDensity.compact,
+                    leading: const Icon(Icons.history, size: 16, color: Colors.grey),
+                    title: Text(s, style: const TextStyle(fontSize: 13)),
+                    onTap: () { _searchCtl.text = s; _searchFocus.unfocus(); _load(); },
+                  )).toList(),
+                ),
+              ),
+          ],
+        ),
         const SizedBox(height: 12),
         SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: _fundTypes.map((tVal) {
           final s = tVal == _selectedFundType;
@@ -276,18 +310,6 @@ class _FundsTabState extends State<FundsTab> {
                 onChanged: (v) { if (v != null) { setState(() => _sortOption = v); _load(); } } )))),
             IconButton(icon: Icon(_isNavAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 20, color: Colors.indigo[700]), onPressed: () { setState(() => _isNavAscending = !_isNavAscending); _load(); }, visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
           ])),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: Container(height: 40, padding: const EdgeInsets.symmetric(horizontal: 8), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-            child: DropdownButtonHideUnderline(child: DropdownButton<String>(isExpanded: true, value: _selectedPlan, style: const TextStyle(fontSize: 12, color: Colors.black87),
-              items: _planList.map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
-              onChanged: (v) { if (v != null) { setState(() => _selectedPlan = v); _savePrefs(); _load(); } } )))),
-          const SizedBox(width: 8),
-          Expanded(child: Container(height: 40, padding: const EdgeInsets.symmetric(horizontal: 8), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-            child: DropdownButtonHideUnderline(child: DropdownButton<String>(isExpanded: true, value: _selectedOption, style: const TextStyle(fontSize: 12, color: Colors.black87),
-              items: _optionList.map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
-              onChanged: (v) { if (v != null) { setState(() => _selectedOption = v); _savePrefs(); _load(); } } )))),
         ]),
         const SizedBox(height: 8),
       ],
@@ -359,5 +381,344 @@ class _FundsTabState extends State<FundsTab> {
   void dispose() {
     _searchCtl.dispose(); _scrollCtl.dispose(); _searchFocus.dispose();
     super.dispose();
+  }
+}
+
+class FundHistorySection extends StatefulWidget {
+  final String schemeCode;
+  final String schemeName;
+  final String selectedLanguage;
+  final Future<String> Function(String) translate;
+
+  const FundHistorySection({
+    super.key,
+    required this.schemeCode,
+    required this.schemeName,
+    required this.selectedLanguage,
+    required this.translate,
+  });
+
+  @override
+  State<FundHistorySection> createState() => _FundHistorySectionState();
+}
+
+class _FundHistorySectionState extends State<FundHistorySection> {
+  final NavRepository _repo = NavRepository();
+  List<Map<String, dynamic>> _history = [];
+  bool _loading = true;
+  Map<String, double> _returns = {};
+  String _selectedPeriod = '1Y';
+
+  // Range selection state
+  int? _startIdx;
+  int? _endIdx;
+  bool _isSelecting = false;
+  final Map<int, Offset> _pointers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await _repo.getHistoryForScheme(widget.schemeCode);
+      if (mounted) {
+        setState(() {
+          _history = data;
+          _returns = _calculateReturns(data);
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Map<String, double> _calculateReturns(List<Map<String, dynamic>> data) {
+    if (data.length < 2) return {};
+    final latest = (data.last['nav_value'] as num).toDouble();
+    final latestDateStr = data.last['nav_date'] ?? '';
+    final latestDate = DateTime.tryParse(latestDateStr) ?? DateTime.now();
+
+    double getRet(int days) {
+      final target = latestDate.subtract(Duration(days: days));
+      Map<String, dynamic>? point;
+      for (var i = data.length - 1; i >= 0; i--) {
+        final d = DateTime.tryParse(data[i]['nav_date'] ?? '');
+        if (d != null && (d.isBefore(target) || d.isAtSameMomentAs(target))) {
+          point = data[i];
+          break;
+        }
+      }
+      point ??= data.first;
+      final oldVal = (point['nav_value'] as num).toDouble();
+      return (oldVal > 0) ? (latest / oldVal - 1) * 100 : 0;
+    }
+
+    return {
+      '1M': getRet(30),
+      '3M': getRet(90),
+      '6M': getRet(182),
+      '1Y': getRet(365),
+    };
+  }
+
+  List<Map<String, dynamic>> _getFilteredHistory() {
+    if (_history.isEmpty) return [];
+
+    int days = 365;
+    if (_selectedPeriod == '1M') days = 30;
+    else if (_selectedPeriod == '3M') days = 90;
+    else if (_selectedPeriod == '6M') days = 182;
+
+    final latestDateStr = _history.last['nav_date'] ?? '';
+    final latestDate = DateTime.tryParse(latestDateStr) ?? DateTime.now();
+    final target = latestDate.subtract(Duration(days: days));
+
+    return _history.where((p) {
+      final d = DateTime.tryParse(p['nav_date'] ?? '');
+      return d != null && (d.isAfter(target) || d.isAtSameMomentAs(target));
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
+    if (_history.isEmpty) return const SizedBox();
+
+    final filteredData = _getFilteredHistory();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final chartWidth = constraints.maxWidth - 12; // Account for right padding in _buildChart
+            return Stack(
+              children: [
+                _buildChart(filteredData, chartWidth),
+                if (_isSelecting && _startIdx != null && _endIdx != null) 
+                  _buildRangeOverlay(filteredData, chartWidth),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        _buildReturnMatrix(),
+      ],
+    );
+  }
+
+  Widget _buildChart(List<Map<String, dynamic>> data, double chartWidth) {
+    if (data.length < 2) return const SizedBox(height: 180, child: Center(child: Text('Not enough data for this period', style: TextStyle(fontSize: 12, color: Colors.grey))));
+    
+    double minNav = double.infinity;
+    double maxNav = double.negativeInfinity;
+    for (var p in data) {
+      final v = (p['nav_value'] as num).toDouble();
+      if (v < minNav) minNav = v;
+      if (v > maxNav) maxNav = v;
+    }
+    
+    final padding = (maxNav - minNav) * 0.1;
+    final minY = (minNav - padding).floorToDouble();
+    final maxY = (maxNav + padding).ceilToDouble();
+
+    return Listener(
+      onPointerDown: (e) {
+        setState(() {
+          _pointers[e.pointer] = e.localPosition;
+          _updateSelection(data, chartWidth);
+        });
+      },
+      onPointerMove: (e) {
+        setState(() {
+          _pointers[e.pointer] = e.localPosition;
+          _updateSelection(data, chartWidth);
+        });
+      },
+      onPointerUp: (e) {
+        setState(() {
+          _pointers.remove(e.pointer);
+          if (_pointers.length < 2) _isSelecting = false;
+        });
+      },
+      onPointerCancel: (e) {
+        setState(() {
+          _pointers.remove(e.pointer);
+          _isSelecting = false;
+        });
+      },
+      child: Container(
+        height: 180,
+        width: double.infinity,
+        padding: const EdgeInsets.only(right: 12, left: 0),
+        child: LineChart(
+          LineChartData(
+            lineTouchData: LineTouchData(
+              enabled: !_isSelecting,
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipItems: (touchedSpots) {
+                  return touchedSpots.map((spot) {
+                    final item = data[spot.x.toInt()];
+                    return LineTooltipItem(
+                      '${item['nav_date']}\n\u20b9${spot.y.toStringAsFixed(2)}',
+                      const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    );
+                  }).toList();
+                },
+              ),
+            ),
+            gridData: const FlGridData(show: false),
+            titlesData: const FlTitlesData(show: false),
+            borderData: FlBorderData(show: false),
+            minY: minY,
+            maxY: maxY,
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['nav_value'] as num).toDouble())),
+                isCurved: true,
+                color: Colors.indigo[700],
+                barWidth: 2.5,
+                isStrokeCapRound: true,
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(
+                  show: true, 
+                  gradient: LinearGradient(
+                    colors: [Colors.indigo.withOpacity(0.3), Colors.indigo.withOpacity(0.0)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _updateSelection(List<Map<String, dynamic>> data, double chartWidth) {
+    if (_pointers.length >= 2) {
+      _isSelecting = true;
+      final sortedPointers = _pointers.values.toList()..sort((a, b) => a.dx.compareTo(b.dx));
+      final p1 = sortedPointers.first;
+      final p2 = sortedPointers.last;
+      
+      if (chartWidth <= 0) return;
+
+      double x1Pct = (p1.dx / chartWidth).clamp(0.0, 1.0);
+      double x2Pct = (p2.dx / chartWidth).clamp(0.0, 1.0);
+      
+      _startIdx = (x1Pct * (data.length - 1)).round().clamp(0, data.length - 1);
+      _endIdx = (x2Pct * (data.length - 1)).round().clamp(0, data.length - 1);
+    }
+  }
+
+  Widget _buildRangeOverlay(List<Map<String, dynamic>> data, double chartWidth) {
+    if (_startIdx == null || _endIdx == null || _startIdx == _endIdx) return const SizedBox();
+    
+    if (_startIdx! >= data.length || _endIdx! >= data.length) return const SizedBox();
+
+    final s = data[_startIdx!];
+    final e = data[_endIdx!];
+    final v1 = (s['nav_value'] as num).toDouble();
+    final v2 = (e['nav_value'] as num).toDouble();
+    final ret = (v1 > 0) ? (v2 / v1 - 1) * 100 : 0.0;
+    
+    final x1 = (_startIdx! / (data.length - 1)) * chartWidth;
+    final x2 = (_endIdx! / (data.length - 1)) * chartWidth;
+
+    return IgnorePointer(
+      child: Container(
+        height: 180,
+        width: double.infinity,
+        child: Stack(
+          children: [
+            Positioned(
+              left: x1,
+              width: (x2 - x1).clamp(0, double.infinity),
+              top: 0,
+              bottom: 0,
+              child: Container(color: Colors.indigo.withOpacity(0.1)),
+            ),
+            Positioned(
+              left: x1, top: 0, bottom: 0,
+              child: Container(width: 2, color: Colors.indigo),
+            ),
+            Positioned(
+              left: x2, top: 0, bottom: 0,
+              child: Container(width: 2, color: Colors.indigo),
+            ),
+            Positioned(
+              left: (x1 + (x2 - x1) / 2 - 40).clamp(0, chartWidth - 80),
+              top: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.indigo[900]?.withOpacity(0.9), 
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)],
+                ),
+                child: Column(
+                  children: [
+                    Text('${s['nav_date']} \u2192 ${e['nav_date']}', style: const TextStyle(color: Colors.white, fontSize: 8)),
+                    Text('${ret >= 0 ? '+' : ''}${ret.toStringAsFixed(2)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReturnMatrix() {
+    final periods = ['1M', '3M', '6M', '1Y'];
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: periods.map((pKey) {
+          final isSelected = _selectedPeriod == pKey;
+          final retVal = _returns[pKey];
+          final isPos = (retVal ?? 0) >= 0;
+
+          return InkWell(
+            onTap: () => setState(() => _selectedPeriod = pKey),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.indigo[50] : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Text(pKey, style: TextStyle(fontSize: 10, color: isSelected ? Colors.indigo : Colors.grey, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text(
+                    retVal != null ? '${isPos ? '+' : ''}${retVal.toStringAsFixed(1)}%' : '-',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                      color: retVal != null ? (isPos ? Colors.green[700] : Colors.red[700]) : Colors.grey[400],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 }
