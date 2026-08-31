@@ -95,8 +95,8 @@ class MarketNewsService {
           finalNews.add(sn.news.copyWith(score: sn.score));
           addedUrls.add(sn.news.link);
         }
-        // Limit to top 150 relevant stories to allow for deeper scrolling
-        if (finalNews.length >= 150) break;
+        // Limit to top 500 relevant stories for deeper search coverage
+        if (finalNews.length >= 500) break;
       }
 
       // 5. Update Cache
@@ -381,6 +381,34 @@ class MarketNewsService {
 
   Future<List<MarketNews>> fetchTop10News({bool force = false}) async {
     return fetchNews(hours: 24, limit: 20, force: force);
+  }
+
+  Future<List<MarketNews>> searchInternetNews(String query, {int limit = 20, int offset = 0}) async {
+    if (query.trim().isEmpty) return [];
+    
+    final client = _getClient();
+    final now = DateTime.now();
+    final encodedQuery = Uri.encodeComponent('${query.trim()} India Market');
+    final url = 'https://news.google.com/rss/search?q=$encodedQuery&hl=en-IN&gl=IN&ceid=IN:en';
+    
+    try {
+      final results = await _fetchSingleFeed(client, url, 'Internet Search', 720, now); // Search up to 30 days
+      
+      // Sort by score (freshness + keyword matches)
+      results.sort((a, b) => b.score.compareTo(a.score));
+      
+      final List<MarketNews> newsList = results.map((sn) => sn.news.copyWith(score: sn.score)).toList();
+      
+      // Pagination
+      final end = min(offset + limit, newsList.length);
+      if (offset >= newsList.length) return [];
+      
+      final paginated = newsList.sublist(offset, end);
+      return await _checkSavedStatus(paginated);
+    } catch (e) {
+      debugPrint('Internet search news error: $e');
+      return [];
+    }
   }
 
   bool _isDomestic(String text) {

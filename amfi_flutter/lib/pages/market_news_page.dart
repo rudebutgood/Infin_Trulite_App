@@ -26,7 +26,9 @@ class MarketNewsPage extends StatefulWidget {
 class _MarketNewsPageState extends State<MarketNewsPage> {
   final MarketNewsService _service = MarketNewsService();
   final ScrollController _scrollCtl = ScrollController();
+  final TextEditingController _searchCtl = TextEditingController();
   List<MarketNews> _news = [];
+  String _searchQuery = "";
   bool _loading = true;
   bool _loadingMore = false;
   int _currentPage = 0;
@@ -53,12 +55,26 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
         }
       }
     });
+    _searchCtl.addListener(() {
+      setState(() => _searchQuery = _searchCtl.text);
+    });
   }
 
   @override
   void dispose() {
     _scrollCtl.dispose();
+    _searchCtl.dispose();
     super.dispose();
+  }
+
+  List<MarketNews> get _filteredNews {
+    if (_searchQuery.isEmpty) return _news;
+    final query = _searchQuery.toLowerCase();
+    return _news.where((n) =>
+      n.title.toLowerCase().contains(query) ||
+      n.description.toLowerCase().contains(query) ||
+      n.source.toLowerCase().contains(query)
+    ).toList();
   }
 
   Future<void> _fetch({bool silent = false}) async {
@@ -129,34 +145,14 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     );
   }
 
-  Future<void> _launchInBrowser(String url) async {
-    final cleanUrl = url.trim();
-    if (cleanUrl.isEmpty) return;
-    try {
-      final Uri uri = Uri.parse(cleanUrl);
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!launched) {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
-      }
-    } catch (e) {
-      debugPrint('Error launching URL: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: Invalid news link.')),
-        );
-      }
-    }
-  }
-
-  Future<void> _launchUrl(String url) async {
-    // Legacy fallback
-    _launchInBrowser(url);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final filtered = _filteredNews;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: isDark ? theme.scaffoldBackgroundColor : Colors.grey[50],
       appBar: AppBar(
         titleSpacing: 0,
         title: Row(
@@ -166,7 +162,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
             Expanded(child: CommonWidgets.txt('Market Insights', style: const TextStyle(fontWeight: FontWeight.bold), selectedLanguage: widget.selectedLanguage, translate: widget.translate)),
           ],
         ),
-        backgroundColor: Colors.indigo[900],
+        backgroundColor: isDark ? Colors.grey[900] : Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -183,11 +179,12 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
       body: Column(
         children: [
           _buildHeader(),
+          _buildSearchBar(),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : _news.isEmpty
-                    ? Center(child: CommonWidgets.txt('No news available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
+                : filtered.isEmpty
+                    ? _buildNoResults()
                     : Scrollbar(
                         controller: _scrollCtl,
                         interactive: true,
@@ -195,25 +192,29 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                         radius: const Radius.circular(3),
                         child: ListView.separated(
                           controller: _scrollCtl,
-                          itemCount: _news.length + (_hasMore ? 1 : 0),
+                          itemCount: filtered.length + (_hasMore ? 1 : 0),
                           padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (context, index) {
-                            if (index == _news.length) {
-                              return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)));
+                            if (index == filtered.length) {
+                              return _buildLoadMoreIndicator();
                             }
+                            final item = filtered[index];
                             return _ExpandableNewsCard(
-                              news: _news[index],
+                              news: item,
                               selectedLanguage: widget.selectedLanguage,
                               translate: widget.translate,
                               setCompactLayout: widget.setCompactLayout,
-                              onTap: () => _showNewsPopup(_news[index]),
+                              onTap: () => _showNewsPopup(item),
                               onBookmarkToggle: () async {
-                                await _service.toggleSave(_news[index]);
+                                await _service.toggleSave(item);
                                 setState(() {
-                                  _news[index] = _news[index].copyWith(isSaved: !_news[index].isSaved);
-                                  if (_selectedHours == -1 && !_news[index].isSaved) {
-                                    _news.removeAt(index);
+                                  final mainIdx = _news.indexWhere((n) => n.link == item.link);
+                                  if (mainIdx != -1) {
+                                    _news[mainIdx] = _news[mainIdx].copyWith(isSaved: !_news[mainIdx].isSaved);
+                                    if (_selectedHours == -1 && !_news[mainIdx].isSaved) {
+                                      _news.removeAt(mainIdx);
+                                    }
                                   }
                                 });
                               },
@@ -227,11 +228,62 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     );
   }
 
+  Widget _buildNoResults() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off, size: 64, color: isDark ? Colors.grey[700] : Colors.grey[300]),
+            const SizedBox(height: 16),
+            CommonWidgets.txt(_searchQuery.isEmpty ? 'No news available' : 'No matches found for "$_searchQuery"', 
+                style: TextStyle(fontSize: 16, color: isDark ? Colors.white70 : Colors.black54),
+                selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreIndicator() {
+    return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)));
+  }
+
+  Widget _buildSearchBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      color: isDark ? Colors.transparent : Colors.white,
+      child: TextField(
+        controller: _searchCtl,
+        decoration: InputDecoration(
+          hintText: 'Search within news...',
+          hintStyle: TextStyle(fontSize: 13, color: isDark ? Colors.grey[500] : Colors.grey),
+          prefixIcon: Icon(Icons.search, size: 20, color: isDark ? Colors.indigoAccent : Colors.indigo),
+          suffixIcon: _searchQuery.isNotEmpty 
+            ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () => _searchCtl.clear())
+            : null,
+          filled: true,
+          fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+        ),
+        style: TextStyle(fontSize: 14, color: isDark ? Colors.white : Colors.black87),
+      ),
+    );
+  }
+
   Widget _buildHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.white,
+      color: isDark ? Colors.transparent : Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -239,9 +291,9 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CommonWidgets.txt('Top Market Stories', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+                CommonWidgets.txt('Top Market Stories', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.indigo[900]), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                 const SizedBox(height: 2),
-                Text('India market news curated from top sources.', style: TextStyle(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+                Text('India market news curated from top sources.', style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[400] : Colors.grey[600], fontStyle: FontStyle.italic)),
               ],
             ),
           ),
@@ -249,14 +301,15 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
             height: 35,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: Colors.indigo[50],
+              color: isDark ? Colors.grey[900] : Colors.indigo[50],
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.indigo[100]!),
+              border: Border.all(color: isDark ? Colors.grey[800]! : Colors.indigo[100]!),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: _selectedHours,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo[900]),
+                dropdownColor: isDark ? Colors.grey[900] : Colors.white,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.indigo[900]),
                 items: _filters.map((f) => DropdownMenuItem<int>(
                   value: f['value'],
                   child: Text(f['label']),
@@ -303,9 +356,12 @@ class _ExpandableNewsCardState extends State<_ExpandableNewsCard> {
   @override
   Widget build(BuildContext context) {
     final d = widget.news;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!)),
+      color: isDark ? Colors.grey[900] : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isDark ? Colors.grey[800]! : Colors.grey[200]!)),
       child: InkWell(
         onTap: widget.onTap,
         borderRadius: BorderRadius.circular(12),
@@ -319,7 +375,7 @@ class _ExpandableNewsCardState extends State<_ExpandableNewsCard> {
                 children: [
                   Expanded(
                     child: CommonWidgets.txt(d.title,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14, color: Colors.indigo[900]),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: widget.setCompactLayout ? 13 : 14, color: isDark ? Colors.white : Colors.indigo[900]),
                       selectedLanguage: widget.selectedLanguage, translate: widget.translate),
                   ),
                   const SizedBox(width: 8),
@@ -344,7 +400,7 @@ class _ExpandableNewsCardState extends State<_ExpandableNewsCard> {
               InkWell(
                 onTap: () => setState(() => _isExpanded = !_isExpanded),
                 child: CommonWidgets.txt(d.description,
-                  style: TextStyle(fontSize: widget.setCompactLayout ? 11 : 12, color: Colors.black87),
+                  style: TextStyle(fontSize: widget.setCompactLayout ? 11 : 12, color: isDark ? Colors.white70 : Colors.black87),
                   maxLines: _isExpanded ? null : 3,
                   overflow: _isExpanded ? false : true,
                   selectedLanguage: widget.selectedLanguage, translate: widget.translate),
@@ -353,9 +409,9 @@ class _ExpandableNewsCardState extends State<_ExpandableNewsCard> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Text(d.source, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.indigo[300])),
+                  Text(d.source, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? Colors.indigoAccent[100] : Colors.indigo[300])),
                   const SizedBox(width: 8),
-                  Text(d.pubDate, style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+                  Text(d.pubDate, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[500] : Colors.grey[400])),
                   const Spacer(),
                   if (d.description.length > 50)
                     Material(

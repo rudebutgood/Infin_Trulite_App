@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'models/fii_dii_data.dart';
 import 'models/gift_nifty_data.dart';
 import 'models/gold_rate_data.dart';
@@ -106,6 +107,96 @@ void main() async {
   }
 
   runApp(const MyApp());
+}
+
+/**
+ * A wrapper to provide a punchy bounce effect on tap.
+ */
+class BounceClickWrapper extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  const BounceClickWrapper({super.key, required this.child, this.onTap});
+
+  @override
+  State<BounceClickWrapper> createState() => _BounceClickWrapperState();
+}
+
+class _BounceClickWrapperState extends State<BounceClickWrapper> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      reverseDuration: const Duration(milliseconds: 500),
+    );
+    
+    // Scale: Press down to 0.88, then pop back with elastic overshoot
+    _scale = Tween<double>(begin: 1.0, end: 0.88).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+        reverseCurve: Curves.elasticOut,
+      ),
+    );
+
+    // Opacity: Dim slightly during press to give a "receding" feel
+    _opacity = Tween<double>(begin: 1.0, end: 0.85).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeIn,
+        reverseCurve: Curves.easeOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scale.value,
+          child: Opacity(
+            opacity: _opacity.value,
+            child: Stack(
+              children: [
+                widget.child,
+                Positioned.fill(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTapDown: (_) {
+                        HapticFeedback.vibrate();
+                        HapticFeedback.heavyImpact();
+                        _controller.forward();
+                      },
+                      onTapUp: (_) => _controller.reverse(),
+                      onTapCancel: () => _controller.reverse(),
+                      onTap: widget.onTap,
+                      splashColor: Colors.white.withOpacity(0.3),
+                      highlightColor: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -711,60 +802,66 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         maxChildSize: 0.95,
         expand: false,
         builder: (ctx, sc) => ClipRRect(
-          borderRadius: BorderRadius.vertical(top: const Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: StatefulBuilder(
-              builder: (ctx, setLocalState) => Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.92),
-                  border: Border.all(color: Colors.white.withOpacity(0.5)),
-                ),
-                child: DefaultTabController(
-                  length: 4,
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                        child: Column(
-                          children: [
-                            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2))),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo[900])),
-                                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      TabBar(
-                        isScrollable: true,
-                        labelColor: Colors.indigo[900],
-                        unselectedLabelColor: Colors.grey[700],
-                        indicatorColor: Colors.indigo[900],
-                        tabs: [
-                          const Tab(child: Text('General'), icon: Icon(Icons.settings_outlined)),
-                          Tab(child: CommonWidgets.txt('Sync', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.sync_outlined)),
-                          Tab(child: CommonWidgets.txt('UI', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.palette_outlined)),
-                          Tab(child: CommonWidgets.txt('Tools', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.build_outlined)),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _buildGeneralSettings(setLocalState, sc),
-                            _buildSyncSettings(setLocalState, sc),
-                            _buildUISettings(setLocalState, sc),
-                            _buildToolsSettings(sc),
-                          ],
-                        ),
-                      ),
-                    ],
+              builder: (ctx, setLocalState) {
+                // Determine theme inside the builder to ensure it reacts to changes
+                final theme = Theme.of(ctx);
+                final isDark = theme.brightness == Brightness.dark;
+                
+                return Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[900]!.withOpacity(0.9) : Colors.white.withOpacity(0.92),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.white.withOpacity(0.5)),
                   ),
-                ),
-              ),
+                  child: DefaultTabController(
+                    length: 4,
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                          child: Column(
+                            children: [
+                              Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.grey[700] : Colors.grey[400], borderRadius: BorderRadius.circular(2))),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.indigo[900])),
+                                  IconButton(icon: Icon(Icons.close, color: isDark ? Colors.white70 : Colors.black54), onPressed: () => Navigator.pop(ctx))
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        TabBar(
+                          isScrollable: true,
+                          labelColor: isDark ? theme.colorScheme.primaryContainer : Colors.indigo[900],
+                          unselectedLabelColor: isDark ? Colors.white60 : Colors.grey[700],
+                          indicatorColor: isDark ? theme.colorScheme.primaryContainer : Colors.indigo[900],
+                          tabs: [
+                            const Tab(child: Text('General'), icon: Icon(Icons.settings_outlined)),
+                            Tab(child: CommonWidgets.txt('Sync', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.sync_outlined)),
+                            Tab(child: CommonWidgets.txt('UI', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.palette_outlined)),
+                            Tab(child: CommonWidgets.txt('Tools', selectedLanguage: _selectedLanguage, translate: _translate), icon: const Icon(Icons.build_outlined)),
+                          ],
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildGeneralSettings(setLocalState, sc),
+                              _buildSyncSettings(setLocalState, sc),
+                              _buildUISettings(setLocalState, sc),
+                              _buildToolsSettings(sc),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -857,18 +954,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             margin: const EdgeInsets.symmetric(vertical: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.indigo[50],
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[900] : Colors.indigo[50],
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.indigo[100]!),
+              border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.indigo[100]!),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.info_outline, size: 14, color: Colors.indigo[900]),
+                    Icon(Icons.info_outline, size: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.indigo[900]),
                     const SizedBox(width: 8),
-                    Text('Last Background Sync', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.indigo[900])),
+                    Text('Last Background Sync', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.indigo[900])),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -1212,8 +1309,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   Widget _actionTile(String title, IconData icon, Function onTap) {
+    final theme = Theme.of(context);
     return ListTile(
-      leading: Icon(icon, color: Colors.indigo, size: 20),
+      leading: Icon(icon, color: theme.colorScheme.primary, size: 20),
       title: CommonWidgets.txt(title, style: const TextStyle(fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
       onTap: () {
         onTap();
@@ -1475,7 +1573,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           onTap: (index) {
             _tabCtl.animateTo(index);
           },
-          selectedItemColor: Colors.indigo[900],
+          selectedItemColor: Theme.of(context).colorScheme.primary,
           unselectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -1507,41 +1605,36 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       children: [
         // Portfolio Overview Card
-        Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          clipBehavior: Clip.antiAlias,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _tabCtl.animateTo(2),
-              splashColor: Colors.white.withOpacity(0.15),
-              highlightColor: Colors.white.withOpacity(0.05),
-              child: Ink(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.indigo[900]!, Colors.indigo[700]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+        BounceClickWrapper(
+          onTap: () => _tabCtl.animateTo(2),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            clipBehavior: Clip.antiAlias,
+            child: Ink(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.indigo[900]!, Colors.indigo[700]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CommonWidgets.txt(t('synopsis'), style: const TextStyle(color: Colors.white70, fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
+                  const SizedBox(height: 8),
+                  Text('₹${CommonWidgets.formatCurrency(totalCur, privacyMode: _setPrivacyMode)}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _synopsisItem(t('net_gain'), netGain.toDouble(), netPct.toDouble()),
+                      _synopsisItem(t('day_gain'), totalDayGain.toDouble(), dayPct.toDouble()),
+                    ],
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CommonWidgets.txt(t('synopsis'), style: const TextStyle(color: Colors.white70, fontSize: 14), selectedLanguage: _selectedLanguage, translate: _translate),
-                    const SizedBox(height: 8),
-                    Text('₹${CommonWidgets.formatCurrency(totalCur, privacyMode: _setPrivacyMode)}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _synopsisItem(t('net_gain'), netGain.toDouble(), netPct.toDouble()),
-                        _synopsisItem(t('day_gain'), totalDayGain.toDouble(), dayPct.toDouble()),
-                      ],
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
@@ -1551,7 +1644,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            CommonWidgets.txt(t('quick_access'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+            CommonWidgets.txt(t('quick_access'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
           ],
         ),
         const SizedBox(height: 12),
@@ -1734,10 +1827,39 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ),
           ),
           childWhenDragging: Opacity(opacity: 0.3, child: _buildTileById(id)),
-          child: _buildTileById(id),
+          child: BounceClickWrapper(
+            onTap: () => _handleTileTap(id),
+            child: _buildTileById(id),
+          ),
         );
       },
     );
+  }
+
+  void _handleTileTap(String id) {
+    switch (id) {
+      case 'fiiDii':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => FiiDiiPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
+        break;
+      case 'indices':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => IndicesPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
+        break;
+      case 'aum':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => AmfiAumPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
+        break;
+      case 'giftNifty':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => GiftNiftyPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
+        break;
+      case 'gold':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => BullionPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
+        break;
+      case 'marketNews':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => MarketNewsPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
+        break;
+      case 'factorPerf':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => FactorPerformancePage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout, initialData: _indicesData)));
+        break;
+    }
   }
 
   Widget _buildTileById(String id) {
@@ -1762,45 +1884,41 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MarketNewsPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout))),
-            splashColor: Colors.indigo.withOpacity(0.1),
-            child: Padding(
-              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
-              child: _fetchingNews
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.auto_awesome, color: Colors.amber[700], size: _setCompactLayout ? 14 : 16),
-                            const SizedBox(width: 4),
-                            CommonWidgets.txt('Market News', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
-                          ],
-                        ),
-                        SizedBox(height: _setCompactLayout ? 4 : 6),
-                        if (_marketNews.isNotEmpty)
-                          ..._marketNews.take(2).map((n) => Padding(
-                            padding: const EdgeInsets.only(bottom: 4.0),
-                            child: CommonWidgets.txt(n.title,
-                              style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, fontWeight: FontWeight.w500, color: Colors.black87),
-                              overflow: true, selectedLanguage: _selectedLanguage, translate: _translate),
-                          ))
-                        else
-                          Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
-                        const Spacer(),
-                        if (_newsLastFetch != null)
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              'News \u2022 ${DateFormat('dd MMM HH:mm').format(_newsLastFetch!)}',
-                              style: const TextStyle(fontSize: 8, color: Colors.grey),
-                            ),
+          Padding(
+            padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+            child: _fetchingNews
+                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.auto_awesome, color: Colors.amber[700], size: _setCompactLayout ? 14 : 16),
+                          const SizedBox(width: 4),
+                          CommonWidgets.txt('Market News', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                        ],
+                      ),
+                      SizedBox(height: _setCompactLayout ? 4 : 6),
+                      if (_marketNews.isNotEmpty)
+                        ..._marketNews.take(2).map((n) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4.0),
+                          child: CommonWidgets.txt(n.title,
+                            style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, fontWeight: FontWeight.w500, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87),
+                            overflow: true, selectedLanguage: _selectedLanguage, translate: _translate),
+                        ))
+                      else
+                        Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
+                      const Spacer(),
+                      if (_newsLastFetch != null)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            'News \u2022 ${DateFormat('dd MMM HH:mm').format(_newsLastFetch!)}',
+                            style: const TextStyle(fontSize: 8, color: Colors.grey),
                           ),
-                      ],
-                    ),
-            ),
+                        ),
+                    ],
+                  ),
           ),
           Positioned(
             top: 0,
@@ -1833,7 +1951,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
 
     if (factors.isEmpty) {
-      return Card(
+      return const Card(
         margin: EdgeInsets.zero,
         child: Center(
           child: Text('Loading...', style: TextStyle(fontSize: 10, color: Colors.grey)),
@@ -1845,51 +1963,50 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     factors.sort((a, b) => b.dayReturn.compareTo(a.dayReturn));
     final topTwo = factors.take(2).toList();
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => FactorPerformancePage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout, initialData: _indicesData))),
-            splashColor: Colors.indigo.withOpacity(0.1),
-            child: Padding(
-              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
-              child: _fetchingFactors 
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                  : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          Padding(
+            padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+            child: _fetchingFactors 
+                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.analytics, color: isDark ? theme.colorScheme.primaryContainer : Colors.purple[700], size: _setCompactLayout ? 14 : 16),
+                    const SizedBox(width: 4),
+                    CommonWidgets.txt('Factor Analysis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: isDark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                  ],
+                ),
+                SizedBox(height: _setCompactLayout ? 4 : 6),
+                ...topTwo.map((f) => Padding(
+                  padding: const EdgeInsets.only(bottom: 2.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.analytics, color: Colors.purple[700], size: _setCompactLayout ? 14 : 16),
-                      const SizedBox(width: 4),
-                      CommonWidgets.txt('Factor Analysis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                      Expanded(child: Text(f.factorName, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : Colors.black87), overflow: TextOverflow.ellipsis)),
+                      Text('${f.dayReturn >= 0 ? '+' : ''}${f.dayReturn.toStringAsFixed(1)}%',
+                           style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: f.dayReturn >= 0 ? Colors.green[700] : Colors.red[700], fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  SizedBox(height: _setCompactLayout ? 4 : 6),
-                  ...topTwo.map((f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 2.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(child: Text(f.factorName, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, fontWeight: FontWeight.w500, color: Colors.black87), overflow: TextOverflow.ellipsis)),
-                        Text('${f.dayReturn >= 0 ? '+' : ''}${f.dayReturn.toStringAsFixed(1)}%',
-                             style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: f.dayReturn >= 0 ? Colors.green[700] : Colors.red[700], fontWeight: FontWeight.bold)),
-                      ],
+                )),
+                const Spacer(),
+                if (_indicesLastFetch != null)
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_indicesLastFetch!)}',
+                      style: const TextStyle(fontSize: 8, color: Colors.grey),
                     ),
-                  )),
-                  const Spacer(),
-                  if (_indicesLastFetch != null)
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_indicesLastFetch!)}',
-                        style: const TextStyle(fontSize: 8, color: Colors.grey),
-                      ),
-                    ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
           Positioned(
@@ -1919,45 +2036,44 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       } catch (_) {}
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => FiiDiiPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout))),
-            splashColor: Colors.indigo.withOpacity(0.1),
-            child: Padding(
-              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
-              child: _fetchingFiiDii
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.swap_horizontal_circle, color: Colors.indigo[700], size: _setCompactLayout ? 14 : 16),
-                            const SizedBox(width: 4),
-                            CommonWidgets.txt('FII/DII', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13), selectedLanguage: _selectedLanguage, translate: _translate),
-                          ],
-                        ),
-                        SizedBox(height: _setCompactLayout ? 4 : 6),
-                        if (fii != null) _fiiDiiRow(fii.date, 'FII', fii.netValue),
-                        if (dii != null) _fiiDiiRow(dii.date, 'DII', dii.netValue),
-                        if (fii == null && dii == null)
-                          Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
-                        const Spacer(),
-                        if (_fiiDiiLastFetch != null)
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_fiiDiiLastFetch!)}',
-                              style: const TextStyle(fontSize: 8, color: Colors.grey),
-                            ),
+          Padding(
+            padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+            child: _fetchingFiiDii
+                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.swap_horizontal_circle, color: isDark ? theme.colorScheme.primaryContainer : Colors.indigo[700], size: _setCompactLayout ? 14 : 16),
+                          const SizedBox(width: 4),
+                          CommonWidgets.txt('FII/DII', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: isDark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                        ],
+                      ),
+                      SizedBox(height: _setCompactLayout ? 4 : 6),
+                      if (fii != null) _fiiDiiRow(fii.date, 'FII', fii.netValue),
+                      if (dii != null) _fiiDiiRow(dii.date, 'DII', dii.netValue),
+                      if (fii == null && dii == null)
+                        Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
+                      const Spacer(),
+                      if (_fiiDiiLastFetch != null)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_fiiDiiLastFetch!)}',
+                            style: const TextStyle(fontSize: 8, color: Colors.grey),
                           ),
-                      ],
-                    ),
-            ),
+                        ),
+                    ],
+                  ),
           ),
           Positioned(
             top: 0,
@@ -1982,6 +2098,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       if (parts.length >= 2) displayDate = "${parts[0]} ${parts[1]}";
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 0.5),
       child: Row(
@@ -1990,7 +2108,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           Text(displayDate, style: TextStyle(fontSize: _setCompactLayout ? 8 : 9, color: Colors.grey, fontWeight: FontWeight.w500)),
           Row(
             children: [
-              Text(label, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: Colors.black54)),
+              Text(label, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: isDark ? Colors.white70 : Colors.black54)),
               const SizedBox(width: 4),
               Text('${value > 0 ? '+' : ''}${value.toInt()} Cr',
                   style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.bold, color: value >= 0 ? Colors.green : Colors.red)),
@@ -2036,45 +2154,44 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       if (sorted.length > 1) far = sorted[1];
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          InkWell(
-            onTap: _showGiftNiftyDetails,
-            splashColor: Colors.indigo.withOpacity(0.1),
-            child: Padding(
-              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
-              child: _fetchingGiftNifty
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.public, color: Colors.indigo[700], size: _setCompactLayout ? 14 : 16),
-                            const SizedBox(width: 4),
-                            CommonWidgets.txt('GIFT NIFTY', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 11 : 12), selectedLanguage: _selectedLanguage, translate: _translate),
-                          ],
-                        ),
-                        SizedBox(height: _setCompactLayout ? 4 : 6),
-                        if (near != null) _giftNiftyRow(near.expiryDate, near.lastPrice, near.percentChange),
-                        if (far != null) _giftNiftyRow(far.expiryDate, far.lastPrice, far.percentChange),
-                        if (_giftNiftyData.isEmpty)
-                          Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
-                        const Spacer(),
-                        if (_giftNiftyLastFetch != null)
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              'NSE IX \u2022 ${DateFormat('dd MMM HH:mm').format(_giftNiftyLastFetch!)}',
-                              style: const TextStyle(fontSize: 8, color: Colors.grey),
-                            ),
+          Padding(
+            padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+            child: _fetchingGiftNifty
+                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.public, color: isDark ? theme.colorScheme.primaryContainer : Colors.indigo[700], size: _setCompactLayout ? 14 : 16),
+                          const SizedBox(width: 4),
+                          CommonWidgets.txt('GIFT NIFTY', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 11 : 12, color: isDark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                        ],
+                      ),
+                      SizedBox(height: _setCompactLayout ? 4 : 6),
+                      if (near != null) _giftNiftyRow(near.expiryDate, near.lastPrice, near.percentChange),
+                      if (far != null) _giftNiftyRow(far.expiryDate, far.lastPrice, far.percentChange),
+                      if (_giftNiftyData.isEmpty)
+                        Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
+                      const Spacer(),
+                      if (_giftNiftyLastFetch != null)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            'NSE IX \u2022 ${DateFormat('dd MMM HH:mm').format(_giftNiftyLastFetch!)}',
+                            style: const TextStyle(fontSize: 8, color: Colors.grey),
                           ),
-                      ],
-                    ),
-            ),
+                        ),
+                    ],
+                  ),
           ),
           Positioned(
             top: 0,
@@ -2140,46 +2257,45 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       } catch (_) {}
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          InkWell(
-            onTap: _showGoldDetails,
-            splashColor: Colors.indigo.withOpacity(0.1),
-            child: Padding(
-              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
-              child: _fetchingGold
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.currency_rupee, color: Colors.amber, size: _setCompactLayout ? 14 : 16),
-                            const SizedBox(width: 4),
-                            CommonWidgets.txt('BULLION', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 11 : 12), selectedLanguage: _selectedLanguage, translate: _translate),
-                          ],
-                        ),
-                        SizedBox(height: _setCompactLayout ? 4 : 6),
-                        if (gold != null) _rateRow('Gold', gold.ask),
-                        if (silver != null) _rateRow('Silver', silver.ask),
-                        if (usdinr != null) _rateRow('USDINR', usdinr.ask),
-                        if (_goldRates.isEmpty)
-                          Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
-                        const Spacer(),
-                        if (_goldLastFetch != null)
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              'DP Gold \u2022 ${DateFormat('dd MMM HH:mm').format(_goldLastFetch!)}',
-                              style: const TextStyle(fontSize: 8, color: Colors.grey),
-                            ),
+          Padding(
+            padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+            child: _fetchingGold
+                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.currency_rupee, color: Colors.amber, size: _setCompactLayout ? 14 : 16),
+                          const SizedBox(width: 4),
+                          CommonWidgets.txt('BULLION', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 11 : 12, color: isDark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                        ],
+                      ),
+                      SizedBox(height: _setCompactLayout ? 4 : 6),
+                      if (gold != null) _rateRow('Gold', gold.ask),
+                      if (silver != null) _rateRow('Silver', silver.ask),
+                      if (usdinr != null) _rateRow('USDINR', usdinr.ask),
+                      if (_goldRates.isEmpty)
+                        Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
+                      const Spacer(),
+                      if (_goldLastFetch != null)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            'DP Gold \u2022 ${DateFormat('dd MMM HH:mm').format(_goldLastFetch!)}',
+                            style: const TextStyle(fontSize: 8, color: Colors.grey),
                           ),
-                      ],
-                    ),
-            ),
+                        ),
+                    ],
+                  ),
           ),
           Positioned(
             top: 0,
@@ -2198,6 +2314,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   Widget _rateRow(String label, double value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 0.5),
       child: Row(
@@ -2206,7 +2323,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           Text(label, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: Colors.grey, fontWeight: FontWeight.w500)),
           Text(
             label == 'USDINR' ? '\u20b9${value.toStringAsFixed(2)}' : '\u20b9${value.toInt().toString()}',
-            style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
           ),
         ],
       ),
@@ -2224,45 +2341,44 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       } catch (_) {}
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          InkWell(
-            onTap: _showIndicesDetails,
-            splashColor: Colors.indigo.withOpacity(0.1),
-            child: Padding(
-              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
-              child: _fetchingIndices
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.analytics, color: Colors.indigo[700], size: _setCompactLayout ? 14 : 16),
-                            const SizedBox(width: 4),
-                            CommonWidgets.txt('Indices', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13), selectedLanguage: _selectedLanguage, translate: _translate),
-                          ],
-                        ),
-                        SizedBox(height: _setCompactLayout ? 4 : 6),
-                        if (nifty != null) _indexRow('Nifty 50', nifty.last, nifty.percentChange),
-                        if (nifty500 != null) _indexRow('Nifty 500', nifty500.last, nifty500.percentChange),
-                        if (_indicesData.isEmpty)
-                          Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
-                        const Spacer(),
-                        if (_indicesLastFetch != null)
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_indicesLastFetch!)}',
-                              style: const TextStyle(fontSize: 8, color: Colors.grey),
-                            ),
+          Padding(
+            padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+            child: _fetchingIndices
+                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.analytics, color: isDark ? theme.colorScheme.primaryContainer : Colors.indigo[700], size: _setCompactLayout ? 14 : 16),
+                          const SizedBox(width: 4),
+                          CommonWidgets.txt('Indices', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: isDark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                        ],
+                      ),
+                      SizedBox(height: _setCompactLayout ? 4 : 6),
+                      if (nifty != null) _indexRow('Nifty 50', nifty.last, nifty.percentChange),
+                      if (nifty500 != null) _indexRow('Nifty 500', nifty500.last, nifty500.percentChange),
+                      if (_indicesData.isEmpty)
+                        Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
+                      const Spacer(),
+                      if (_indicesLastFetch != null)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            'NSE \u2022 ${DateFormat('dd MMM HH:mm').format(_indicesLastFetch!)}',
+                            style: const TextStyle(fontSize: 8, color: Colors.grey),
                           ),
-                      ],
-                    ),
-            ),
+                        ),
+                    ],
+                  ),
           ),
           Positioned(
             top: 0,
@@ -2282,75 +2398,74 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
   Widget _aumTile() {
     final data = _amfiAumComparison;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AmfiAumPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout))),
-            splashColor: Colors.indigo.withOpacity(0.1),
-            child: Padding(
-              padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
-              child: _fetchingAum
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+          Padding(
+            padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+            child: _fetchingAum
+                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.pie_chart, color: isDark ? theme.colorScheme.primaryContainer : Colors.indigo[700], size: _setCompactLayout ? 14 : 16),
+                          const SizedBox(width: 4),
+                          CommonWidgets.txt('MF AUM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: isDark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                        ],
+                      ),
+                      SizedBox(height: _setCompactLayout ? 4 : 6),
+                      if (data != null) ...[
+                        Text(data.current.period, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: isDark ? Colors.white70 : Colors.indigo[400], fontWeight: FontWeight.w500)),
+                        SizedBox(height: _setCompactLayout ? 1 : 4),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
                           children: [
-                            Icon(Icons.pie_chart, color: Colors.indigo[700], size: _setCompactLayout ? 14 : 16),
-                            const SizedBox(width: 4),
-                            CommonWidgets.txt('MF AUM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13), selectedLanguage: _selectedLanguage, translate: _translate),
-                          ],
-                        ),
-                        SizedBox(height: _setCompactLayout ? 4 : 6),
-                        if (data != null) ...[
-                          Text(data.current.period, style: TextStyle(fontSize: _setCompactLayout ? 9 : 10, color: Colors.indigo[400], fontWeight: FontWeight.w500)),
-                          SizedBox(height: _setCompactLayout ? 1 : 4),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                '₹${(data.current.totalAum / 100000).toStringAsFixed(1)}L Cr',
-                                style: TextStyle(fontSize: _setCompactLayout ? 12 : 13, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(width: 8),
-                              Row(
-                                children: [
-                                  Icon(
-                                    data.percentageIncrease >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                                    size: _setCompactLayout ? 8 : 10,
+                            Text(
+                              '₹${(data.current.totalAum / 100000).toStringAsFixed(1)}L Cr',
+                              style: TextStyle(fontSize: _setCompactLayout ? 12 : 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+                            ),
+                            const SizedBox(width: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  data.percentageIncrease >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                                  size: _setCompactLayout ? 8 : 10,
+                                  color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${data.percentageIncrease.abs().toStringAsFixed(1)}%',
+                                  style: TextStyle(
+                                    fontSize: _setCompactLayout ? 9 : 10,
+                                    fontWeight: FontWeight.bold,
                                     color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
                                   ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    '${data.percentageIncrease.abs().toStringAsFixed(1)}%',
-                                    style: TextStyle(
-                                      fontSize: _setCompactLayout ? 9 : 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: data.percentageIncrease >= 0 ? Colors.green : Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ] else
-                          Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
-                        const Spacer(),
-                        if (_aumLastFetch != null)
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              'AMFI \u2022 ${DateFormat('dd MMM HH:mm').format(_aumLastFetch!)}',
-                              style: const TextStyle(fontSize: 8, color: Colors.grey),
+                                ),
+                              ],
                             ),
+                          ],
+                        ),
+                      ] else
+                        Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
+                      const Spacer(),
+                      if (_aumLastFetch != null)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            'AMFI \u2022 ${DateFormat('dd MMM HH:mm').format(_aumLastFetch!)}',
+                            style: const TextStyle(fontSize: 8, color: Colors.grey),
                           ),
-                      ],
-                    ),
-            ),
+                        ),
+                    ],
+                  ),
           ),
           Positioned(
             top: 0,
@@ -2369,6 +2484,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   Widget _indexRow(String label, double last, double pct) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 0.5),
       child: Row(
@@ -2377,7 +2493,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           Text(label, style: TextStyle(fontSize: _setCompactLayout ? 8 : 9, color: Colors.grey, fontWeight: FontWeight.w500)),
           Row(
             children: [
-              Text(last.toStringAsFixed(1), style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.bold)),
+              Text(last.toStringAsFixed(1), style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
               const SizedBox(width: 4),
               Text(
                 '(${pct > 0 ? '+' : ''}${pct.toStringAsFixed(2)}%)',
