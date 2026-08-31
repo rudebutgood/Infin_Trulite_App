@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'models/factor_performance_data.dart';
 import 'models/index_data.dart';
 import 'services/index_service.dart';
@@ -142,7 +144,7 @@ class _IndicesPageState extends State<IndicesPage> {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
+        initialChildSize: 0.8,
         maxChildSize: 0.9,
         expand: false,
         builder: (c, s) => Column(
@@ -182,17 +184,11 @@ class _IndicesPageState extends State<IndicesPage> {
                       const Divider(),
                       const SizedBox(height: 8),
                     ],
-                    
-                    CommonWidgets.txt('Returns Matrix', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _returnBoxDetail('1D', d.percentChange),
-                        if (weekReturn != null) _returnBoxDetail('1W', weekReturn),
-                        if (d.perChange30d != null) _returnBoxDetail('1M', d.perChange30d!),
-                        if (d.perChange365d != null) _returnBoxDetail('1Y', d.perChange365d!),
-                      ],
+
+                    IndexHistorySection(
+                      indexName: d.name,
+                      selectedLanguage: widget.selectedLanguage,
+                      translate: widget.translate,
                     ),
                     const SizedBox(height: 24),
                     const Divider(),
@@ -552,6 +548,402 @@ class _IndicesPageState extends State<IndicesPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class IndexHistorySection extends StatefulWidget {
+  final String indexName;
+  final String selectedLanguage;
+  final Future<String> Function(String) translate;
+
+  const IndexHistorySection({
+    super.key,
+    required this.indexName,
+    required this.selectedLanguage,
+    required this.translate,
+  });
+
+  @override
+  State<IndexHistorySection> createState() => _IndexHistorySectionState();
+}
+
+class _IndexHistorySectionState extends State<IndexHistorySection> {
+  final IndexService _service = IndexService();
+  List<Map<String, dynamic>> _history = [];
+  bool _loading = true;
+  String? _error;
+  Map<String, double> _returns = {};
+  String _selectedPeriod = '1Y';
+
+  // Range selection state
+  int? _startIdx;
+  int? _endIdx;
+  bool _isSelecting = false;
+  final Map<int, Offset> _pointers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await _service.fetchIndexHistory(widget.indexName);
+      if (mounted) {
+        setState(() {
+          _history = data;
+          _returns = _calculateReturns(data);
+          _loading = false;
+          if (data.isEmpty) {
+            _error = 'No historical data found for this index';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load history: $e';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Map<String, double> _calculateReturns(List<Map<String, dynamic>> data) {
+    if (data.length < 2) return {};
+    final latest = (data.last['value'] as num).toDouble();
+    final latestTs = data.last['timestamp'] as int;
+    final latestDate = DateTime.fromMillisecondsSinceEpoch(latestTs);
+
+    double getRet(int days) {
+      final target = latestDate.subtract(Duration(days: days));
+      Map<String, dynamic>? point;
+      for (var i = data.length - 1; i >= 0; i--) {
+        final d = DateTime.fromMillisecondsSinceEpoch(data[i]['timestamp'] as int);
+        if (d.isBefore(target) || d.isAtSameMomentAs(target)) {
+          point = data[i];
+          break;
+        }
+      }
+      point ??= data.first;
+      final oldVal = (point['value'] as num).toDouble();
+      return (oldVal > 0) ? (latest / oldVal - 1) * 100 : 0;
+    }
+
+    return {
+      '1W': getRet(7),
+      '1M': getRet(30),
+      '3M': getRet(90),
+      '6M': getRet(182),
+      '1Y': getRet(365),
+      '3Y': getRet(365 * 3),
+      '5Y': getRet(365 * 5),
+    };
+  }
+
+  List<Map<String, dynamic>> _getFilteredHistory(List<Map<String, dynamic>> data) {
+    if (data.isEmpty) return [];
+
+    int days = 365 * 5;
+    if (_selectedPeriod == '1W') days = 7;
+    else if (_selectedPeriod == '1M') days = 30;
+    else if (_selectedPeriod == '3M') days = 90;
+    else if (_selectedPeriod == '6M') days = 182;
+    else if (_selectedPeriod == '1Y') days = 365;
+    else if (_selectedPeriod == '3Y') days = 365 * 3;
+
+    final latestTs = data.last['timestamp'] as int;
+    final latestDate = DateTime.fromMillisecondsSinceEpoch(latestTs);
+    final target = latestDate.subtract(Duration(days: days));
+
+    return data.where((p) {
+      final d = DateTime.fromMillisecondsSinceEpoch(p['timestamp'] as int);
+      return d.isAfter(target) || d.isAtSameMomentAs(target);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
+    
+    if (_error != null) {
+      return Container(
+        height: 150,
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 24),
+            const SizedBox(height: 8),
+            Text(_error!, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.red[900])),
+            TextButton(onPressed: _load, child: const Text('Retry', style: TextStyle(fontSize: 12))),
+          ],
+        ),
+      );
+    }
+
+    if (_history.isEmpty) return const SizedBox();
+
+    final filteredData = _getFilteredHistory(_history);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CommonWidgets.txt('Historical Trend', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo), selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final chartWidth = constraints.maxWidth - 12;
+            return Stack(
+              children: [
+                _buildChart(filteredData, chartWidth),
+                if (_isSelecting && _startIdx != null && _endIdx != null) 
+                  _buildRangeOverlay(filteredData, chartWidth),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        _buildReturnMatrix(),
+      ],
+    );
+  }
+
+  Widget _buildChart(List<Map<String, dynamic>> data, double chartWidth) {
+    if (data.length < 2) return const SizedBox(height: 180, child: Center(child: Text('Not enough data for this period', style: TextStyle(fontSize: 12, color: Colors.grey))));
+    
+    // rebasing to 100
+    final baseVal = (data.first['value'] as num).toDouble();
+
+    double minValue = double.infinity;
+    double maxValue = double.negativeInfinity;
+    for (var p in data) {
+      final v = (p['value'] as num).toDouble();
+      final rebased = baseVal > 0 ? (v / baseVal * 100) : 100.0;
+      if (rebased < minValue) minValue = rebased;
+      if (rebased > maxValue) maxValue = rebased;
+    }
+    
+    final padding = (maxValue - minValue) * 0.15;
+    final minY = (minValue - padding).floorToDouble();
+    final maxY = (maxValue + padding).ceilToDouble();
+
+    return Listener(
+      onPointerDown: (e) {
+        setState(() {
+          _pointers[e.pointer] = e.localPosition;
+          _updateSelection(data, chartWidth);
+        });
+      },
+      onPointerMove: (e) {
+        setState(() {
+          _pointers[e.pointer] = e.localPosition;
+          _updateSelection(data, chartWidth);
+        });
+      },
+      onPointerUp: (e) {
+        setState(() {
+          _pointers.remove(e.pointer);
+          if (_pointers.length < 2) _isSelecting = false;
+        });
+      },
+      onPointerCancel: (e) {
+        setState(() {
+          _pointers.remove(e.pointer);
+          _isSelecting = false;
+        });
+      },
+      child: Container(
+        height: 180,
+        width: double.infinity,
+        padding: const EdgeInsets.only(right: 12, left: 0),
+        child: LineChart(
+          LineChartData(
+            lineTouchData: LineTouchData(
+              enabled: !_isSelecting,
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipItems: (touchedSpots) {
+                  return touchedSpots.map((spot) {
+                    final item = data[spot.x.toInt()];
+                    final date = DateTime.fromMillisecondsSinceEpoch(item['timestamp'] as int);
+                    final rebasedVal = spot.y;
+                    final returnPct = rebasedVal - 100;
+                    return LineTooltipItem(
+                      '${DateFormat('dd MMM yyyy').format(date)}\nValue: ${(item['value'] as num).toStringAsFixed(2)} (${returnPct >= 0 ? '+' : ''}${returnPct.toStringAsFixed(1)}%)',
+                      const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    );
+                  }).toList();
+                },
+              ),
+            ),
+            gridData: const FlGridData(show: false),
+            titlesData: const FlTitlesData(show: false),
+            borderData: FlBorderData(show: false),
+            minY: minY,
+            maxY: maxY,
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(data.length, (i) {
+                   final v = (data[i]['value'] as num).toDouble();
+                   return FlSpot(i.toDouble(), baseVal > 0 ? (v / baseVal * 100) : 100);
+                }),
+                isCurved: true,
+                color: Colors.indigo[700],
+                barWidth: 1.5,
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(
+                  show: true, 
+                  gradient: LinearGradient(
+                    colors: [Colors.indigo.withOpacity(0.3), Colors.indigo.withOpacity(0.0)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _updateSelection(List<Map<String, dynamic>> data, double chartWidth) {
+    if (_pointers.length >= 2) {
+      _isSelecting = true;
+      final sortedPointers = _pointers.values.toList()..sort((a, b) => a.dx.compareTo(b.dx));
+      final p1 = sortedPointers.first;
+      final p2 = sortedPointers.last;
+      
+      if (chartWidth <= 0) return;
+
+      double x1Pct = (p1.dx / chartWidth).clamp(0.0, 1.0);
+      double x2Pct = (p2.dx / chartWidth).clamp(0.0, 1.0);
+      
+      _startIdx = (x1Pct * (data.length - 1)).round().clamp(0, data.length - 1);
+      _endIdx = (x2Pct * (data.length - 1)).round().clamp(0, data.length - 1);
+    }
+  }
+
+  Widget _buildRangeOverlay(List<Map<String, dynamic>> data, double chartWidth) {
+    if (_startIdx == null || _endIdx == null || _startIdx == _endIdx) return const SizedBox();
+    
+    if (_startIdx! >= data.length || _endIdx! >= data.length) return const SizedBox();
+
+    final s = data[_startIdx!];
+    final e = data[_endIdx!];
+    final v1 = (s['value'] as num).toDouble();
+    final v2 = (e['value'] as num).toDouble();
+    final ret = (v1 > 0) ? (v2 / v1 - 1) * 100 : 0.0;
+    
+    final x1 = (_startIdx! / (data.length - 1)) * chartWidth;
+    final x2 = (_endIdx! / (data.length - 1)) * chartWidth;
+
+    final date1 = DateTime.fromMillisecondsSinceEpoch(s['timestamp'] as int);
+    final date2 = DateTime.fromMillisecondsSinceEpoch(e['timestamp'] as int);
+
+    return IgnorePointer(
+      child: Container(
+        height: 180,
+        width: double.infinity,
+        child: Stack(
+          children: [
+            Positioned(
+              left: x1,
+              width: (x2 - x1).clamp(0, double.infinity),
+              top: 0,
+              bottom: 0,
+              child: Container(color: Colors.indigo.withOpacity(0.1)),
+            ),
+            Positioned(
+              left: x1, top: 0, bottom: 0,
+              child: Container(width: 2, color: Colors.indigo),
+            ),
+            Positioned(
+              left: x2, top: 0, bottom: 0,
+              child: Container(width: 2, color: Colors.indigo),
+            ),
+            Positioned(
+              left: (x1 + (x2 - x1) / 2 - 40).clamp(0, chartWidth - 80),
+              top: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.indigo[900]?.withOpacity(0.9), 
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)],
+                ),
+                child: Column(
+                  children: [
+                    Text('${DateFormat('dd/MM/yy').format(date1)} \u2192 ${DateFormat('dd/MM/yy').format(date2)}', style: const TextStyle(color: Colors.white, fontSize: 8)),
+                    Text('Return: ${ret >= 0 ? '+' : ''}${ret.toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReturnMatrix() {
+    final periods = ['1W', '1M', '3M', '6M', '1Y', '3Y', '5Y'];
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: periods.map((pKey) {
+          final isSelected = _selectedPeriod == pKey;
+          final retVal = _returns[pKey];
+          final isPos = (retVal ?? 0) >= 0;
+
+          return Flexible(
+            child: InkWell(
+              onTap: () => setState(() => _selectedPeriod = pKey),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.indigo[50] : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(pKey, style: TextStyle(fontSize: 9, color: isSelected ? Colors.indigo : Colors.grey, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        retVal != null ? '${isPos ? '+' : ''}${retVal.toStringAsFixed(1)}%' : '-',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                          color: retVal != null ? (isPos ? Colors.green[700] : Colors.red[700]) : Colors.grey[400],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

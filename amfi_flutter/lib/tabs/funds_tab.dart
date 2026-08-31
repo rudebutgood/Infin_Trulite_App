@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/nav_item.dart';
 import '../services/nav_repository.dart';
+import '../services/index_service.dart';
 import '../widgets/common_widgets.dart';
 
 class FundsTab extends StatefulWidget {
@@ -404,7 +405,9 @@ class FundHistorySection extends StatefulWidget {
 
 class _FundHistorySectionState extends State<FundHistorySection> {
   final NavRepository _repo = NavRepository();
+  final IndexService _indexService = IndexService();
   List<Map<String, dynamic>> _history = [];
+  List<Map<String, dynamic>> _benchmarkHistory = [];
   bool _loading = true;
   Map<String, double> _returns = {};
   String _selectedPeriod = '1Y';
@@ -423,11 +426,15 @@ class _FundHistorySectionState extends State<FundHistorySection> {
 
   Future<void> _load() async {
     try {
-      final data = await _repo.getHistoryForScheme(widget.schemeCode);
+      final results = await Future.wait([
+        _repo.getHistoryForScheme(widget.schemeCode),
+        _indexService.fetchIndexHistory('NIFTY 500'),
+      ]);
       if (mounted) {
         setState(() {
-          _history = data;
-          _returns = _calculateReturns(data);
+          _history = results[0];
+          _benchmarkHistory = results[1];
+          _returns = _calculateReturns(_history);
           _loading = false;
         });
       }
@@ -458,6 +465,7 @@ class _FundHistorySectionState extends State<FundHistorySection> {
     }
 
     return {
+      '1W': getRet(7),
       '1M': getRet(30),
       '3M': getRet(90),
       '6M': getRet(182),
@@ -465,20 +473,33 @@ class _FundHistorySectionState extends State<FundHistorySection> {
     };
   }
 
-  List<Map<String, dynamic>> _getFilteredHistory() {
-    if (_history.isEmpty) return [];
+  List<Map<String, dynamic>> _getFilteredHistory(List<Map<String, dynamic>> fullData, bool isNav) {
+    if (fullData.isEmpty) return [];
 
     int days = 365;
-    if (_selectedPeriod == '1M') days = 30;
+    if (_selectedPeriod == '1W') days = 7;
+    else if (_selectedPeriod == '1M') days = 30;
     else if (_selectedPeriod == '3M') days = 90;
     else if (_selectedPeriod == '6M') days = 182;
 
-    final latestDateStr = _history.last['nav_date'] ?? '';
-    final latestDate = DateTime.tryParse(latestDateStr) ?? DateTime.now();
+    final lastItem = fullData.last;
+    DateTime? latestDate;
+    if (isNav) {
+      latestDate = DateTime.tryParse(lastItem['nav_date'] ?? '');
+    } else {
+      latestDate = DateTime.fromMillisecondsSinceEpoch(lastItem['timestamp'] as int);
+    }
+    
+    latestDate ??= DateTime.now();
     final target = latestDate.subtract(Duration(days: days));
 
-    return _history.where((p) {
-      final d = DateTime.tryParse(p['nav_date'] ?? '');
+    return fullData.where((p) {
+      DateTime? d;
+      if (isNav) {
+        d = DateTime.tryParse(p['nav_date'] ?? '');
+      } else {
+        d = DateTime.fromMillisecondsSinceEpoch(p['timestamp'] as int);
+      }
       return d != null && (d.isAfter(target) || d.isAtSameMomentAs(target));
     }).toList();
   }
@@ -488,22 +509,32 @@ class _FundHistorySectionState extends State<FundHistorySection> {
     if (_loading) return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
     if (_history.isEmpty) return const SizedBox();
 
-    final filteredData = _getFilteredHistory();
+    final filteredNav = _getFilteredHistory(_history, true);
+    final filteredBench = _getFilteredHistory(_benchmarkHistory, false);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            final chartWidth = constraints.maxWidth - 12; // Account for right padding in _buildChart
+            final chartWidth = constraints.maxWidth - 12; 
             return Stack(
               children: [
-                _buildChart(filteredData, chartWidth),
+                _buildChart(filteredNav, filteredBench, chartWidth),
                 if (_isSelecting && _startIdx != null && _endIdx != null) 
-                  _buildRangeOverlay(filteredData, chartWidth),
+                  _buildRangeOverlay(filteredNav, chartWidth),
               ],
             );
           },
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _legendMarker(Colors.indigo[700]!, 'Fund'),
+            const SizedBox(width: 16),
+            _legendMarker(Colors.orange[700]!, 'Nifty 500 (Benchmark)'),
+          ],
         ),
         const SizedBox(height: 20),
         _buildReturnMatrix(),
@@ -511,32 +542,63 @@ class _FundHistorySectionState extends State<FundHistorySection> {
     );
   }
 
-  Widget _buildChart(List<Map<String, dynamic>> data, double chartWidth) {
-    if (data.length < 2) return const SizedBox(height: 180, child: Center(child: Text('Not enough data for this period', style: TextStyle(fontSize: 12, color: Colors.grey))));
+  Widget _legendMarker(Color color, String label) {
+    return Row(
+      children: [
+        Container(width: 10, height: 2, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildChart(List<Map<String, dynamic>> navData, List<Map<String, dynamic>> benchData, double chartWidth) {
+    if (navData.length < 2) return const SizedBox(height: 180, child: Center(child: Text('Not enough data', style: TextStyle(fontSize: 12, color: Colors.grey))));
     
-    double minNav = double.infinity;
-    double maxNav = double.negativeInfinity;
-    for (var p in data) {
-      final v = (p['nav_value'] as num).toDouble();
-      if (v < minNav) minNav = v;
-      if (v > maxNav) maxNav = v;
+    final navBase = (navData.first['nav_value'] as num).toDouble();
+    final benchBase = (benchData.isNotEmpty) ? (benchData.first['value'] as num).toDouble() : 1.0;
+
+    List<FlSpot> navSpots = [];
+    for (int i = 0; i < navData.length; i++) {
+      final val = (navData[i]['nav_value'] as num).toDouble();
+      navSpots.add(FlSpot(i.toDouble(), navBase > 0 ? (val / navBase * 100) : 100));
+    }
+
+    List<FlSpot> benchSpots = [];
+    if (benchData.isNotEmpty) {
+      for (int i = 0; i < benchData.length; i++) {
+        final val = (benchData[i]['value'] as num).toDouble();
+        final x = (i / (benchData.length - 1)) * (navData.length - 1);
+        benchSpots.add(FlSpot(x, benchBase > 0 ? (val / benchBase * 100) : 100));
+      }
+    }
+
+    double minY = 100;
+    double maxY = 100;
+    for (var s in navSpots) {
+      if (s.y < minY) minY = s.y;
+      if (s.y > maxY) maxY = s.y;
+    }
+    for (var s in benchSpots) {
+      if (s.y < minY) minY = s.y;
+      if (s.y > maxY) maxY = s.y;
     }
     
-    final padding = (maxNav - minNav) * 0.1;
-    final minY = (minNav - padding).floorToDouble();
-    final maxY = (maxNav + padding).ceilToDouble();
+    final padding = (maxY - minY) * 0.15;
+    minY = (minY - padding).floorToDouble();
+    maxY = (maxY + padding).ceilToDouble();
 
     return Listener(
       onPointerDown: (e) {
         setState(() {
           _pointers[e.pointer] = e.localPosition;
-          _updateSelection(data, chartWidth);
+          _updateSelection(navData, chartWidth);
         });
       },
       onPointerMove: (e) {
         setState(() {
           _pointers[e.pointer] = e.localPosition;
-          _updateSelection(data, chartWidth);
+          _updateSelection(navData, chartWidth);
         });
       },
       onPointerUp: (e) {
@@ -561,12 +623,27 @@ class _FundHistorySectionState extends State<FundHistorySection> {
               enabled: !_isSelecting,
               touchTooltipData: LineTouchTooltipData(
                 getTooltipItems: (touchedSpots) {
-                  return touchedSpots.map((spot) {
-                    final item = data[spot.x.toInt()];
-                    return LineTooltipItem(
-                      '${item['nav_date']}\n\u20b9${spot.y.toStringAsFixed(2)}',
-                      const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    );
+                  // Sort touched spots to have a consistent display order (Fund first, then Benchmark)
+                  final sortedSpots = touchedSpots.toList()..sort((a, b) => a.barIndex.compareTo(b.barIndex));
+                  
+                  return sortedSpots.map((spot) {
+                    if (spot.barIndex == 0) { // Fund
+                      final item = navData[spot.x.toInt()];
+                      final rebasedVal = spot.y;
+                      final returnPct = rebasedVal - 100;
+                      return LineTooltipItem(
+                        '${item['nav_date']}\nFund: \u20b9${(item['nav_value'] as num).toStringAsFixed(2)} (${returnPct >= 0 ? '+' : ''}${returnPct.toStringAsFixed(1)}%)',
+                        const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      );
+                    } else if (spot.barIndex == 1) { // Benchmark
+                      final rebasedVal = spot.y;
+                      final returnPct = rebasedVal - 100;
+                      return LineTooltipItem(
+                        'Benchmark: ${returnPct >= 0 ? '+' : ''}${returnPct.toStringAsFixed(1)}%',
+                        TextStyle(color: Colors.orange[200], fontSize: 10, fontWeight: FontWeight.bold),
+                      );
+                    }
+                    return null;
                   }).toList();
                 },
               ),
@@ -578,21 +655,21 @@ class _FundHistorySectionState extends State<FundHistorySection> {
             maxY: maxY,
             lineBarsData: [
               LineChartBarData(
-                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['nav_value'] as num).toDouble())),
+                spots: navSpots,
                 isCurved: true,
                 color: Colors.indigo[700],
-                barWidth: 2.5,
-                isStrokeCapRound: true,
+                barWidth: 1.5,
                 dotData: const FlDotData(show: false),
-                belowBarData: BarAreaData(
-                  show: true, 
-                  gradient: LinearGradient(
-                    colors: [Colors.indigo.withOpacity(0.3), Colors.indigo.withOpacity(0.0)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
+                belowBarData: BarAreaData(show: true, color: Colors.indigo.withOpacity(0.05)),
               ),
+              if (benchSpots.isNotEmpty)
+                LineChartBarData(
+                  spots: benchSpots,
+                  isCurved: true,
+                  color: Colors.orange[700],
+                  barWidth: 1.5,
+                  dotData: const FlDotData(show: false),
+                ),
             ],
           ),
         ),
@@ -628,6 +705,27 @@ class _FundHistorySectionState extends State<FundHistorySection> {
     final v2 = (e['nav_value'] as num).toDouble();
     final ret = (v1 > 0) ? (v2 / v1 - 1) * 100 : 0.0;
     
+    // Calculate benchmark return for the same period if available
+    double? benchRet;
+    if (_benchmarkHistory.isNotEmpty) {
+      final sDate = DateTime.tryParse(s['nav_date'] ?? '');
+      final eDate = DateTime.tryParse(e['nav_date'] ?? '');
+      
+      if (sDate != null && eDate != null) {
+        Map<String, dynamic>? bs, be;
+        for (var p in _benchmarkHistory) {
+          final d = DateTime.fromMillisecondsSinceEpoch(p['timestamp'] as int);
+          if (bs == null && (d.isAfter(sDate) || d.isAtSameMomentAs(sDate))) bs = p;
+          if (be == null && (d.isAfter(eDate) || d.isAtSameMomentAs(eDate))) be = p;
+        }
+        if (bs != null && be != null) {
+          final bv1 = (bs['value'] as num).toDouble();
+          final bv2 = (be['value'] as num).toDouble();
+          if (bv1 > 0) benchRet = (bv2 / bv1 - 1) * 100;
+        }
+      }
+    }
+
     final x1 = (_startIdx! / (data.length - 1)) * chartWidth;
     final x2 = (_endIdx! / (data.length - 1)) * chartWidth;
 
@@ -653,7 +751,7 @@ class _FundHistorySectionState extends State<FundHistorySection> {
               child: Container(width: 2, color: Colors.indigo),
             ),
             Positioned(
-              left: (x1 + (x2 - x1) / 2 - 40).clamp(0, chartWidth - 80),
+              left: (x1 + (x2 - x1) / 2 - 60).clamp(0, chartWidth - 120),
               top: 10,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -665,7 +763,9 @@ class _FundHistorySectionState extends State<FundHistorySection> {
                 child: Column(
                   children: [
                     Text('${s['nav_date']} \u2192 ${e['nav_date']}', style: const TextStyle(color: Colors.white, fontSize: 8)),
-                    Text('${ret >= 0 ? '+' : ''}${ret.toStringAsFixed(2)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text('Fund: ${ret >= 0 ? '+' : ''}${ret.toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                    if (benchRet != null)
+                      Text('Bench: ${benchRet >= 0 ? '+' : ''}${benchRet.toStringAsFixed(1)}%', style: TextStyle(color: Colors.orange[200], fontWeight: FontWeight.bold, fontSize: 10)),
                   ],
                 ),
               ),
@@ -677,7 +777,7 @@ class _FundHistorySectionState extends State<FundHistorySection> {
   }
 
   Widget _buildReturnMatrix() {
-    final periods = ['1M', '3M', '6M', '1Y'];
+    final periods = ['1W', '1M', '3M', '6M', '1Y'];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       decoration: BoxDecoration(
