@@ -49,6 +49,10 @@ class _FundsTabState extends State<FundsTab> {
   String _selectedFundType = 'Direct';
   String _selectedCompany = 'All Companies';
   List<String> _amcList = ['All Companies'];
+  String _selectedPlan = 'All Plans';
+  List<String> _planList = ['All Plans'];
+  String _selectedOption = 'All Options';
+  List<String> _optionList = ['All Options'];
   String _sortOption = 'Return';
   bool _isNavAscending = false;
 
@@ -78,34 +82,59 @@ class _FundsTabState extends State<FundsTab> {
   }
 
   Future<void> _initFilters() async {
-    final prefs = await SharedPreferences.getInstance();
-    _selectedFundType = prefs.getString('selectedFundType') ?? 'Direct';
-    
-    // Aggressive ghost text cleanup
-    String last = (prefs.getString('lastSearch') ?? '').trim();
-    if (last.toLowerCase() == 'auto' || last.isEmpty) {
-      _searchCtl.text = '';
-      if (last.isNotEmpty) await prefs.setString('lastSearch', '');
-    } else {
-      _searchCtl.text = last;
-    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _selectedFundType = prefs.getString('selectedFundType') ?? 'Direct';
+      
+      // Aggressive ghost text cleanup
+      String last = (prefs.getString('lastSearch') ?? '').trim();
+      if (last.toLowerCase() == 'auto' || last.isEmpty) {
+        _searchCtl.text = '';
+        if (last.isNotEmpty) await prefs.setString('lastSearch', '');
+      } else {
+        _searchCtl.text = last;
+      }
 
-    _recentSearches = prefs.getStringList('recentSearches') ?? [];
-    _amcList = ['All Companies', ...await _repo.getFundCompanies()];
-    
-    final defaultSort = prefs.getString('setNAVDefaultSort') ?? 'Return \u2193';
-    if (defaultSort.contains('\u2193')) {
-      _sortOption = defaultSort.replaceAll(' \u2193', '');
-      _isNavAscending = false;
-    } else if (defaultSort.contains('\u2191')) {
-      _sortOption = defaultSort.replaceAll(' \u2191', '');
-      _isNavAscending = true;
-    } else {
-      _sortOption = defaultSort;
-      _isNavAscending = false;
-    }
+      _recentSearches = prefs.getStringList('recentSearches') ?? [];
+      
+      final amcs = await _repo.getFundCompanies();
+      final plans = await _repo.getUniquePlans();
+      final options = await _repo.getUniqueOptions();
 
-    _load();
+      if (mounted) {
+        setState(() {
+          _amcList = ['All Companies', ...amcs].toSet().toList();
+          _planList = ['All Plans', ...plans].toSet().toList();
+          _optionList = ['All Options', ...options].toSet().toList();
+          
+          _selectedPlan = prefs.getString('selectedPlan') ?? 'All Plans';
+          _selectedOption = prefs.getString('selectedOption') ?? 'All Options';
+          
+          if (!_planList.contains(_selectedPlan)) _selectedPlan = 'All Plans';
+          if (!_optionList.contains(_selectedOption)) _selectedOption = 'All Options';
+        });
+      }
+      
+      final defaultSort = prefs.getString('setNAVDefaultSort') ?? 'Return \u2193';
+      if (mounted) {
+        setState(() {
+          if (defaultSort.contains('\u2193')) {
+            _sortOption = defaultSort.replaceAll(' \u2193', '');
+            _isNavAscending = false;
+          } else if (defaultSort.contains('\u2191')) {
+            _sortOption = defaultSort.replaceAll(' \u2191', '');
+            _isNavAscending = true;
+          } else {
+            _sortOption = defaultSort;
+            _isNavAscending = false;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing filters: $e');
+    } finally {
+      _load();
+    }
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -122,6 +151,8 @@ class _FundsTabState extends State<FundsTab> {
         q: _searchCtl.text,
         fundType: _selectedFundType,
         amc: _selectedCompany,
+        plan: _selectedPlan,
+        option: _selectedOption,
         orderBy: orderBy,
         date: widget.selectedFilterDate != null ? DateFormat('yyyy-MM-dd').format(widget.selectedFilterDate!) : null,
         prioritizeHeldAndFav: widget.setPrioritizeHeldAndFav,
@@ -141,6 +172,8 @@ class _FundsTabState extends State<FundsTab> {
   Future<void> _savePrefs() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('selectedFundType', _selectedFundType);
+    await prefs.setString('selectedPlan', _selectedPlan);
+    await prefs.setString('selectedOption', _selectedOption);
     await prefs.setString('lastSearch', _searchCtl.text);
     if (_recentSearches.length > 10) _recentSearches = _recentSearches.sublist(0, 10);
     await prefs.setStringList('recentSearches', _recentSearches);
@@ -183,6 +216,8 @@ class _FundsTabState extends State<FundsTab> {
             CommonWidgets.detailRow('Scheme Code', it.schemeCode),
             CommonWidgets.detailRow('AMC', it.mfName),
             CommonWidgets.detailRow('Category', it.category),
+            CommonWidgets.detailRow('Plan', it.plan),
+            CommonWidgets.detailRow('Option', it.option),
             CommonWidgets.detailRow('NAV Value', it.navValue?.toString()),
             CommonWidgets.detailRow('NAV Date', it.navDate),
             const SizedBox(height: 20),
@@ -241,6 +276,18 @@ class _FundsTabState extends State<FundsTab> {
                 onChanged: (v) { if (v != null) { setState(() => _sortOption = v); _load(); } } )))),
             IconButton(icon: Icon(_isNavAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 20, color: Colors.indigo[700]), onPressed: () { setState(() => _isNavAscending = !_isNavAscending); _load(); }, visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
           ])),
+        ]),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: Container(height: 40, padding: const EdgeInsets.symmetric(horizontal: 8), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
+            child: DropdownButtonHideUnderline(child: DropdownButton<String>(isExpanded: true, value: _selectedPlan, style: const TextStyle(fontSize: 12, color: Colors.black87),
+              items: _planList.map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
+              onChanged: (v) { if (v != null) { setState(() => _selectedPlan = v); _savePrefs(); _load(); } } )))),
+          const SizedBox(width: 8),
+          Expanded(child: Container(height: 40, padding: const EdgeInsets.symmetric(horizontal: 8), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
+            child: DropdownButtonHideUnderline(child: DropdownButton<String>(isExpanded: true, value: _selectedOption, style: const TextStyle(fontSize: 12, color: Colors.black87),
+              items: _optionList.map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
+              onChanged: (v) { if (v != null) { setState(() => _selectedOption = v); _savePrefs(); _load(); } } )))),
         ]),
         const SizedBox(height: 8),
       ],

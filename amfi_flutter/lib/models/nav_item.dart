@@ -10,6 +10,8 @@ class NavItem {
   final String? apiTimestamp;
   final String? mfName;
   final String? category;
+  final String? plan;
+  final String? option;
   final bool isFavorite;
   final bool isHeld;
 
@@ -29,6 +31,8 @@ class NavItem {
     this.apiTimestamp,
     this.mfName,
     this.category,
+    this.plan,
+    this.option,
     this.isFavorite = false,
     this.isHeld = false,
     this.prevNavValue,
@@ -47,6 +51,8 @@ class NavItem {
         apiTimestamp: m['api_timestamp'] as String?,
         mfName: m['mf_name'] as String?,
         category: m['category_name'] as String?,
+        plan: m['plan'] as String?,
+        option: m['nav_option'] as String?,
         isFavorite: (m['is_favorite'] as int? ?? 0) == 1,
         isHeld: (m['is_held'] as int? ?? 0) == 1,
         prevNavValue: m.containsKey('prev_nav_value') && m['prev_nav_value'] != null ? (m['prev_nav_value'] as num).toDouble() : null,
@@ -62,5 +68,7 @@ class NavItem {
         'nav_value': navValue,
         'nav_date': navDate,
         'imported_at': importedAt,
+        'plan': plan,
+        'nav_option': option,
       };
 }

@@ -68,13 +68,8 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
   }
 
   List<MarketNews> get _filteredNews {
-    if (_searchQuery.isEmpty) return _news;
-    final query = _searchQuery.toLowerCase();
-    return _news.where((n) =>
-      n.title.toLowerCase().contains(query) ||
-      n.description.toLowerCase().contains(query) ||
-      n.source.toLowerCase().contains(query)
-    ).toList();
+    // Service now handles search filtering for us, so we just return the news list
+    return _news;
   }
 
   Future<void> _fetch({bool silent = false}) async {
@@ -93,7 +88,16 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
         }
         return;
       }
-      final res = await _service.fetchNews(hours: _selectedHours, limit: 20, offset: 0, force: !silent);
+      
+      // Respect both period (hours) and search keyword
+      final res = await _service.fetchNews(
+        hours: _selectedHours, 
+        limit: 20, 
+        offset: 0, 
+        force: !silent,
+        searchQuery: _searchQuery
+      );
+      
       if (mounted) {
         setState(() {
           _news = res;
@@ -109,12 +113,23 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
     }
   }
 
+  Future<void> _performInternetSearch() async {
+    // This is now integrated into _fetch() and _fetchMore() via tiered loading
+    _fetch();
+  }
+
   Future<void> _fetchMore() async {
     if (_loadingMore || !_hasMore) return;
     setState(() => _loadingMore = true);
     _currentPage++;
     try {
-      final res = await _service.fetchNews(hours: _selectedHours, limit: 20, offset: _currentPage * 20);
+      final res = await _service.fetchNews(
+        hours: _selectedHours, 
+        limit: 20, 
+        offset: _currentPage * 20,
+        searchQuery: _searchQuery
+      );
+      
       if (mounted) {
         setState(() {
           if (res.isEmpty) {
@@ -147,7 +162,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredNews;
+    // We now use the main _news list directly because the service handles search/filtering
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -183,7 +198,7 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : filtered.isEmpty
+                : _news.isEmpty
                     ? _buildNoResults()
                     : Scrollbar(
                         controller: _scrollCtl,
@@ -192,14 +207,14 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
                         radius: const Radius.circular(3),
                         child: ListView.separated(
                           controller: _scrollCtl,
-                          itemCount: filtered.length + (_hasMore ? 1 : 0),
+                          itemCount: _news.length + (_hasMore ? 1 : 0),
                           padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (context, index) {
-                            if (index == filtered.length) {
+                            if (index == _news.length) {
                               return _buildLoadMoreIndicator();
                             }
-                            final item = filtered[index];
+                            final item = _news[index];
                             return _ExpandableNewsCard(
                               news: item,
                               selectedLanguage: widget.selectedLanguage,
@@ -238,9 +253,15 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
           children: [
             Icon(Icons.search_off, size: 64, color: isDark ? Colors.grey[700] : Colors.grey[300]),
             const SizedBox(height: 16),
-            CommonWidgets.txt(_searchQuery.isEmpty ? 'No news available' : 'No matches found for "$_searchQuery"', 
+            CommonWidgets.txt(_searchQuery.isEmpty ? 'No news available' : 'No results found for "$_searchQuery"', 
                 style: TextStyle(fontSize: 16, color: isDark ? Colors.white70 : Colors.black54),
                 selectedLanguage: widget.selectedLanguage, translate: widget.translate),
+            if (_searchQuery.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('The app will search deeper into the internet as you scroll.', 
+                style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey[600]),
+                textAlign: TextAlign.center),
+            ],
           ],
         ),
       ),
@@ -248,7 +269,10 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
   }
 
   Widget _buildLoadMoreIndicator() {
-    return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)));
+    if (_loadingMore) {
+      return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)));
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _buildSearchBar() {
@@ -258,12 +282,26 @@ class _MarketNewsPageState extends State<MarketNewsPage> {
       color: isDark ? Colors.transparent : Colors.white,
       child: TextField(
         controller: _searchCtl,
+        textInputAction: TextInputAction.search,
+        onChanged: (val) {
+          // Update query and re-fetch immediately for local-feeling filtering
+          setState(() => _searchQuery = val);
+          _fetch(silent: true);
+        },
+        onSubmitted: (val) {
+          // Pressing search key on keyboard triggers a deep refresh
+          _fetch();
+        },
         decoration: InputDecoration(
-          hintText: 'Search within news...',
+          hintText: 'Search news',
           hintStyle: TextStyle(fontSize: 13, color: isDark ? Colors.grey[500] : Colors.grey),
           prefixIcon: Icon(Icons.search, size: 20, color: isDark ? Colors.indigoAccent : Colors.indigo),
           suffixIcon: _searchQuery.isNotEmpty 
-            ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () => _searchCtl.clear())
+            ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () {
+                _searchCtl.clear();
+                setState(() => _searchQuery = "");
+                _fetch();
+              })
             : null,
           filled: true,
           fillColor: isDark ? Colors.grey[900] : Colors.grey[100],

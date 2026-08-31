@@ -39,6 +39,10 @@ class MarketNewsService {
       'url': 'https://news.google.com/rss/search?q=India+Stock+Market&hl=en-IN&gl=IN&ceid=IN:en',
       'source': 'Google News'
     },
+    {
+      'url': 'https://news.google.com/rss/search?q=India+Economy+GDP+Inflation&hl=en-IN&gl=IN&ceid=IN:en',
+      'source': 'Economy Watch'
+    },
   ];
 
   IOClient? _client;
@@ -55,64 +59,118 @@ class MarketNewsService {
   static List<MarketNews> _cachedNews = [];
   static DateTime? _lastFetchTime;
 
-  Future<List<MarketNews>> fetchNews({int hours = 2, int limit = 10, int offset = 0, bool force = false}) async {
-    // Return cache if it's fresh (last 5 minutes)
-    if (!force && _cachedNews.isNotEmpty && _lastFetchTime != null) {
-      if (DateTime.now().difference(_lastFetchTime!).inMinutes < 5) {
-        final end = min(offset + limit, _cachedNews.length);
-        if (offset >= _cachedNews.length) return [];
-        return _cachedNews.sublist(offset, end);
-      }
-    }
+  List<MarketNews> get fullCache => _cachedNews;
 
-    final client = _getClient();
-    final now = DateTime.now();
-    
-    try {
-      // 1. Fetch from all sources in parallel with individual timeouts
-      // Future.wait will catch all results that finish within their internal timeouts
-      final List<List<_ScoredNews>> results = await Future.wait(
-        _feeds.map((f) => _fetchSingleFeed(client, f['url']!, f['source']!, hours, now))
-      );
-
-      // 2. Aggregate all news from successful responses
-      List<_ScoredNews> allScored = [];
-      for (var list in results) {
-        allScored.addAll(list);
-      }
-
-      // 3. Simple Deduplication
-      allScored = _deduplicate(allScored);
-
-      // 4. Best Ranking First: Sort all news by their AI impact score
-      allScored.sort((a, b) => b.score.compareTo(a.score));
-
-      final List<MarketNews> finalNews = [];
-      final Set<String> addedUrls = {};
-
-      for (var sn in allScored) {
-        if (!addedUrls.contains(sn.news.link)) {
-          finalNews.add(sn.news.copyWith(score: sn.score));
-          addedUrls.add(sn.news.link);
+  Future<List<MarketNews>> fetchNews({int hours = 2, int limit = 10, int offset = 0, bool force = false, String searchQuery = ""}) async {
+    // 1. Curated primary feed (0 - 120)
+    if (offset < 120) {
+      if (!force && _cachedNews.isNotEmpty && _lastFetchTime != null && searchQuery.isEmpty) {
+        if (DateTime.now().difference(_lastFetchTime!).inMinutes < 5) {
+          final end = min(offset + limit, _cachedNews.length);
+          if (offset >= _cachedNews.length) return [];
+          return _cachedNews.sublist(offset, end);
         }
-        // Limit to top 500 relevant stories for deeper search coverage
-        if (finalNews.length >= 500) break;
       }
 
-      // 5. Update Cache
-      _cachedNews = finalNews;
-      _lastFetchTime = DateTime.now();
-
-      // 6. Pagination
-      final end = min(offset + limit, finalNews.length);
-      if (offset >= finalNews.length) return [];
+      final client = _getClient();
+      final now = DateTime.now();
       
-      final paginated = finalNews.sublist(offset, end);
-      return await _checkSavedStatus(paginated);
-    } catch (e) {
-      debugPrint('Multi-source fetch news error: $e');
-      return await _checkSavedStatus(_cachedNews); 
+      try {
+        final List<List<_ScoredNews>> results = await Future.wait(
+          _feeds.map((f) => _fetchSingleFeed(client, f['url']!, f['source']!, hours, now))
+        );
+
+        List<_ScoredNews> allScored = [];
+        for (var list in results) {
+          allScored.addAll(list);
+        }
+
+        allScored = _deduplicate(allScored);
+        allScored.sort((a, b) => b.score.compareTo(a.score));
+
+        final List<MarketNews> finalNews = [];
+        final Set<String> addedUrls = {};
+
+        for (var sn in allScored) {
+          if (!addedUrls.contains(sn.news.link)) {
+            finalNews.add(sn.news.copyWith(score: sn.score));
+            addedUrls.add(sn.news.link);
+          }
+          if (finalNews.length >= 120) break;
+        }
+
+        _cachedNews = finalNews;
+        _lastFetchTime = DateTime.now();
+
+        // If a local search query is present, filter the results immediately
+        List<MarketNews> toReturn = finalNews;
+        if (searchQuery.isNotEmpty) {
+          final q = searchQuery.toLowerCase();
+          toReturn = finalNews.where((n) => 
+            n.title.toLowerCase().contains(q) || 
+            n.description.toLowerCase().contains(q)
+          ).toList();
+        }
+
+        final end = min(offset + limit, toReturn.length);
+        if (offset >= toReturn.length) return [];
+        
+        final paginated = toReturn.sublist(offset, end);
+        return await _checkSavedStatus(paginated);
+      } catch (e) {
+        debugPrint('RSS fetch error: $e');
+        return await _checkSavedStatus(_cachedNews); 
+      }
+    } 
+    
+    // 2. Secondary feed (120 - 240): Respect selected dropdown hours
+    if (offset < 240) {
+      final client = _getClient();
+      final now = DateTime.now();
+      try {
+        // Expand timeframe slightly if 1hr/6hr is selected to ensure we have depth for scroll
+        final lookbackHours = max(hours, 24); 
+        final List<List<_ScoredNews>> results = await Future.wait(
+          _feeds.map((f) => _fetchSingleFeed(client, f['url']!, f['source']!, lookbackHours, now))
+        );
+
+        List<_ScoredNews> allScored = [];
+        for (var list in results) {
+          allScored.addAll(list);
+        }
+
+        allScored = _deduplicate(allScored);
+        
+        // Filter out news already in the top 120 curated cache
+        final cachedLinks = _cachedNews.map((n) => n.link).toSet();
+        var secondaryNews = allScored
+            .where((sn) => !cachedLinks.contains(sn.news.link))
+            .map((sn) => sn.news.copyWith(score: sn.score))
+            .toList();
+
+        if (searchQuery.isNotEmpty) {
+          final q = searchQuery.toLowerCase();
+          secondaryNews = secondaryNews.where((n) => 
+            n.title.toLowerCase().contains(q) || 
+            n.description.toLowerCase().contains(q)
+          ).toList();
+        }
+
+        final start = max(0, offset - 120);
+        final end = min(start + limit, secondaryNews.length);
+        if (start >= secondaryNews.length) return [];
+        
+        return await _checkSavedStatus(secondaryNews.sublist(start, end));
+      } catch (e) {
+        debugPrint('Extended RSS fetch error: $e');
+        return [];
+      }
     }
+
+    // 3. Depth feed (> 240): Targeted Internet Search based on keyword
+    final internetOffset = offset - 240;
+    final finalQuery = searchQuery.isNotEmpty ? searchQuery : 'India Stock Market Finance';
+    return await searchInternetNews(finalQuery, limit: limit, offset: internetOffset);
   }
 
   Future<List<MarketNews>> _checkSavedStatus(List<MarketNews> newsList) async {
@@ -221,6 +279,7 @@ class MarketNewsService {
         if (descRaw.isEmpty) descRaw = _getNodeText(node, 'content:encoded');
         
         String pubDateRaw = _getNodeText(node, 'pubDate');
+        String sourceInFeed = _getNodeText(node, 'source');
         
         // For Aggregators (Google/Bloomberg), verify it's a domestic story
         // For Whitelisted portals, accept everything to avoid missing company specific news
@@ -239,12 +298,19 @@ class MarketNewsService {
         String? link = _getNodeText(node, 'link');
         if (link.isEmpty) link = _getNodeText(node, 'guid');
         
+        // Format Google News sources with the website in brackets
+        String displaySource = sourceName;
+        if (sourceName == 'Google News' || sourceName == 'Internet Search' || sourceName == 'Economy Watch') {
+          String website = sourceInFeed.isNotEmpty ? sourceInFeed : _extractDomain(link);
+          displaySource = "Google News ($website)";
+        }
+
         final news = MarketNews(
           title: _decodeHtmlEntities(title.trim()),
           description: _stripHtml(descRaw),
           link: link.trim(),
           pubDate: displayDate,
-          source: sourceName,
+          source: displaySource,
         );
         
         feedNews.add(_ScoredNews(news, _calculateScore(title, descRaw, date, now, sourceName)));
@@ -315,7 +381,10 @@ class MarketNewsService {
     final text = (title + " " + desc).toLowerCase();
     
     // 1. Core Popularity Keywords
-    final topInterest = ['nifty', 'sensex', 'rbi', 'sebi', 'ipo', 'earnings', 'quarterly', 'profit', 'dividend'];
+    final topInterest = [
+      'nifty', 'sensex', 'rbi', 'sebi', 'ipo', 'earnings', 'quarterly', 
+      'profit', 'dividend', 'gdp', 'fmcg', 'inflation', 'budget', 'policy', 'interest rate'
+    ];
     for (var k in topInterest) {
       if (text.contains(k)) score += 25;
     }
@@ -392,7 +461,8 @@ class MarketNewsService {
     final url = 'https://news.google.com/rss/search?q=$encodedQuery&hl=en-IN&gl=IN&ceid=IN:en';
     
     try {
-      final results = await _fetchSingleFeed(client, url, 'Internet Search', 720, now); // Search up to 30 days
+      // Use 'Internet Search' as a flag to trigger domain extraction in _fetchSingleFeed
+      final results = await _fetchSingleFeed(client, url, 'Internet Search', 720, now); 
       
       // Sort by score (freshness + keyword matches)
       results.sort((a, b) => b.score.compareTo(a.score));
@@ -462,6 +532,17 @@ class MarketNewsService {
     // 4. Truncate if too long for preview
     if (text.length > 500) text = text.substring(0, 497) + "...";
     return text;
+  }
+
+  String _extractDomain(String url) {
+    try {
+      final uri = Uri.parse(url);
+      String host = uri.host.toLowerCase();
+      if (host.startsWith('www.')) host = host.substring(4);
+      return host;
+    } catch (_) {
+      return 'News Source';
+    }
   }
 }
 

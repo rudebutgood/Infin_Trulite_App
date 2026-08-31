@@ -21,7 +21,7 @@ class NavRepository {
     if (_db != null) return _db!;
     final databasesPath = await getDatabasesPath();
     final path = p.join(databasesPath, 'nav.db');
-    _db = await openDatabase(path, version: 8, onCreate: (d, v) async {
+    _db = await openDatabase(path, version: 9, onCreate: (d, v) async {
       await d.execute('''
         CREATE TABLE nav (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,12 +34,16 @@ class NavRepository {
           imported_at TEXT,
           api_timestamp TEXT,
           mf_name TEXT,
-          category_name TEXT
+          category_name TEXT,
+          plan TEXT,
+          nav_option TEXT
         );
       ''');
       await d.execute('CREATE INDEX idx_nav_date ON nav(nav_date)');
       await d.execute('CREATE INDEX idx_nav_scheme_code ON nav(scheme_code)');
       await d.execute('CREATE INDEX idx_nav_mf_name ON nav(mf_name)');
+      await d.execute('CREATE INDEX idx_nav_plan ON nav(plan)');
+      await d.execute('CREATE INDEX idx_nav_option ON nav(nav_option)');
       await d.execute('CREATE INDEX idx_nav_isin_payout ON nav(isin_div_payout)');
       await d.execute('CREATE INDEX idx_nav_isin_reinvest ON nav(isin_reinvestment)');
 
@@ -101,6 +105,12 @@ class NavRepository {
             saved_at TEXT
           );
         ''');
+      }
+      if (oldV < 9) {
+        try { await d.execute('ALTER TABLE nav ADD COLUMN plan TEXT'); } catch(_) {}
+        try { await d.execute('ALTER TABLE nav ADD COLUMN nav_option TEXT'); } catch(_) {}
+        try { await d.execute('CREATE INDEX idx_nav_plan ON nav(plan)'); } catch(_) {}
+        try { await d.execute('CREATE INDEX idx_nav_option ON nav(nav_option)'); } catch(_) {}
       }
     },
 onOpen: (d) async {
@@ -194,7 +204,14 @@ onOpen: (d) async {
                     if (scheme is Map<String, dynamic> && scheme.containsKey('navs')) {
                       for (final nav in scheme['navs']) {
                         if (nav is Map<String, dynamic>) {
-                          rows.add(_mapFromApiJson(nav, d, mfName: mf['mfName']?.toString(), category: scheme['schemeName']?.toString()));
+                          rows.add(_mapFromApiJson(
+                            nav, 
+                            d, 
+                            mfName: mf['mfName']?.toString(), 
+                            category: scheme['schemeName']?.toString(),
+                            plan: scheme['Plan']?.toString(),
+                            option: scheme['Option']?.toString() ?? scheme['Nav_Type']?.toString(),
+                          ));
                         }
                       }
                     }
@@ -234,6 +251,8 @@ onOpen: (d) async {
             'api_timestamp': r['api_timestamp'],
             'mf_name': r['mf_name'],
             'category_name': r['category_name'],
+            'plan': r['plan'],
+            'nav_option': r['option'],
           });
         }
         await batch.commit(noResult: true);
@@ -270,7 +289,17 @@ onOpen: (d) async {
     return res.map((m) => m['nav_date'] as String).toList();
   }
 
-  Future<List<NavItem>> queryLatestWithChange({String? q, String? fundType, String? amc, int limit = 200, String? orderBy, String? date, bool prioritizeHeldAndFav = true}) async {
+  Future<List<NavItem>> queryLatestWithChange({
+    String? q, 
+    String? fundType, 
+    String? amc, 
+    String? plan,
+    String? option,
+    int limit = 200, 
+    String? orderBy, 
+    String? date, 
+    bool prioritizeHeldAndFav = true
+  }) async {
     final database = await db;
     
     String latest;
@@ -298,6 +327,16 @@ onOpen: (d) async {
     if (amc != null && amc.isNotEmpty && amc != 'All Companies') {
       filters.add('n.mf_name = ?');
       args.add(amc);
+    }
+
+    if (plan != null && plan.isNotEmpty && plan != 'All Plans') {
+      filters.add('n.plan = ?');
+      args.add(plan);
+    }
+
+    if (option != null && option.isNotEmpty && option != 'All Options') {
+      filters.add('n.nav_option = ?');
+      args.add(option);
     }
 
     if (fundType != null && fundType.isNotEmpty && fundType != 'All') {
@@ -366,6 +405,28 @@ onOpen: (d) async {
     final database = await db;
     final res = await database.rawQuery('SELECT DISTINCT mf_name FROM nav WHERE mf_name IS NOT NULL AND mf_name != "" ORDER BY mf_name ASC');
     return res.map((m) => m['mf_name'] as String).toList();
+  }
+
+  Future<List<String>> getUniquePlans() async {
+    try {
+      final database = await db;
+      final res = await database.rawQuery('SELECT DISTINCT plan FROM nav WHERE plan IS NOT NULL AND plan != "" ORDER BY plan ASC');
+      return res.map((m) => m['plan'] as String).toList();
+    } catch (e) {
+      debugPrint('Error getting unique plans: $e');
+      return [];
+    }
+  }
+
+  Future<List<String>> getUniqueOptions() async {
+    try {
+      final database = await db;
+      final res = await database.rawQuery('SELECT DISTINCT nav_option FROM nav WHERE nav_option IS NOT NULL AND nav_option != "" ORDER BY nav_option ASC');
+      return res.map((m) => m['nav_option'] as String).toList();
+    } catch (e) {
+      debugPrint('Error getting unique options: $e');
+      return [];
+    }
   }
 
   Future<int> clearDataInRange(String from, String to) async {
@@ -469,22 +530,38 @@ onOpen: (d) async {
                       if (navVal != null && dateVal != null) {
                         if (localInfo == null) {
                           final localInfoRes = await database.rawQuery(
-                            'SELECT isin_div_payout, isin_reinvestment, mf_name, category_name, scheme_name FROM nav WHERE scheme_code = ? LIMIT 1',
+                            'SELECT isin_div_payout, isin_reinvestment, mf_name, category_name, scheme_name, plan, nav_option FROM nav WHERE scheme_code = ? LIMIT 1',
                             [task.code]
                           );
                           localInfo = localInfoRes.isNotEmpty ? localInfoRes.first : {};
+                        }
+
+                        final sName = data['scheme_name'] ?? localInfo['scheme_name'] ?? "";
+                        String? p = data['Plan']?.toString();
+                        String? o = data['Option']?.toString() ?? data['Nav_Type']?.toString();
+                        if (p == null || p.isEmpty) {
+                          if (sName.toString().toUpperCase().contains('DIRECT')) p = 'Direct';
+                          else if (sName.toString().toUpperCase().contains('REGULAR')) p = 'Regular';
+                          else p = localInfo['plan'] ?? 'Other';
+                        }
+                        if (o == null || o.isEmpty) {
+                          if (sName.toString().toUpperCase().contains('GROWTH')) o = 'Growth';
+                          else if (sName.toString().toUpperCase().contains('IDCW') || sName.toString().toUpperCase().contains('DIVIDEND')) o = 'IDCW';
+                          else o = localInfo['nav_option'] ?? 'Other';
                         }
 
                         schemeRows.add({
                           'scheme_code': task.code,
                           'isin_div_payout': group['isin_payout'] ?? localInfo['isin_div_payout'],
                           'isin_reinvestment': group['isin_reinvest'] ?? localInfo['isin_reinvestment'],
-                          'scheme_name': data['scheme_name'] ?? localInfo['scheme_name'],
+                          'scheme_name': sName,
                           'nav_value': double.tryParse(navVal.toString()),
                           'nav_date': dateVal.toString(),
                           'api_timestamp': DateTime.now().toIso8601String(),
                           'mf_name': data['mf_name'] ?? localInfo['mf_name'],
                           'category_name': data['category_name'] ?? group['nav_name'] ?? localInfo['category_name'],
+                          'plan': p,
+                          'nav_option': o,
                         });
                         successfulDates.add(task.date);
                       }
@@ -517,6 +594,8 @@ onOpen: (d) async {
                 'api_timestamp': r['api_timestamp'],
                 'mf_name': r['mf_name'],
                 'category_name': r['category_name'],
+                'plan': r['plan'],
+                'nav_option': r['nav_option'],
               }, conflictAlgorithm: ConflictAlgorithm.replace);
             }
             await batch.commit(noResult: true);
@@ -558,12 +637,29 @@ onOpen: (d) async {
     return res.map((m) => m['scheme_code'] as String).toList();
   }
 
-  Map<String, dynamic> _mapFromApiJson(Map<String, dynamic> item, String date, {String? mfName, String? category, String? forcedSdId}) {
+  Map<String, dynamic> _mapFromApiJson(Map<String, dynamic> item, String date, {String? mfName, String? category, String? forcedSdId, String? plan, String? option}) {
     final schemeCode = item['SD_ID']?.toString() ?? forcedSdId;
     final isinDiv = item['ISIN_PO']?.toString();
     final isinReinv = item['ISIN_RI']?.toString();
     final schemeName = item['NAV_Name']?.toString();
     final navRaw = item['hNAV_Amt'];
+
+    // Sourcing Plan and Option from arguments OR item (flat JSON case)
+    String? finalPlan = plan ?? item['Plan']?.toString();
+    String? finalOption = option ?? item['Option']?.toString() ?? item['Nav_Type']?.toString();
+
+    final sName = schemeName ?? "";
+    if (finalPlan == null || finalPlan.isEmpty) {
+      if (sName.toUpperCase().contains('DIRECT')) finalPlan = 'Direct';
+      else if (sName.toUpperCase().contains('REGULAR')) finalPlan = 'Regular';
+      else finalPlan = 'Other';
+    }
+
+    if (finalOption == null || finalOption.isEmpty) {
+      if (sName.toUpperCase().contains('GROWTH')) finalOption = 'Growth';
+      else if (sName.toUpperCase().contains('IDCW') || sName.toUpperCase().contains('DIVIDEND')) finalOption = 'IDCW';
+      else finalOption = 'Other';
+    }
 
     double? navValue;
     if (navRaw != null) {
@@ -590,6 +686,8 @@ onOpen: (d) async {
       'api_timestamp': apiTs,
       'mf_name': mfName,
       'category_name': category,
+      'plan': finalPlan,
+      'option': finalOption,
     };
   }
 }

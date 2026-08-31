@@ -17,12 +17,13 @@ class PortfolioService {
     final databasesPath = await getDatabasesPath();
     final path = p.join(databasesPath, 'nav.db');
     // Using same version as NavRepository to avoid conflicts
-    _db = await openDatabase(path, version: 6, onCreate: (d, v) async {
+    _db = await openDatabase(path, version: 9, onCreate: (d, v) async {
        await _createPortfolioTables(d);
     }, onUpgrade: (d, oldV, newV) async {
        if (oldV < 6) {
          await _createPortfolioTables(d);
        }
+       // Other migrations are handled by NavRepository
     });
     await _ensureTables();
     return _db!;
