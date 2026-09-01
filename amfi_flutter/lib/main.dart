@@ -38,6 +38,7 @@ import 'services/market_news_service.dart';
 import 'models/market_news.dart';
 import 'pages/factor_performance_page.dart';
 import 'models/factor_performance_data.dart';
+import 'pages/calculators_page.dart';
 
 /**
  * INFIN TRULITE - Main Entry Point
@@ -114,8 +115,10 @@ void main() async {
  */
 class BounceClickWrapper extends StatefulWidget {
   final Widget child;
+  final Widget? topLayer;
   final VoidCallback? onTap;
-  const BounceClickWrapper({super.key, required this.child, this.onTap});
+  final double borderRadius;
+  const BounceClickWrapper({super.key, required this.child, this.topLayer, this.onTap, this.borderRadius = 16});
 
   @override
   State<BounceClickWrapper> createState() => _BounceClickWrapperState();
@@ -125,6 +128,7 @@ class _BounceClickWrapperState extends State<BounceClickWrapper> with SingleTick
   late AnimationController _controller;
   late Animation<double> _scale;
   late Animation<double> _opacity;
+  late Animation<Color?> _overlayColor;
 
   @override
   void initState() {
@@ -135,17 +139,29 @@ class _BounceClickWrapperState extends State<BounceClickWrapper> with SingleTick
       reverseDuration: const Duration(milliseconds: 500),
     );
     
-    // Scale: Press down to 0.88, then pop back with elastic overshoot
-    _scale = Tween<double>(begin: 1.0, end: 0.88).animate(
+    // Scale: Press down to 0.92 for a snappier but physical feel
+    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Curves.easeInOut,
+        curve: Curves.easeOutQuad,
         reverseCurve: Curves.elasticOut,
       ),
     );
 
-    // Opacity: Dim slightly during press to give a "receding" feel
-    _opacity = Tween<double>(begin: 1.0, end: 0.85).animate(
+    // Opacity: Dim slightly during press
+    _opacity = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeIn,
+        reverseCurve: Curves.easeOut,
+      ),
+    );
+
+    // Color: Subtle brightness boost on tap
+    _overlayColor = ColorTween(
+      begin: Colors.transparent,
+      end: Colors.white.withOpacity(0.2),
+    ).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.easeIn,
@@ -173,23 +189,32 @@ class _BounceClickWrapperState extends State<BounceClickWrapper> with SingleTick
               children: [
                 widget.child,
                 Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _overlayColor.value,
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTapDown: (_) {
-                        HapticFeedback.vibrate();
-                        HapticFeedback.heavyImpact();
-                        _controller.forward();
-                      },
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
+                      onTapDown: (_) => _controller.forward(),
                       onTapUp: (_) => _controller.reverse(),
                       onTapCancel: () => _controller.reverse(),
-                      onTap: widget.onTap,
+                      onTap: () async {
+                        // Reverted to 150ms delay
+                        await Future.delayed(const Duration(milliseconds: 150));
+                        widget.onTap?.call();
+                      },
                       splashColor: Colors.white.withOpacity(0.3),
                       highlightColor: Colors.white.withOpacity(0.1),
                     ),
                   ),
                 ),
+                if (widget.topLayer != null) widget.topLayer!,
               ],
             ),
           ),
@@ -1499,6 +1524,12 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                 if (v == 'import') _pickAndImportFile();
                 else if (v == 'manage') _showManageImportsDialog();
                 else if (v == 'settings') _showSettingsMenu();
+                else if (v == 'calculators') {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => CalculatorsPage(
+                    selectedLanguage: _selectedLanguage,
+                    translate: _translate,
+                  )));
+                }
                 else if (v == 'clear_date') {
                   setState(() {
                     _selectedFilterDate = null;
@@ -1532,6 +1563,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                 ),
                 PopupMenuItem(value: 'manage', child: Row(children: [const Icon(Icons.layers, size: 20, color: Colors.indigo), const SizedBox(width: 8), CommonWidgets.txt('Manage Imports', selectedLanguage: _selectedLanguage, translate: _translate)])),
                 PopupMenuItem(value: 'settings', child: Row(children: [const Icon(Icons.tune, size: 20, color: Colors.indigo), const SizedBox(width: 8), const Text('Settings')])),
+                PopupMenuItem(value: 'calculators', child: Row(children: [const Icon(Icons.calculate, size: 20, color: Colors.indigo), const SizedBox(width: 8), CommonWidgets.txt('Calculators', selectedLanguage: _selectedLanguage, translate: _translate)])),
               ],
             ),
           ],
@@ -1829,10 +1861,53 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           childWhenDragging: Opacity(opacity: 0.3, child: _buildTileById(id)),
           child: BounceClickWrapper(
             onTap: () => _handleTileTap(id),
+            topLayer: _buildTileRefreshButton(id),
+            borderRadius: 12,
             child: _buildTileById(id),
           ),
         );
       },
+    );
+  }
+
+  Widget? _buildTileRefreshButton(String id) {
+    VoidCallback? onRefresh;
+    switch (id) {
+      case 'fiiDii':
+        onRefresh = () => _fetchFiiDii(force: true);
+        break;
+      case 'indices':
+        onRefresh = () => _fetchIndices(force: true);
+        break;
+      case 'aum':
+        onRefresh = () => _fetchAmfiAum(force: true);
+        break;
+      case 'giftNifty':
+        onRefresh = () => _fetchGiftNifty(force: true);
+        break;
+      case 'gold':
+        onRefresh = () => _fetchGoldRates(force: true);
+        break;
+      case 'marketNews':
+        onRefresh = () => _fetchMarketNews(force: true);
+        break;
+      case 'factorPerf':
+        onRefresh = _fetchFactorsOnly;
+        break;
+      default:
+        return null;
+    }
+
+    return Positioned(
+      top: 0,
+      right: 0,
+      child: IconButton(
+        icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
+        onPressed: onRefresh,
+        visualDensity: VisualDensity.compact,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+      ),
     );
   }
 
@@ -1920,17 +1995,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     ],
                   ),
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
-              onPressed: () => _fetchMarketNews(force: true),
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ),
         ],
       ),
     );
@@ -2009,17 +2073,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               ],
             ),
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
-              onPressed: _fetchFactorsOnly,
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ),
         ],
       ),
     );
@@ -2074,17 +2127,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                         ),
                     ],
                   ),
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
-              onPressed: () => _fetchFiiDii(force: true),
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
           ),
         ],
       ),
@@ -2193,17 +2235,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     ],
                   ),
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
-              onPressed: () => _fetchGiftNifty(force: true),
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ),
         ],
       ),
     );
@@ -2297,17 +2328,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     ],
                   ),
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
-              onPressed: () => _fetchGoldRates(force: true),
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ),
         ],
       ),
     );
@@ -2379,17 +2399,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                         ),
                     ],
                   ),
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
-              onPressed: () => _fetchIndices(force: true),
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
           ),
         ],
       ),
@@ -2466,17 +2475,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                         ),
                     ],
                   ),
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.refresh, size: 14, color: Colors.grey),
-              onPressed: () => _fetchAmfiAum(force: true),
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
           ),
         ],
       ),

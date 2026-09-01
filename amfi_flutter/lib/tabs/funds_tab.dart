@@ -356,8 +356,8 @@ class _FundsTabState extends State<FundsTab> {
                     subtitle: Row(children: [
                         Expanded(child: Text('${it.navDate ?? ''} \u2022 ${it.apiTimestamp != null ? CommonWidgets.formatImportedAt(it.apiTimestamp!) : ''}', style: TextStyle(fontSize: widget.setCompactLayout ? 10 : 11, color: Colors.grey[600]))),
                         if (widget.setShowIconsInNav) ...[
-                          if (it.isHeld) Padding(padding: const EdgeInsets.only(right: 6.0), child: Icon(Icons.account_balance_wallet, size: 12, color: Colors.indigo[400])),
-                          if (it.isFavorite) Icon(Icons.star, size: 12, color: Colors.amber[700]),
+                          if (it.isFavorite) Padding(padding: const EdgeInsets.only(right: 6.0), child: Icon(Icons.star, size: 12, color: Colors.amber[700])),
+                          if (it.isHeld) Icon(Icons.account_balance_wallet, size: 12, color: Colors.indigo[400]),
                         ],
                     ]),
                     trailing: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
