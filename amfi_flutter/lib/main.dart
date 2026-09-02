@@ -205,12 +205,12 @@ class _BounceClickWrapperState extends State<BounceClickWrapper> with SingleTick
                       onTapUp: (_) => _controller.reverse(),
                       onTapCancel: () => _controller.reverse(),
                       onTap: () async {
-                        // Reverted to 150ms delay
-                        await Future.delayed(const Duration(milliseconds: 150));
+                        // Increased to 200ms delay as requested
+                        await Future.delayed(const Duration(milliseconds: 200));
                         widget.onTap?.call();
                       },
-                      splashColor: Colors.white.withOpacity(0.3),
-                      highlightColor: Colors.white.withOpacity(0.1),
+                      splashColor: Colors.white.withOpacity(0.4),
+                      highlightColor: Colors.white.withOpacity(0.15),
                     ),
                   ),
                 ),
@@ -820,7 +820,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         minChildSize: 0.6,
@@ -1759,7 +1759,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (ctx) => Container(
         height: MediaQuery.of(ctx).size.height * 0.7,
         decoration: const BoxDecoration(

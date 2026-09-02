@@ -183,6 +183,7 @@ class _FundsTabState extends State<FundsTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.8,
@@ -208,7 +209,9 @@ class _FundsTabState extends State<FundsTab> {
               FundHistorySection(
                 schemeCode: it.schemeCode!,
                 schemeName: it.schemeName ?? '',
+                category: it.category,
                 selectedLanguage: widget.selectedLanguage,
+                setCompactLayout: widget.setCompactLayout,
                 translate: widget.translate,
               ),
               const Divider(height: 40),
@@ -388,14 +391,18 @@ class _FundsTabState extends State<FundsTab> {
 class FundHistorySection extends StatefulWidget {
   final String schemeCode;
   final String schemeName;
+  final String? category;
   final String selectedLanguage;
+  final bool setCompactLayout;
   final Future<String> Function(String) translate;
 
   const FundHistorySection({
     super.key,
     required this.schemeCode,
     required this.schemeName,
+    this.category,
     required this.selectedLanguage,
+    required this.setCompactLayout,
     required this.translate,
   });
 
@@ -411,6 +418,11 @@ class _FundHistorySectionState extends State<FundHistorySection> {
   bool _loading = true;
   Map<String, double> _returns = {};
   String _selectedPeriod = '1Y';
+  String _benchmarkName = 'Nifty 500';
+
+  // Toggle visibility
+  bool _showFundLine = true;
+  bool _showBenchmarkLine = true;
 
   // Range selection state
   int? _startIdx;
@@ -426,12 +438,16 @@ class _FundHistorySectionState extends State<FundHistorySection> {
 
   Future<void> _load() async {
     try {
+      final benchmark = _determineBenchmark(widget.schemeName, widget.category);
+      debugPrint('Benchmark for ${widget.schemeName}: $benchmark');
+      
       final results = await Future.wait([
         _repo.getHistoryForScheme(widget.schemeCode),
-        _indexService.fetchIndexHistory('NIFTY 500'),
+        _indexService.fetchIndexHistory(benchmark),
       ]);
       if (mounted) {
         setState(() {
+          _benchmarkName = benchmark;
           _history = results[0];
           _benchmarkHistory = results[1];
           _returns = _calculateReturns(_history);
@@ -441,6 +457,112 @@ class _FundHistorySectionState extends State<FundHistorySection> {
     } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+
+  String _determineBenchmark(String name, String? category) {
+    final n = name.toUpperCase();
+    final c = (category ?? '').toUpperCase();
+    
+    // --- 1. DIRECT INDEX TRACKERS (ETFs / Index Funds) ---
+    // Rule: If the fund is explicitly named after an index, use that index.
+    if (n.contains('NIFTY 50') && !n.contains('NEXT 50')) return 'NIFTY 50';
+    if (n.contains('NIFTY NEXT 50')) return 'NIFTY NEXT 50';
+    if (n.contains('NIFTY 100')) return 'NIFTY 100';
+    if (n.contains('NIFTY 200')) return 'NIFTY 200';
+    if (n.contains('NIFTY 500')) return 'NIFTY 500';
+    if (n.contains('MIDCAP 150')) return 'NIFTY MIDCAP 150';
+    if (n.contains('MIDCAP 100')) return 'NIFTY MIDCAP 100';
+    if (n.contains('SMALLCAP 250')) return 'NIFTY SMALLCAP 250';
+    if (n.contains('SMALLCAP 50')) return 'NIFTY SMALLCAP 50';
+    if (n.contains('BANK NIFTY') || n.contains('NIFTY BANK')) return 'NIFTY BANK';
+    if (n.contains('NIFTY IT')) return 'NIFTY IT';
+    
+    // --- 2. SEBI TIER-1 CATEGORY MAPPING (Highest Priority for Active Funds) ---
+    // Rule: SEBI category determines the benchmark. This avoids AMC names (like "Bank of India") 
+    // triggering false sectoral matches.
+    if (c.contains('SMALL CAP')) return 'NIFTY SMALLCAP 250';
+    if (c.contains('MID CAP')) return 'NIFTY MIDCAP 150';
+    if (c.contains('LARGE CAP')) return 'NIFTY 100';
+    if (c.contains('LARGE & MID')) return 'NIFTY LARGEMIDCAP 250';
+    if (c.contains('FLEXI CAP') || c.contains('MULTI CAP') || c.contains('ELSS') || c.contains('FOCUSED')) return 'NIFTY 500';
+    if (c.contains('VALUE') || c.contains('CONTRA') || c.contains('DIVIDEND YIELD')) return 'NIFTY 500';
+    
+    // Debt Categories
+    if (c.contains('LIQUID') || c.contains('OVERNIGHT')) return 'NIFTY LIQUID INDEX';
+    if (c.contains('MONEY MARKET') || c.contains('ULTRA SHORT')) return 'NIFTY MONEY MARKET INDEX';
+    if (c.contains('SHORT DURATION') || c.contains('LOW DURATION')) return 'NIFTY SHORT DURATION DEBT INDEX';
+    if (c.contains('CORPORATE BOND')) return 'NIFTY CORPORATE BOND INDEX';
+    if (c.contains('BANKING AND PSU DEBT')) return 'NIFTY BANKING & PSU DEBT INDEX';
+    if (c.contains('DYNAMIC BOND')) return 'NIFTY DYNAMIC BOND INDEX';
+    if (c.contains('GILT')) return 'NIFTY 10 YR BENCHMARK G-SEC';
+    
+    // Arbitrage / Hybrid
+    if (c.contains('ARBITRAGE')) return 'NIFTY 50 ARBITRAGE INDEX';
+    if (c.contains('AGGRESSIVE HYBRID')) return 'NIFTY 50 HYBRID COMPOSITE DEBT 65:35';
+    if (c.contains('BALANCED HYBRID') || c.contains('DYNAMIC ASSET')) return 'NIFTY 50 HYBRID COMPOSITE DEBT 50:50';
+    if (c.contains('CONSERVATIVE HYBRID')) return 'NIFTY 50 HYBRID COMPOSITE DEBT 15:85';
+
+    // --- 3. SECTORAL / THEMATIC MAPPING (Fallback for Sectoral/Thematic category) ---
+    // Rule: If it's not a standard cap-based fund, look for sectoral keywords.
+    if (n.contains('BANK') || n.contains('FINANCIAL') || n.contains('BFSI')) {
+      // Special check: ensure 'BANK' isn't just part of AMC name for a diversified fund
+      if (c.contains('SECTORAL') || c.contains('THEMATIC') || n.contains('BANKING')) {
+         return 'NIFTY FINANCIAL SERVICES';
+      }
+    }
+    if (n.contains(' IT ') || n.contains('TECHNOLOGY') || n.contains('TECH')) return 'NIFTY IT';
+    if (n.contains('PHARMA') || n.contains('HEALTHCARE')) {
+       return n.contains('HEALTHCARE') ? 'NIFTY HEALTHCARE' : 'NIFTY PHARMA';
+    }
+    if (n.contains('FMCG') || n.contains('CONSUMPTION') || n.contains('CONSUMER')) return 'NIFTY FMCG';
+    if (n.contains('DEFENCE')) return 'NIFTY INDIA DEFENCE';
+    if (n.contains('TOURISM') || n.contains('HOSPITALITY')) return 'NIFTY INDIA TOURISM';
+    if (n.contains('INFRA')) return 'NIFTY INFRA';
+    if (n.contains('ENERGY') || n.contains('POWER')) return 'NIFTY ENERGY';
+    if (n.contains('AUTO')) return 'NIFTY AUTO';
+    if (n.contains('METAL') || n.contains('COMMODITIES')) return 'NIFTY METAL';
+    if (n.contains('MEDIA')) return 'NIFTY MEDIA';
+    if (n.contains('REALTY')) return 'NIFTY REALTY';
+    if (n.contains('HOUSING')) return 'NIFTY HOUSING';
+    if (n.contains('POWER')) return 'NIFTY POWER';
+    if (n.contains('CAPITAL GOODS')) return 'NIFTY CAPITAL GOODS';
+    if (n.contains('TELECOM') || n.contains('COMMUNICATION')) return 'NIFTY TELECOMMUNICATIONS';
+    if (n.contains('RETAIL') || n.contains('SHOPPING')) return 'NIFTY RETAIL';
+    if (n.contains('HOSPITAL')) return 'NIFTY HOSPITALS';
+    if (n.contains('NBFC') || n.contains('FINANCE')) {
+       if (n.contains('HOUSING')) return 'NIFTY HOUSING FINANCE';
+       return 'NIFTY NBFC';
+    }
+    if (n.contains('INSURANCE')) return 'NIFTY INSURANCE';
+    if (n.contains('RAILWAY')) return 'NIFTY INDIA RAILWAYS PSU';
+    if (n.contains('EV ') || n.contains('ELECTRIC VEHICLE')) return 'NIFTY EV & NEW AGE AUTOMOTIVE';
+    if (n.contains('MNC')) return 'NIFTY MNC';
+    if (n.contains('PSE') || n.contains('PSU') || n.contains('CPSE')) return 'NIFTY PSE';
+    if (n.contains('SERVICES')) return 'NIFTY SERVICES SECTOR';
+    if (n.contains('MANUFACTURING')) return 'NIFTY INDIA MANUFACTURING';
+    if (n.contains('DIGITAL')) return 'NIFTY INDIA DIGITAL';
+    if (n.contains('LOGISTICS') || n.contains('TRANSPORT') || n.contains('MOBILITY')) return 'NIFTY TRANSPORTATION & LOGISTICS';
+    if (n.contains('CONSUMER DURABLES')) return 'NIFTY CONSUMER DURABLES';
+    if (n.contains('OIL') || n.contains('GAS')) return 'NIFTY OIL & GAS';
+    if (n.contains('MICRO CAP') || n.contains('MICROCAP')) return 'NIFTY MICROCAP 250';
+    
+    // Strategy / Smart Beta
+    if (n.contains('MOMENTUM')) return 'NIFTY200 MOMENTUM 30';
+    if (n.contains('ALPHA')) return 'NIFTY ALPHA 50';
+    if (n.contains('QUALITY')) return 'NIFTY100 QUALITY 30';
+    if (n.contains('LOW VOL')) return 'NIFTY LOW VOLATILITY 50';
+    if (n.contains('EQUAL WEIGHT')) return 'NIFTY50 EQUAL WEIGHT';
+    if (n.contains('GROWTH')) return 'NIFTY500 GROWTH 50';
+    
+    // --- 4. FALLBACKS ---
+    if (n.contains('SMALL')) return 'NIFTY SMALLCAP 250';
+    if (n.contains('MID')) return 'NIFTY MIDCAP 150';
+    if (n.contains('BLUECHIP') || n.contains('LARGE')) return 'NIFTY 100';
+    if (n.contains('TAX') || n.contains('SAVER') || n.contains('BASKET')) return 'NIFTY 500';
+    if (c.contains('MULTI ASSET') || c.contains('EQUITY SAVINGS')) return 'NIFTY 50';
+    
+    return 'NIFTY 500'; 
   }
 
   Map<String, double> _calculateReturns(List<Map<String, dynamic>> data) {
@@ -531,9 +653,67 @@ class _FundHistorySectionState extends State<FundHistorySection> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _legendMarker(Colors.indigo[700]!, 'Fund'),
+            InkWell(
+              onTap: () => setState(() => _showFundLine = !_showFundLine),
+              child: Opacity(
+                opacity: _showFundLine ? 1.0 : 0.4,
+                child: _legendMarker(Colors.indigo[700]!, 'Fund'),
+              ),
+            ),
             const SizedBox(width: 16),
-            _legendMarker(Colors.orange[700]!, 'Nifty 500 (Benchmark)'),
+            InkWell(
+              onTap: () => setState(() => _showBenchmarkLine = !_showBenchmarkLine),
+              child: Opacity(
+                opacity: _showBenchmarkLine ? 1.0 : 0.4,
+                child: _legendMarker(Colors.orange[700]!, _benchmarkName),
+              ),
+            ),
+            const SizedBox(width: 2),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onSelected: (String val) async {
+                setState(() {
+                  _benchmarkName = val;
+                  _loading = true;
+                });
+                try {
+                  final benchData = await _indexService.fetchIndexHistory(val);
+                  if (mounted) {
+                    setState(() {
+                      _benchmarkHistory = benchData;
+                      _loading = false;
+                    });
+                  }
+                } catch (e) {
+                  if (mounted) setState(() => _loading = false);
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                final List<String> commonIndices = [
+                  'NIFTY 50', 'NIFTY NEXT 50', 'NIFTY 100', 'NIFTY 200', 'NIFTY 500',
+                  'NIFTY MIDCAP 50', 'NIFTY MIDCAP 100', 'NIFTY MIDCAP 150',
+                  'NIFTY SMALLCAP 50', 'NIFTY SMALLCAP 100', 'NIFTY SMALLCAP 250',
+                  'NIFTY BANK', 'NIFTY IT', 'NIFTY PHARMA', 'NIFTY FMCG', 'NIFTY AUTO', 
+                  'NIFTY ENERGY', 'NIFTY INFRA', 'NIFTY REALTY', 'NIFTY CPSE', 'NIFTY INDIA DEFENCE'
+                ];
+                return commonIndices.map((String choice) {
+                  return PopupMenuItem<String>(
+                    value: choice,
+                    height: 32,
+                    child: Text(
+                      choice,
+                      style: TextStyle(
+                        fontSize: widget.setCompactLayout ? 13 : 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.indigo[900],
+                      ),
+                    ),
+                  );
+                }).toList();
+              },
+            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -555,21 +735,69 @@ class _FundHistorySectionState extends State<FundHistorySection> {
   Widget _buildChart(List<Map<String, dynamic>> navData, List<Map<String, dynamic>> benchData, double chartWidth) {
     if (navData.length < 2) return const SizedBox(height: 180, child: Center(child: Text('Not enough data', style: TextStyle(fontSize: 12, color: Colors.grey))));
     
-    final navBase = (navData.first['nav_value'] as num).toDouble();
-    final benchBase = (benchData.isNotEmpty) ? (benchData.first['value'] as num).toDouble() : 1.0;
-
-    List<FlSpot> navSpots = [];
-    for (int i = 0; i < navData.length; i++) {
-      final val = (navData[i]['nav_value'] as num).toDouble();
-      navSpots.add(FlSpot(i.toDouble(), navBase > 0 ? (val / navBase * 100) : 100));
+    // --- Date-based Data Alignment ---
+    // 1. Create a map of benchmark values keyed by date string (YYYY-MM-DD)
+    final Map<String, double> benchMap = {};
+    for (var p in benchData) {
+       final d = DateTime.fromMillisecondsSinceEpoch(p['timestamp'] as int);
+       final dateKey = DateFormat('yyyy-MM-dd').format(d);
+       benchMap[dateKey] = (p['value'] as num).toDouble();
     }
 
+    // 2. Identify the common base date (the first date in navData)
+    final firstNavDateStr = navData.first['nav_date'] ?? '';
+    final firstNavDate = DateTime.tryParse(firstNavDateStr) ?? DateTime.now();
+    
+    // 3. Find the benchmark value for the first NAV date to use as a base for rebasing
+    double benchBase = 1.0;
+    if (benchMap.isNotEmpty) {
+      // Look for exact match or closest previous value
+      String lookupKey = DateFormat('yyyy-MM-dd').format(firstNavDate);
+      if (benchMap.containsKey(lookupKey)) {
+        benchBase = benchMap[lookupKey]!;
+      } else {
+        // Fallback: Use the earliest available benchmark point if exact match isn't found
+        benchBase = (benchData.first['value'] as num).toDouble();
+      }
+    }
+
+    final navBase = (navData.first['nav_value'] as num).toDouble();
+
+    List<FlSpot> navSpots = [];
     List<FlSpot> benchSpots = [];
-    if (benchData.isNotEmpty) {
-      for (int i = 0; i < benchData.length; i++) {
-        final val = (benchData[i]['value'] as num).toDouble();
-        final x = (i / (benchData.length - 1)) * (navData.length - 1);
-        benchSpots.add(FlSpot(x, benchBase > 0 ? (val / benchBase * 100) : 100));
+
+    for (int i = 0; i < navData.length; i++) {
+      final navDateStr = navData[i]['nav_date'] ?? '';
+      final navDate = DateTime.tryParse(navDateStr);
+      final navVal = (navData[i]['nav_value'] as num).toDouble();
+      
+      // X-coordinate is simply the index in navData to keep timeline linear
+      final double x = i.toDouble();
+      
+      // Plot Fund spot
+      navSpots.add(FlSpot(x, navBase > 0 ? (navVal / navBase * 100) : 100));
+
+      // Plot Benchmark spot aligned to the same X (same date)
+      if (navDate != null && benchMap.isNotEmpty) {
+        String lookupKey = DateFormat('yyyy-MM-dd').format(navDate);
+        double? bVal;
+        
+        if (benchMap.containsKey(lookupKey)) {
+          bVal = benchMap[lookupKey];
+        } else {
+          // If no exact date match (e.g., weekend/holiday mismatch), look for previous value
+          for (int dayBack = 1; dayBack <= 5; dayBack++) {
+            final prevKey = DateFormat('yyyy-MM-dd').format(navDate.subtract(Duration(days: dayBack)));
+            if (benchMap.containsKey(prevKey)) {
+              bVal = benchMap[prevKey];
+              break;
+            }
+          }
+        }
+        
+        if (bVal != null) {
+          benchSpots.add(FlSpot(x, benchBase > 0 ? (bVal / benchBase * 100) : 100));
+        }
       }
     }
 
@@ -622,12 +850,15 @@ class _FundHistorySectionState extends State<FundHistorySection> {
             lineTouchData: LineTouchData(
               enabled: !_isSelecting,
               touchTooltipData: LineTouchTooltipData(
+                fitInsideHorizontally: true,
+                fitInsideVertically: true,
                 getTooltipItems: (touchedSpots) {
                   // Sort touched spots to have a consistent display order (Fund first, then Benchmark)
                   final sortedSpots = touchedSpots.toList()..sort((a, b) => a.barIndex.compareTo(b.barIndex));
                   
                   return sortedSpots.map((spot) {
                     if (spot.barIndex == 0) { // Fund
+                      if (!_showFundLine) return null;
                       final item = navData[spot.x.toInt()];
                       final rebasedVal = spot.y;
                       final returnPct = rebasedVal - 100;
@@ -636,6 +867,7 @@ class _FundHistorySectionState extends State<FundHistorySection> {
                         const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                       );
                     } else if (spot.barIndex == 1) { // Benchmark
+                      if (!_showBenchmarkLine) return null;
                       final rebasedVal = spot.y;
                       final returnPct = rebasedVal - 100;
                       return LineTooltipItem(
@@ -644,7 +876,7 @@ class _FundHistorySectionState extends State<FundHistorySection> {
                       );
                     }
                     return null;
-                  }).toList();
+                  }).where((item) => item != null).toList();
                 },
               ),
             ),
@@ -654,21 +886,22 @@ class _FundHistorySectionState extends State<FundHistorySection> {
             minY: minY,
             maxY: maxY,
             lineBarsData: [
-              LineChartBarData(
-                spots: navSpots,
-                isCurved: true,
-                color: Colors.indigo[700],
-                barWidth: 1.5,
-                dotData: const FlDotData(show: false),
-                belowBarData: BarAreaData(show: true, color: Colors.indigo.withOpacity(0.05)),
-              ),
-              if (benchSpots.isNotEmpty)
+              if (benchSpots.isNotEmpty && _showBenchmarkLine)
                 LineChartBarData(
                   spots: benchSpots,
                   isCurved: true,
                   color: Colors.orange[700],
                   barWidth: 1.5,
                   dotData: const FlDotData(show: false),
+                ),
+              if (_showFundLine)
+                LineChartBarData(
+                  spots: navSpots,
+                  isCurved: true,
+                  color: Colors.indigo[700],
+                  barWidth: 1.5,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(show: true, color: Colors.indigo.withOpacity(0.05)),
                 ),
             ],
           ),
