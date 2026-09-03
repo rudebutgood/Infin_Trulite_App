@@ -230,7 +230,7 @@ class MarketNewsService {
   }
 
   Future<List<_ScoredNews>> _fetchSingleFeed(
-    IOClient client, 
+    IOClient client,
     String url, 
     String sourceName, 
     int hours, 

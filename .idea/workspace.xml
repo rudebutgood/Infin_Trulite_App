@@ -8,18 +8,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/benchmark_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/amfi_aum_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/amfi_aum_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/factor_performance_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/factor_performance_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/market_news_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/market_news_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/amfi_aum_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/amfi_aum_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/fii_dii_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/fii_dii_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/gift_nifty_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/gift_nifty_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/gold_rate_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/gold_rate_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/index_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/index_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/market_news_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/market_news_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/portfolio_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/portfolio_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/tabs/portfolio_tab.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/tabs/portfolio_tab.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/widgets/common_widgets.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/widgets/common_widgets.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,6 +38,9 @@
       <entry key="_C:/Users/manoz/StudioProjects/Infin Trulite" value="3HmnQsM3hu63d54T3hL5742pMv2" />
       <entry key="_C:/Users/manoz/StudioProjects/Infin Trulite/amfi_flutter" value="3IeIAFZL6QVkrBaCMW58B9TkVsf" />
     </persistenceIdMap>
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="591" />
   </component>
   <component name="ExternalProjectsManager">
     <system id="GRADLE">
@@ -163,34 +170,37 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;PROJECT_TRUSTED_KEY&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
-    &quot;copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Pub/Cache/hosted/pub_dev&quot;: &quot;true&quot;,
-    &quot;copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Pub/Cache/hosted/pub_dev/file_picker-11_0_3/android/src/main&quot;: &quot;true&quot;,
-    &quot;copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Temp&quot;: &quot;true&quot;,
-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/manoz/StudioProjects/Infin Trulite/docs&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMConfigurable&quot;,
-    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "PROJECT_TRUSTED_KEY": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "android.gradle.sync.needed": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "copilot.chat.legacySessionMetadata.migrated": "true",
+    "copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Pub/Cache/hosted/pub_dev": "true",
+    "copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Pub/Cache/hosted/pub_dev/file_picker-11_0_3/android/src/main": "true",
+    "copilot.sensitive.folder.allow.file_read.C:/Users/manoz/AppData/Local/Temp": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "master",
+    "io.flutter.project.isFirstOpen": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/manoz/StudioProjects/Infin Trulite/docs",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
+    "show.migrate.to.gradle.popup": "false"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;com.android.tools.idea.sqlite.queryhistory&quot;: [
-      &quot;SELECT * FROM portfolio_transactions WHERE isin='INF247L01BQ9' --x7m4jy&quot;
+  "keyToStringList": {
+    "com.android.tools.idea.sqlite.queryhistory": [
+      "SELECT * FROM portfolio_transactions WHERE isin='INF247L01BQ9' --x7m4jy"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\manoz\StudioProjects\Infin Trulite\docs" />
@@ -503,7 +513,15 @@
       <option name="project" value="LOCAL" />
       <updated>1788302868031</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="initial commit">
+      <option name="closed" value="true" />
+      <created>1788387950108</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1788387950108</updated>
+    </task>
+    <option name="localTasksCounter" value="38" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -538,7 +556,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="Dart">
           <url>file://$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart</url>
-          <line>483</line>
+          <line>497</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>
