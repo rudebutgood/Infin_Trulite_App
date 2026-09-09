@@ -23,7 +23,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Infin Indices"
+            android:text="Infin Watchlist"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:textSize="13sp"

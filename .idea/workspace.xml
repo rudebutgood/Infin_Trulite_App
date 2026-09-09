@@ -8,15 +8,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetService.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/drawable/header_background.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/AndroidManifest.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/drawable/widget_background.xml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/drawable/widget_background.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/MainActivity.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_item_row.xml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_item_row.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_widget.xml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_widget.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/widget_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/widget_service.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -523,7 +523,15 @@
       <option name="project" value="LOCAL" />
       <updated>1788985124569</updated>
     </task>
-    <option name="localTasksCounter" value="39" />
+    <task id="LOCAL-00039" summary="initial commit">
+      <option name="closed" value="true" />
+      <created>1788991593723</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1788991593723</updated>
+    </task>
+    <option name="localTasksCounter" value="40" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -558,7 +566,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="Dart">
           <url>file://$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart</url>
-          <line>524</line>
+          <line>542</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>

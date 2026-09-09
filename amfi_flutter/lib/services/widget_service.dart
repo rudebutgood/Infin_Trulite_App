@@ -24,7 +24,11 @@ class WidgetService {
 
       // 2. Fetch latest data for indices
       final allIndices = await service.fetchIndices();
-      final bookmarkedData = allIndices.where((e) => bookmarks.contains(e.name)).toList();
+      
+      // Sort bookmarked data based on the bookmark order
+      final bookmarkedData = bookmarks.map((name) {
+        return allIndices.firstWhere((e) => e.name == name);
+      }).whereType<IndexData>().toList();
 
       // 3. Prepare data for widget
       final data = bookmarkedData.map((e) => {

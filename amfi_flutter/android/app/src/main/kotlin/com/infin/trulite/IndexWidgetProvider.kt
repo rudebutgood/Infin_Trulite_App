@@ -35,6 +35,7 @@ class IndexWidgetProvider : AppWidgetProvider() {
         when (intent.action) {
             ACTION_DO_NOTHING -> return // Explicitly catch and ignore
             ACTION_REFRESH -> {
+                val pendingResult = goAsync()
                 // Show progress bar spinner
                 for (appWidgetId in appWidgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.index_widget)
@@ -54,6 +55,7 @@ class IndexWidgetProvider : AppWidgetProvider() {
                     } finally {
                         withContext(Dispatchers.Main) {
                             onUpdate(context, appWidgetManager, appWidgetIds)
+                            pendingResult.finish()
                         }
                     }
                 }
@@ -73,6 +75,8 @@ class IndexWidgetProvider : AppWidgetProvider() {
             // 1. Get cookies first
             val mainUrl = URL("https://www.nseindia.com/")
             val conn1 = mainUrl.openConnection() as HttpURLConnection
+            conn1.connectTimeout = 4000
+            conn1.readTimeout = 4000
             conn1.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
             conn1.connect()
             val cookies = conn1.headerFields["Set-Cookie"]?.joinToString("; ")
@@ -81,6 +85,8 @@ class IndexWidgetProvider : AppWidgetProvider() {
             // 2. Fetch indices
             val apiUrl = URL("https://www.nseindia.com/api/allIndices")
             val conn2 = apiUrl.openConnection() as HttpURLConnection
+            conn2.connectTimeout = 4000
+            conn2.readTimeout = 4000
             conn2.setRequestProperty("User-Agent", "Mozilla/5.0")
             conn2.setRequestProperty("Accept", "application/json")
             if (cookies != null) conn2.setRequestProperty("Cookie", cookies)
@@ -149,17 +155,15 @@ class IndexWidgetProvider : AppWidgetProvider() {
             // 1. DUMMY INTENT TO STOP BACKGROUND CLICKS
             val nothingIntent = Intent(context, IndexWidgetProvider::class.java).apply {
                 action = ACTION_DO_NOTHING
+                data = Uri.parse("nothing://$appWidgetId")
             }
             val nothingPendingIntent = android.app.PendingIntent.getBroadcast(
-                context, 999, nothingIntent,
+                context, appWidgetId + 2000, nothingIntent, 
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
-            // Apply it to anything that shouldn't open the app
+            // Apply it to the entire header area
             views.setOnClickPendingIntent(R.id.header_bar, nothingPendingIntent)
-            views.setOnClickPendingIntent(R.id.widget_title, nothingPendingIntent)
-            views.setOnClickPendingIntent(R.id.last_refresh_label, nothingPendingIntent)
-            views.setOnClickPendingIntent(R.id.last_refresh, nothingPendingIntent)
-
+            
             // Hide progress bar and show logo
             views.setViewVisibility(R.id.widget_logo, View.VISIBLE)
             views.setViewVisibility(R.id.refresh_progress, View.GONE)
@@ -213,11 +217,13 @@ class IndexWidgetProvider : AppWidgetProvider() {
             // PendingIntent template for clicks on grid items
             val clickIntent = Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val clickPendingIntent = android.app.PendingIntent.getActivity(
-                context, 100, clickIntent, 
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                context, 
+                appWidgetId + 5000, 
+                clickIntent, 
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
             )
             views.setPendingIntentTemplate(R.id.indices_grid, clickPendingIntent)
 

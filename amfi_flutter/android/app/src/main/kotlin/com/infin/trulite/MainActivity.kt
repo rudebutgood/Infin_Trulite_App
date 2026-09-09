@@ -25,6 +25,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleIntent(intent)
     }
 
@@ -34,17 +35,25 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun handleIntent(intent: Intent) {
+        var indexName: String? = null
+        
         if (Intent.ACTION_VIEW == intent.action) {
             val data: Uri? = intent.data
             if (data != null && "infin-trulite" == data.scheme && "indices" == data.host) {
-                val indexName = data.getQueryParameter("name")
-                if (indexName != null) {
-                    flutterEngine?.dartExecutor?.binaryMessenger?.let {
-                        MethodChannel(it, CHANNEL).invokeMethod("openIndex", indexName)
-                    } ?: run {
-                        pendingIndexName = indexName
-                    }
-                }
+                indexName = data.getQueryParameter("name")
+            }
+        }
+        
+        // Fallback to extra if URI parameter was not found
+        if (indexName == null) {
+            indexName = intent.getStringExtra("indexName")
+        }
+
+        if (indexName != null) {
+            flutterEngine?.dartExecutor?.binaryMessenger?.let {
+                MethodChannel(it, CHANNEL).invokeMethod("openIndex", indexName)
+            } ?: run {
+                pendingIndexName = indexName
             }
         }
     }

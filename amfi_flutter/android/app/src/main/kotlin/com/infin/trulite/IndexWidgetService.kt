@@ -77,9 +77,12 @@ class IndexWidgetFactory(private val context: Context, private val intent: Inten
                 views.setViewVisibility(R.id.index_chart, View.GONE)
             }
 
+            // Fill-in intent for deep linking
             val fillInIntent = Intent().apply {
-                val data = Uri.parse("infin-trulite://indices?name=${Uri.encode(name)}")
-                setData(data)
+                val dataUri = Uri.parse("infin-trulite://indices?name=${Uri.encode(name)}")
+                data = dataUri
+                // Also add as extra just in case
+                putExtra("indexName", name)
             }
             views.setOnClickFillInIntent(R.id.row_container, fillInIntent)
             
@@ -110,17 +113,17 @@ class IndexWidgetFactory(private val context: Context, private val intent: Inten
                 val colorStr = if (isPositive) "#388E3C" else "#D32F2F"
 
                 // SVG dimensions for a small sparkline
-                val width = 120 
+                val width = 120
                 val height = 48
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bitmap)
-                
+
                 // Scale SVG to fit our bitmap
                 svg.documentWidth = width.toFloat()
                 svg.documentHeight = height.toFloat()
-                
+
                 svg.renderToCanvas(canvas)
-                
+
                 chartCache[path] = bitmap
                 return bitmap
             }

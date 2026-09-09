@@ -22,7 +22,7 @@ class NavRepository {
     if (_db != null) return _db!;
     final databasesPath = await getDatabasesPath();
     final path = p.join(databasesPath, 'nav.db');
-    _db = await openDatabase(path, version: 10, onCreate: (d, v) async {
+    _db = await openDatabase(path, version: 11, onCreate: (d, v) async {
       await d.execute('''
         CREATE TABLE nav (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +55,8 @@ class NavRepository {
       ''');
       await d.execute('''
         CREATE TABLE index_bookmarks (
-          index_name TEXT PRIMARY KEY
+          index_name TEXT PRIMARY KEY,
+          position INTEGER DEFAULT 0
         );
       ''');
       await d.execute('''
@@ -121,9 +122,15 @@ class NavRepository {
       if (oldV < 10) {
         await d.execute('''
           CREATE TABLE IF NOT EXISTS index_bookmarks (
-            index_name TEXT PRIMARY KEY
+            index_name TEXT PRIMARY KEY,
+            position INTEGER DEFAULT 0
           );
         ''');
+      }
+      if (oldV < 11) {
+        try {
+          await d.execute('ALTER TABLE index_bookmarks ADD COLUMN position INTEGER DEFAULT 0');
+        } catch (_) {}
       }
     },
 onOpen: (d) async {
@@ -464,7 +471,9 @@ onOpen: (d) async {
   Future<void> toggleIndexBookmark(String indexName, bool isBookmarked) async {
     final database = await db;
     if (isBookmarked) {
-      await database.insert('index_bookmarks', {'index_name': indexName}, conflictAlgorithm: ConflictAlgorithm.ignore);
+      final res = await database.rawQuery('SELECT MAX(position) as max_pos FROM index_bookmarks');
+      int nextPos = (res.first['max_pos'] as int? ?? -1) + 1;
+      await database.insert('index_bookmarks', {'index_name': indexName, 'position': nextPos}, conflictAlgorithm: ConflictAlgorithm.ignore);
     } else {
       await database.delete('index_bookmarks', where: 'index_name = ?', whereArgs: [indexName]);
     }
@@ -472,8 +481,17 @@ onOpen: (d) async {
 
   Future<List<String>> getIndexBookmarks() async {
     final database = await db;
-    final res = await database.query('index_bookmarks');
+    final res = await database.query('index_bookmarks', orderBy: 'position ASC');
     return res.map((m) => m['index_name'] as String).toList();
+  }
+
+  Future<void> updateIndexBookmarkOrder(List<String> orderedNames) async {
+    final database = await db;
+    await database.transaction((txn) async {
+      for (int i = 0; i < orderedNames.length; i++) {
+        await txn.update('index_bookmarks', {'position': i}, where: 'index_name = ?', whereArgs: [orderedNames[i]]);
+      }
+    });
   }
 
   List<String> _lastNBusinessDays(int n) {

@@ -14,12 +14,14 @@ class IndicesPage extends StatefulWidget {
   final String selectedLanguage;
   final Future<String> Function(String) translate;
   final bool setCompactLayout;
+  final String? initialIndexName;
 
   const IndicesPage({
     super.key,
     required this.selectedLanguage,
     required this.translate,
     required this.setCompactLayout,
+    this.initialIndexName,
   });
 
   @override
@@ -39,6 +41,7 @@ class _IndicesPageState extends State<IndicesPage> {
   String _selectedKey = 'All';
   String _sortBy = 'Change %';
   bool _isAscending = false;
+  bool _isReordering = false;
 
   final List<String> _sortOptions = [
     'Name',
@@ -53,7 +56,11 @@ class _IndicesPageState extends State<IndicesPage> {
   @override
   void initState() {
     super.initState();
-    _fetch();
+    _fetch().then((_) {
+      if (widget.initialIndexName != null) {
+        _openIndexByName(widget.initialIndexName!);
+      }
+    });
     _setupDeepLinkListener();
   }
 
@@ -395,32 +402,61 @@ class _IndicesPageState extends State<IndicesPage> {
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
         actions: [
+          if (_selectedKey == 'Bookmarked' && _bookmarkedIndices.isNotEmpty)
+            IconButton(
+              icon: Icon(_isReordering ? Icons.check : Icons.reorder),
+              onPressed: () {
+                setState(() => _isReordering = !_isReordering);
+                if (!_isReordering) {
+                  // Save order when finishing
+                  _repo.updateIndexBookmarkOrder(_filteredData.map((e) => e.name).toList());
+                  WidgetService.updateWidgetData();
+                }
+              },
+              tooltip: _isReordering ? 'Finish Reordering' : 'Reorder Bookmarks',
+            ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch),
         ],
       ),
       body: Column(
         children: [
-          _buildSearchAndFilters(),
+          if (!_isReordering) _buildSearchAndFilters(),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredData.isEmpty
                     ? Center(child: CommonWidgets.txt('No data available', selectedLanguage: widget.selectedLanguage, translate: widget.translate))
-                    : Scrollbar(
-                        controller: _scrollCtl,
-                        interactive: true,
-                        thickness: 6,
-                        radius: const Radius.circular(3),
-                        child: ListView.builder(
-                          controller: _scrollCtl,
-                          itemCount: _filteredData.length,
-                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
-                          itemBuilder: (context, index) {
-                            final d = _filteredData[index];
-                            return _buildIndexCard(d);
-                          },
-                        ),
-                      ),
+                    : _isReordering 
+                        ? ReorderableListView.builder(
+                            onReorder: (oldIdx, newIdx) {
+                              setState(() {
+                                if (newIdx > oldIdx) newIdx -= 1;
+                                final item = _filteredData.removeAt(oldIdx);
+                                _filteredData.insert(newIdx, item);
+                              });
+                            },
+                            itemCount: _filteredData.length,
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                            itemBuilder: (context, index) {
+                              final d = _filteredData[index];
+                              return _buildIndexCard(d, key: ValueKey(d.name));
+                            },
+                          )
+                        : Scrollbar(
+                            controller: _scrollCtl,
+                            interactive: true,
+                            thickness: 6,
+                            radius: const Radius.circular(3),
+                            child: ListView.builder(
+                              controller: _scrollCtl,
+                              itemCount: _filteredData.length,
+                              padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                              itemBuilder: (context, index) {
+                                final d = _filteredData[index];
+                                return _buildIndexCard(d);
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
@@ -549,7 +585,7 @@ class _IndicesPageState extends State<IndicesPage> {
     );
   }
 
-  Widget _buildIndexCard(IndexData d) {
+  Widget _buildIndexCard(IndexData d, {Key? key}) {
     double? displayChange;
     String label = '';
     Color? color;
@@ -589,16 +625,22 @@ class _IndicesPageState extends State<IndicesPage> {
     final bool isBookmarked = _bookmarkedIndices.contains(d.name);
 
     return Card(
+      key: key,
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!)),
       child: InkWell(
-        onTap: () => _showFullDetails(d),
+        onTap: _isReordering ? null : () => _showFullDetails(d),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: widget.setCompactLayout ? 8 : 12),
           child: Row(
             children: [
+              if (_isReordering)
+                const Padding(
+                  padding: EdgeInsets.only(right: 12.0),
+                  child: Icon(Icons.drag_handle, color: Colors.grey),
+                ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

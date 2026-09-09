@@ -436,6 +436,32 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     });
 
     _initStateAsync();
+    _setupDeepLinkListener();
+  }
+
+  void _setupDeepLinkListener() {
+    const channel = MethodChannel('com.infin.trulite/deep_link');
+    channel.setMethodCallHandler((call) async {
+      if (call.method == 'openIndex' && call.arguments is String) {
+        final name = call.arguments as String;
+        _navigateToIndices(initialIndex: name);
+      }
+    });
+
+    channel.invokeMethod<String>('getInitialIndex').then((name) {
+      if (name != null) {
+        _navigateToIndices(initialIndex: name);
+      }
+    });
+  }
+
+  void _navigateToIndices({String? initialIndex}) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => IndicesPage(
+      selectedLanguage: _selectedLanguage, 
+      translate: _translate, 
+      setCompactLayout: _setCompactLayout,
+      initialIndexName: initialIndex,
+    )));
   }
 
   @override
