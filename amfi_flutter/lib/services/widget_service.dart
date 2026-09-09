@@ -32,6 +32,7 @@ class WidgetService {
         'last': e.last.toStringAsFixed(2),
         'change': e.percentChange.toStringAsFixed(2),
         'isPositive': e.percentChange >= 0,
+        'chartPath': e.rawData['chartTodayPath'] ?? '',
       }).toList();
 
       // 4. Save to shared storage

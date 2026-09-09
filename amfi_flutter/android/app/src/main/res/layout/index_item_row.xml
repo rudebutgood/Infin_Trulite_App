@@ -11,34 +11,47 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
         android:gravity="center_vertical">
 
+        <!-- Name Column -->
         <TextView
             android:id="@+id/index_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="1.2"
             android:text="NIFTY 50"
-            android:textColor="#FFFFFF"
+            android:textColor="#1A237E"
             android:textSize="10sp"
+            android:textStyle="bold"
             android:ellipsize="end"
             android:maxLines="1" />
 
+        <!-- Chart Area -->
+        <ImageView
+            android:id="@+id/index_chart"
+            android:layout_width="45dp"
+            android:layout_height="18dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
+        <!-- Values Column -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="65dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="end"
-            android:paddingLeft="4dp">
+            android:paddingLeft="2dp">
 
             <TextView
                 android:id="@+id/index_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="24,500.00"
-                android:textColor="#FFFFFF"
+                android:textColor="#212121"
                 android:textStyle="bold"
                 android:textSize="10sp" />
 
@@ -47,15 +60,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="+1.25%"
-                android:textColor="#4CAF50"
+                android:textColor="#388E3C"
                 android:textSize="8sp" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Short divider -->
+    <!-- Darker row divider -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0.5dp"
-        android:background="#11FFFFFF"
+        android:background="#DDDDDD"
         android:orientation="horizontal" />
 </LinearLayout>

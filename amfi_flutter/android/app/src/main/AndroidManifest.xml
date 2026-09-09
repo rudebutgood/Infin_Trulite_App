@@ -39,10 +39,15 @@
         <receiver android:name=".IndexWidgetProvider" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.infin.trulite.ACTION_REFRESH" />
+                <action android:name="com.infin.trulite.ACTION_TOGGLE_COLS" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/index_widget_info" />
         </receiver>
+
+        <service android:name=".IndexWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

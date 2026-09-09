@@ -3,91 +3,111 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="8dp"
-    android:background="@drawable/widget_background">
+    android:background="@drawable/widget_background"
+    android:clickable="false">
 
+    <!-- Header with Indigo Gradient -->
     <LinearLayout
+        android:id="@+id/header_bar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="36dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingLeft="4dp"
-        android:paddingRight="4dp">
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:background="@drawable/header_background"
+        android:clickable="true">
+
         <TextView
             android:id="@+id/widget_title"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Market Indices"
+            android:text="Infin Indices"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:textSize="13sp" />
-        <ImageView
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:src="@mipmap/ic_launcher" />
+            android:textSize="13sp"
+            android:clickable="false" />
+
+        <TextView
+            android:id="@+id/last_refresh_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Updated: "
+            android:textColor="#CCFFFFFF"
+            android:textSize="8sp" />
+
+        <TextView
+            android:id="@+id/last_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#CCFFFFFF"
+            android:textSize="8sp"
+            android:layout_marginRight="6dp" />
+
+        <TextView
+            android:id="@+id/btn_toggle_cols"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto"
+            android:textColor="#FFFFFF"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:background="#33FFFFFF"
+            android:padding="3dp"
+            android:layout_marginRight="8dp"
+            android:clickable="true" />
+
+        <FrameLayout
+            android:id="@+id/logo_refresh_btn"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/widget_logo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@mipmap/ic_launcher" />
+
+            <ProgressBar
+                android:id="@+id/refresh_progress"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                android:indeterminate="true"
+                android:indeterminateTint="#FFFFFF" />
+        </FrameLayout>
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="#33FFFFFF"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="6dp"
-        android:orientation="horizontal" />
-
-    <TextView
-        android:id="@+id/empty_view"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:text="No bookmarks.\nOpen app to add."
-        android:textColor="#AAFFFFFF"
-        android:textSize="11sp"
-        android:visibility="gone" />
+        android:padding="8dp"
+        android:clickable="false">
 
-    <LinearLayout
-        android:id="@+id/indices_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal">
-
-        <!-- Left Column -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_weight="1"
+        <TextView
+            android:id="@+id/empty_view"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:paddingRight="4dp">
-            <LinearLayout android:id="@+id/item1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item4" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item5" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item6" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-        </LinearLayout>
+            android:gravity="center"
+            android:text="No bookmarks.\nOpen app to add."
+            android:textColor="#9E9E9E"
+            android:textSize="11sp"
+            android:visibility="gone" />
 
-        <!-- Vertical Divider -->
-        <LinearLayout
-            android:layout_width="0.5dp"
+        <GridView
+            android:id="@+id/indices_grid"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#11FFFFFF"
-            android:orientation="vertical" />
+            android:numColumns="2"
+            android:verticalSpacing="4dp"
+            android:horizontalSpacing="8dp"
+            android:stretchMode="columnWidth"
+            android:gravity="center" />
+    </FrameLayout>
 
-        <!-- Right Column -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:paddingLeft="4dp">
-            <LinearLayout android:id="@+id/item7" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item8" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item9" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item10" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item11" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/item12" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-        </LinearLayout>
-
-    </LinearLayout>
 </LinearLayout>
