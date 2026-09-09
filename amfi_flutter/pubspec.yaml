@@ -25,6 +25,7 @@ dependencies:
   xml: ^6.3.0
   webview_flutter: ^4.4.2
   google_generative_ai: ^0.0.1-dev
+  home_widget: ^0.9.4
 
 dev_dependencies:
   flutter_test:

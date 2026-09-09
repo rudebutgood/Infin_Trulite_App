@@ -22,7 +22,7 @@ class NavRepository {
     if (_db != null) return _db!;
     final databasesPath = await getDatabasesPath();
     final path = p.join(databasesPath, 'nav.db');
-    _db = await openDatabase(path, version: 9, onCreate: (d, v) async {
+    _db = await openDatabase(path, version: 10, onCreate: (d, v) async {
       await d.execute('''
         CREATE TABLE nav (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,6 +51,11 @@ class NavRepository {
       await d.execute('''
         CREATE TABLE favorites (
           scheme_code TEXT PRIMARY KEY
+        );
+      ''');
+      await d.execute('''
+        CREATE TABLE index_bookmarks (
+          index_name TEXT PRIMARY KEY
         );
       ''');
       await d.execute('''
@@ -112,6 +117,13 @@ class NavRepository {
         try { await d.execute('ALTER TABLE nav ADD COLUMN nav_option TEXT'); } catch(_) {}
         try { await d.execute('CREATE INDEX idx_nav_plan ON nav(plan)'); } catch(_) {}
         try { await d.execute('CREATE INDEX idx_nav_option ON nav(nav_option)'); } catch(_) {}
+      }
+      if (oldV < 10) {
+        await d.execute('''
+          CREATE TABLE IF NOT EXISTS index_bookmarks (
+            index_name TEXT PRIMARY KEY
+          );
+        ''');
       }
     },
 onOpen: (d) async {
@@ -447,6 +459,21 @@ onOpen: (d) async {
     } else {
       await database.delete('favorites', where: 'scheme_code = ?', whereArgs: [schemeCode]);
     }
+  }
+
+  Future<void> toggleIndexBookmark(String indexName, bool isBookmarked) async {
+    final database = await db;
+    if (isBookmarked) {
+      await database.insert('index_bookmarks', {'index_name': indexName}, conflictAlgorithm: ConflictAlgorithm.ignore);
+    } else {
+      await database.delete('index_bookmarks', where: 'index_name = ?', whereArgs: [indexName]);
+    }
+  }
+
+  Future<List<String>> getIndexBookmarks() async {
+    final database = await db;
+    final res = await database.query('index_bookmarks');
+    return res.map((m) => m['index_name'] as String).toList();
   }
 
   List<String> _lastNBusinessDays(int n) {

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'models/factor_performance_data.dart';
 import 'models/index_data.dart';
 import 'services/index_service.dart';
+import 'services/nav_repository.dart';
+import 'services/widget_service.dart';
 import 'widgets/common_widgets.dart';
 
 class IndicesPage extends StatefulWidget {
@@ -25,11 +28,13 @@ class IndicesPage extends StatefulWidget {
 
 class _IndicesPageState extends State<IndicesPage> {
   final IndexService _service = IndexService();
+  final NavRepository _repo = NavRepository();
   final TextEditingController _searchCtl = TextEditingController();
   final ScrollController _scrollCtl = ScrollController();
   List<IndexData> _data = [];
   List<IndexData> _filteredData = [];
-  List<String> _keys = ['All'];
+  List<String> _keys = ['All', 'Bookmarked'];
+  Set<String> _bookmarkedIndices = {};
   bool _loading = true;
   String _selectedKey = 'All';
   String _sortBy = 'Change %';
@@ -49,6 +54,38 @@ class _IndicesPageState extends State<IndicesPage> {
   void initState() {
     super.initState();
     _fetch();
+    _setupDeepLinkListener();
+  }
+
+  void _setupDeepLinkListener() {
+    const channel = MethodChannel('com.infin.trulite/deep_link');
+    channel.setMethodCallHandler((call) async {
+      if (call.method == 'openIndex' && call.arguments is String) {
+        final name = call.arguments as String;
+        _openIndexByName(name);
+      }
+    });
+
+    // Check for initial link if app was cold started
+    channel.invokeMethod<String>('getInitialIndex').then((name) {
+      if (name != null) {
+        _openIndexByName(name);
+      }
+    });
+  }
+
+  void _openIndexByName(String name) {
+    if (_data.isEmpty) {
+      // If data is still loading, wait and try again
+      Future.delayed(const Duration(milliseconds: 500), () => _openIndexByName(name));
+      return;
+    }
+    try {
+      final index = _data.firstWhere((d) => d.name.toLowerCase() == name.toLowerCase());
+      _showFullDetails(index);
+    } catch (e) {
+      debugPrint('Index not found for deep link: $name');
+    }
   }
 
   @override
@@ -63,12 +100,15 @@ class _IndicesPageState extends State<IndicesPage> {
     setState(() => _loading = true);
     try {
       final res = await _service.fetchIndices();
+      final bookmarks = await _repo.getIndexBookmarks();
       if (mounted) {
         setState(() {
           _data = res;
-          _keys = ['All', ...res.map((e) => e.rawData['key']?.toString() ?? 'Others').toSet().where((k) => k != 'null' && k.isNotEmpty).toList()..sort()];
+          _bookmarkedIndices = bookmarks.toSet();
+          _keys = ['All', 'Bookmarked', ...res.map((e) => e.rawData['key']?.toString() ?? 'Others').toSet().where((k) => k != 'null' && k.isNotEmpty).toList()..sort()];
           _sort();
         });
+        WidgetService.updateWidgetData();
       }
     } catch (e) {
       if (mounted) {
@@ -121,10 +161,34 @@ class _IndicesPageState extends State<IndicesPage> {
     setState(() {
       _filteredData = _data.where((d) {
         final matchesQuery = query.isEmpty || d.name.toLowerCase().contains(query);
-        final matchesKey = _selectedKey == 'All' || (d.rawData['key']?.toString() ?? 'Others') == _selectedKey;
+        bool matchesKey = _selectedKey == 'All';
+        if (_selectedKey == 'Bookmarked') {
+          matchesKey = _bookmarkedIndices.contains(d.name);
+        } else if (_selectedKey != 'All') {
+          matchesKey = (d.rawData['key']?.toString() ?? 'Others') == _selectedKey;
+        }
         return matchesQuery && matchesKey;
       }).toList();
     });
+  }
+
+  Future<void> _toggleBookmark(String name) async {
+    final isBookmarked = _bookmarkedIndices.contains(name);
+    await _repo.toggleIndexBookmark(name, !isBookmarked);
+    
+    // Update widget data
+    await WidgetService.updateWidgetData();
+
+    if (mounted) {
+      setState(() {
+        if (isBookmarked) {
+          _bookmarkedIndices.remove(name);
+        } else {
+          _bookmarkedIndices.add(name);
+        }
+        _filter();
+      });
+    }
   }
 
   void _showFullDetails(IndexData d) {
@@ -162,6 +226,21 @@ class _IndicesPageState extends State<IndicesPage> {
                           Text(d.rawData['key'].toString(), style: TextStyle(fontSize: 11, color: Colors.indigo[300], fontWeight: FontWeight.bold)),
                       ],
                     ),
+                  ),
+                  StatefulBuilder(
+                    builder: (context, setSheetState) {
+                      final bool isBookmarked = _bookmarkedIndices.contains(d.name);
+                      return IconButton(
+                        icon: Icon(
+                          isBookmarked ? Icons.star : Icons.star_border,
+                          color: isBookmarked ? Colors.amber : Colors.grey,
+                        ),
+                        onPressed: () async {
+                          await _toggleBookmark(d.name);
+                          setSheetState(() {});
+                        },
+                      );
+                    },
                   ),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
@@ -222,6 +301,7 @@ class _IndicesPageState extends State<IndicesPage> {
                         onUrlTap: isUrl ? () => _launchUrl(valueStr) : null,
                       );
                     }).toList(),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -505,6 +585,8 @@ class _IndicesPageState extends State<IndicesPage> {
     if (color == null) {
       color = (displayChange ?? 0) >= 0 ? Colors.green[700] : Colors.red[700];
     }
+
+    final bool isBookmarked = _bookmarkedIndices.contains(d.name);
 
     return Card(
       elevation: 0,

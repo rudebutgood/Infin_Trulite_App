@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/row_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/index_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="NIFTY 50"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:ellipsize="end"
+            android:maxLines="1" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end"
+            android:paddingLeft="4dp">
+
+            <TextView
+                android:id="@+id/index_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="24,500.00"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/index_change"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+1.25%"
+                android:textColor="#4CAF50"
+                android:textSize="8sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Short divider -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="#11FFFFFF"
+        android:orientation="horizontal" />
+</LinearLayout>
