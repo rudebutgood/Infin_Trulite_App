@@ -402,16 +402,32 @@ class _GlobalIndicesPageState extends State<GlobalIndicesPage> {
                                 },
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: widget.setCompactLayout ? 8 : 12,
+                                  ),
                                   child: Row(
                                     children: [
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(item.fullName.isNotEmpty ? item.fullName : item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.indigo)),
+                                            Text(
+                                              item.fullName.isNotEmpty ? item.fullName : item.name,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: widget.setCompactLayout ? 14 : 15,
+                                                color: Colors.indigo[900],
+                                              ),
+                                            ),
                                             const SizedBox(height: 2),
-                                            Text(item.country, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                            Text(
+                                              '${item.country}${item.latestDate != null ? ' (${DateFormat('dd MMM yyyy').format(item.latestDate!)})' : ''}',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -421,12 +437,20 @@ class _GlobalIndicesPageState extends State<GlobalIndicesPage> {
                                         children: [
                                           Text(
                                             item.last.toStringAsFixed(2),
-                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             '${item.percentChange >= 0 ? '+' : ''}${item.percentChange.toStringAsFixed(2)}%',
-                                            style: TextStyle(color: deltaColor, fontWeight: FontWeight.bold, fontSize: 12),
+                                            style: TextStyle(
+                                              color: deltaColor,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ],
                                       ),

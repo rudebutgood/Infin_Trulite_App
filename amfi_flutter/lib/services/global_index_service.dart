@@ -18,6 +18,7 @@ class GlobalIndexData {
   final double fiftyTwoWeekHigh;
   final double fiftyTwoWeekLow;
   final int volume;
+  final DateTime? latestDate;
 
   GlobalIndexData({
     required this.country,
@@ -35,6 +36,7 @@ class GlobalIndexData {
     required this.fiftyTwoWeekHigh,
     required this.fiftyTwoWeekLow,
     required this.volume,
+    this.latestDate,
   });
 }
 
@@ -144,9 +146,42 @@ class GlobalIndexService {
 
         final Map<String, dynamic> r = result.first as Map<String, dynamic>;
         final metaMap = r['meta'] ?? {};
-        final double current = _asDouble(metaMap['regularMarketPrice'] ?? metaMap['previousClose'] ?? 0);
-        final double previousClose = _asDouble(metaMap['previousClose'] ?? metaMap['chartPreviousClose'] ?? current);
-        final double pct = previousClose == 0 ? 0 : ((current - previousClose) / previousClose) * 100;
+        final quote = ((r['indicators'] ?? {})['quote'] ?? const <dynamic>[]);
+        final List<dynamic> closeSeries = quote.isNotEmpty ? (quote[0]['close'] ?? const <dynamic>[]) : const <dynamic>[];
+
+        final double latestClose = _asDouble(metaMap['regularMarketPrice'] ?? 0);
+
+        if (latestClose == 0) continue;
+
+        // Find the last TWO non-null closes from the chart series
+        // We need the previous day's close (second-to-last), not today's close (which might be None)
+        double previousClose = 0;
+        int validClosesFound = 0;
+        for (int i = closeSeries.length - 1; i >= 0; i--) {
+          final val = closeSeries[i];
+          if (val != null) {
+            validClosesFound++;
+            if (validClosesFound == 2) {
+              // This is the second-to-last valid close (yesterday's close)
+              previousClose = _asDouble(val);
+              break;
+            }
+          }
+        }
+
+        // Fallback to chartPreviousClose if we couldn't find two valid closes
+        if (previousClose == 0) {
+          previousClose = _asDouble(metaMap['chartPreviousClose'] ?? 0);
+        }
+
+        DateTime? latestDate;
+        final regularMarketTime = metaMap['regularMarketTime'];
+        if (regularMarketTime != null) {
+          // Create DateTime in UTC first
+          latestDate = DateTime.fromMillisecondsSinceEpoch((_asDouble(regularMarketTime) * 1000).toInt(), isUtc: true);
+        }
+
+        final double pct = previousClose == 0 ? 0 : ((latestClose - previousClose) / previousClose) * 100;
         final String longName = (metaMap['longName'] ?? metaMap['shortName'] ?? meta['name']).toString();
 
         out.add(GlobalIndexData(
@@ -154,17 +189,18 @@ class GlobalIndexService {
           name: meta['name']!,
           fullName: longName,
           symbol: symbol,
-          last: current,
+          last: latestClose,
           percentChange: pct,
           previousClose: previousClose,
-          open: _asDouble(metaMap['regularMarketOpen'] ?? metaMap['chartPreviousClose'] ?? 0),
-          dayHigh: _asDouble(metaMap['regularMarketDayHigh'] ?? current),
-          dayLow: _asDouble(metaMap['regularMarketDayLow'] ?? current),
+          open: _asDouble(metaMap['regularMarketOpen'] ?? 0),
+          dayHigh: _asDouble(metaMap['regularMarketDayHigh'] ?? latestClose),
+          dayLow: _asDouble(metaMap['regularMarketDayLow'] ?? latestClose),
           currency: (metaMap['currency'] ?? 'USD').toString(),
           exchangeName: (metaMap['exchangeName'] ?? 'N/A').toString(),
-          fiftyTwoWeekHigh: _asDouble(metaMap['fiftyTwoWeekHigh'] ?? current),
-          fiftyTwoWeekLow: _asDouble(metaMap['fiftyTwoWeekLow'] ?? current),
+          fiftyTwoWeekHigh: _asDouble(metaMap['fiftyTwoWeekHigh'] ?? latestClose),
+          fiftyTwoWeekLow: _asDouble(metaMap['fiftyTwoWeekLow'] ?? latestClose),
           volume: _asInt(metaMap['regularMarketVolume'] ?? 0),
+          latestDate: latestDate,
         ));
       } catch (_) {
         // Skip any symbol that fails so the page can still render the rest.
@@ -176,7 +212,7 @@ class GlobalIndexService {
 
   Future<List<Map<String, dynamic>>> fetchGlobalHistory(String symbol) async {
     final client = _getClient();
-    final url = 'https://query1.finance.yahoo.com/v8/finance/chart/${Uri.encodeComponent(symbol)}?interval=1d&range=5y';
+    final url = 'https://query1.finance.yahoo.com/v8/finance/chart/${Uri.encodeComponent(symbol)}?interval=1d&range=1y';
 
     final response = await client.get(Uri.parse(url), headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',

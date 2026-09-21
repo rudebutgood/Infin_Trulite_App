@@ -8,14 +8,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
-      <change afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/.artifacts/5269b394-7eb8-487e-8e44-58c2beb2ee2d/scratch/inspect_nse_data.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/infin_trulite/MainActivity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/global_indices_page.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/global_index_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/global_indices_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/global_indices_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/global_index_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/global_index_service.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
