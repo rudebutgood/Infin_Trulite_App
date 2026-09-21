@@ -86,41 +86,15 @@
             android:textSize="11sp"
             android:visibility="gone" />
 
-        <!-- 1 Column GridView Configuration -->
         <GridView
-            android:id="@+id/indices_grid_1col"
+            android:id="@+id/indices_grid"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:numColumns="1"
             android:verticalSpacing="4dp"
             android:horizontalSpacing="8dp"
             android:stretchMode="columnWidth"
-            android:gravity="center"
-            android:visibility="gone" />
-
-        <!-- 2 Columns GridView Configuration -->
-        <GridView
-            android:id="@+id/indices_grid_2col"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:numColumns="2"
-            android:verticalSpacing="4dp"
-            android:horizontalSpacing="8dp"
-            android:stretchMode="columnWidth"
-            android:gravity="center"
-            android:visibility="gone" />
-
-        <!-- 3 Columns GridView Configuration -->
-        <GridView
-            android:id="@+id/indices_grid_3col"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:numColumns="3"
-            android:verticalSpacing="4dp"
-            android:horizontalSpacing="8dp"
-            android:stretchMode="columnWidth"
-            android:gravity="center"
-            android:visibility="gone" />
+            android:gravity="center" />
     </FrameLayout>
 
 </LinearLayout>

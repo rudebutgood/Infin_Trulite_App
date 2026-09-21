@@ -659,7 +659,7 @@ class _FundHistorySectionState extends State<FundHistorySection> {
                 child: _legendMarker(Colors.indigo[700]!, 'Fund'),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 8),
             InkWell(
               onTap: () => setState(() => _showBenchmarkLine = !_showBenchmarkLine),
               child: Opacity(
@@ -726,7 +726,7 @@ class _FundHistorySectionState extends State<FundHistorySection> {
       children: [
         Container(width: 10, height: 2, color: color),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -816,12 +816,14 @@ class _FundHistorySectionState extends State<FundHistorySection> {
     maxY = (maxY + padding).ceilToDouble();
 
     return Listener(
+      behavior: HitTestBehavior.translucent,
       onPointerDown: (e) {
         setState(() {
           _pointers[e.pointer] = e.localPosition;
           _updateSelection(navData, chartWidth);
         });
       },
+
       onPointerMove: (e) {
         setState(() {
           _pointers[e.pointer] = e.localPosition;
@@ -853,29 +855,39 @@ class _FundHistorySectionState extends State<FundHistorySection> {
                 fitInsideVertically: true,
                 getTooltipItems: (touchedSpots) {
                   // Sort touched spots to have a consistent display order (Fund first, then Benchmark)
-                  final sortedSpots = touchedSpots.toList()..sort((a, b) => a.barIndex.compareTo(b.barIndex));
-                  
-                  return sortedSpots.map((spot) {
-                    if (spot.barIndex == 0) { // Fund
-                      if (!_showFundLine) return null;
+                  // barIndex: 0 -> benchmark (added first), 1 -> fund (added second)
+                  final sortedSpots = touchedSpots.toList()..sort((a, b) => b.barIndex.compareTo(a.barIndex));
+                  if (sortedSpots.isEmpty) return [];
+
+                  // Show date once (white) and series lines colored
+                  final commonDate = navData[sortedSpots.first.x.toInt()]['nav_date'] ?? '';
+                  final items = <LineTooltipItem>[];
+
+                  // Date line (white)
+                  items.add(LineTooltipItem('$commonDate\n', const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)));
+
+                  // Add Fund first, then Benchmark (if present)
+                  for (final spot in sortedSpots) {
+                    if (spot.barIndex == 1) { // Fund
+                      if (!_showFundLine) continue;
                       final item = navData[spot.x.toInt()];
                       final rebasedVal = spot.y;
                       final returnPct = rebasedVal - 100;
-                      return LineTooltipItem(
-                        '${item['nav_date']}\nFund: \u20b9${(item['nav_value'] as num).toStringAsFixed(2)} (${returnPct >= 0 ? '+' : ''}${returnPct.toStringAsFixed(1)}%)',
-                        const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      );
-                    } else if (spot.barIndex == 1) { // Benchmark
-                      if (!_showBenchmarkLine) return null;
+                      final label = 'Fund: \u20b9${(item['nav_value'] as num).toStringAsFixed(2)} (${returnPct >= 0 ? '+' : ''}${returnPct.toStringAsFixed(1)}%)';
+                      items.add(LineTooltipItem(label, TextStyle(color: Colors.blue[700], fontSize: 10, fontWeight: FontWeight.bold)));
+                    }
+                  }
+                  for (final spot in sortedSpots) {
+                    if (spot.barIndex == 0) { // Benchmark
+                      if (!_showBenchmarkLine) continue;
                       final rebasedVal = spot.y;
                       final returnPct = rebasedVal - 100;
-                      return LineTooltipItem(
-                        'Benchmark: ${returnPct >= 0 ? '+' : ''}${returnPct.toStringAsFixed(1)}%',
-                        TextStyle(color: Colors.orange[200], fontSize: 10, fontWeight: FontWeight.bold),
-                      );
+                      final label = 'Benchmark: ${returnPct >= 0 ? '+' : ''}${returnPct.toStringAsFixed(1)}%';
+                      items.add(LineTooltipItem(label, TextStyle(color: Colors.orange[700], fontSize: 10, fontWeight: FontWeight.bold)));
                     }
-                    return null;
-                  }).where((item) => item != null).toList();
+                  }
+
+                  return items;
                 },
               ),
             ),

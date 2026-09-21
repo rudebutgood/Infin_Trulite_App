@@ -5,5 +5,7 @@
     android:updatePeriodMillis="86400000"
     android:initialLayout="@layout/index_widget"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen">
+    android:widgetCategory="home_screen"
+    android:configure="com.infin.trulite.WidgetSettingsActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional">
 </appwidget-provider>

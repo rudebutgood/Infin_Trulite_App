@@ -22,6 +22,10 @@ class IndexWidgetProvider : AppWidgetProvider() {
         const val ACTION_REFRESH = "com.infin.trulite.ACTION_REFRESH"
         const val ACTION_TOGGLE_COLS = "com.infin.trulite.ACTION_TOGGLE_COLS"
         const val ACTION_DO_NOTHING = "com.infin.trulite.ACTION_DO_NOTHING"
+        const val ACTION_SHOW_FULL_NAME = "com.infin.trulite.ACTION_SHOW_FULL_NAME"
+        const val ACTION_GRID_ITEM_CLICK = "com.infin.trulite.ACTION_GRID_ITEM_CLICK"
+        const val EXTRA_INDEX_NAME = "com.infin.trulite.EXTRA_INDEX_NAME"
+        const val EXTRA_INDEX_SYMBOL = "com.infin.trulite.EXTRA_INDEX_SYMBOL"
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -60,12 +64,37 @@ class IndexWidgetProvider : AppWidgetProvider() {
                     }
                 }
             }
+            ACTION_SHOW_FULL_NAME -> {
+                val name = intent.getStringExtra(EXTRA_INDEX_NAME)
+                if (name != null) {
+                    android.widget.Toast.makeText(context, name, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
             ACTION_TOGGLE_COLS -> {
                 val widgetData = HomeWidgetPlugin.getData(context)
                 val current = widgetData.getInt("user_columns", 0)
                 val next = if (current == 0) 1 else if (current == 1) 2 else 0
                 widgetData.edit().putInt("user_columns", next).apply()
                 onUpdate(context, appWidgetManager, appWidgetIds)
+            }
+            ACTION_GRID_ITEM_CLICK -> {
+                val name = intent.getStringExtra(EXTRA_INDEX_NAME) ?: return
+                val symbol = intent.getStringExtra(EXTRA_INDEX_SYMBOL) ?: ""
+                
+                // Construct URL with symbol, fallback to name if symbol is empty
+                val urlSymbol = if (symbol.isNotEmpty()) symbol else name
+                
+                // Open app with deep link to show NSE Tracker in browser popup
+                val openIntent = Intent(context, MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    data = Uri.parse("infin-trulite://indices?name=${Uri.encode(name)}&symbol=${Uri.encode(urlSymbol)}&open_browser=true")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                try {
+                    context.startActivity(openIntent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -99,14 +128,7 @@ class IndexWidgetProvider : AppWidgetProvider() {
             
             // 3. Update bookmarked indices in prefs
             val widgetData = HomeWidgetPlugin.getData(context)
-            val bookmarks = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-                .getStringSet("VGhpcyBpcyB0aGUgcHJlZml4IGZvciBmaWxlX2luZGV4X2Jvb2ttYXJrcw==", null) 
-                // Note: SharedPreferences key in Flutter is base64 encoded prefix + key if using shared_preferences.
-                // However, our NavRepository uses SQLite. 
-                // We'll rely on the existing 'indices_json' which should be updated by Flutter eventually.
-                // BUT the user wants the widget to refresh NOW.
-                // To do this properly, Kotlin would need to read the SQLite database.
-                
+            
             // Let's read the existing indices_json and update ONLY the values of indices that are already there.
             val currentJsonStr = widgetData.getString("indices_json", null)
             if (!currentJsonStr.isNullOrEmpty()) {
@@ -129,7 +151,11 @@ class IndexWidgetProvider : AppWidgetProvider() {
                         item.put("last", String.format("%.2f", apiItem.getDouble("last")))
                         item.put("change", String.format("%.2f", apiItem.getDouble("percentChange")))
                         item.put("isPositive", apiItem.getDouble("percentChange") >= 0)
-                        item.put("chartPath", apiItem.optString("chartTodayPath", ""))
+                        // Use indexSymbol for URLs, fallback to index
+                        val sym = apiItem.optString("indexSymbol", apiItem.optString("index", ""))
+                        item.put("symbol", sym)
+                        // Removed fetching chartPath SVG to avoid polling/pulling it from the API
+                        item.put("chartPath", "")
                     }
                     updatedArray.put(item)
                 }
@@ -146,10 +172,22 @@ class IndexWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray
     ) {
         val widgetData = HomeWidgetPlugin.getData(context)
-        val userCols = widgetData.getInt("user_columns", 0)
 
         for (appWidgetId in appWidgetIds) {
             val indicesJson = widgetData.getString("indices_json", null)
+            
+            // Determine columns count
+            val widgetCols = widgetData.getInt("user_columns_$appWidgetId", widgetData.getInt("user_columns", 0))
+            var columns = 2
+            if (widgetCols != 0) {
+                columns = widgetCols
+            } else {
+                val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+                val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+                columns = if (minWidth != 0 && minWidth < 250) 1 else 2
+            }
+
+            // Always use the same single root layout resource file to completely bypass layout re-inflation bugs
             val views = RemoteViews(context.packageName, R.layout.index_widget)
 
             // 1. DUMMY INTENT TO STOP BACKGROUND CLICKS
@@ -161,7 +199,6 @@ class IndexWidgetProvider : AppWidgetProvider() {
                 context, appWidgetId + 2000, nothingIntent, 
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
-            // Apply it to the entire header area
             views.setOnClickPendingIntent(R.id.header_bar, nothingPendingIntent)
             
             // Hide progress bar and show logo
@@ -182,58 +219,46 @@ class IndexWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.logo_refresh_btn, refreshPendingIntent)
 
-            // Toggle columns
-            val toggleIntent = Intent(context, IndexWidgetProvider::class.java).apply {
-                action = ACTION_TOGGLE_COLS
+            // Determine active target grid ID based on columns selection, and hide inactive grids
+            val activeGridId = when (columns) {
+                1 -> R.id.indices_grid_1col
+                3 -> R.id.indices_grid_3col
+                else -> R.id.indices_grid_2col
             }
-            val togglePendingIntent = android.app.PendingIntent.getBroadcast(
-                context, 1, toggleIntent, 
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.btn_toggle_cols, togglePendingIntent)
 
-            // Determine columns
-            var columns = 2
-            if (userCols != 0) {
-                columns = userCols
-            } else {
-                val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-                columns = if (minWidth != 0 && minWidth < 250) 1 else 2
+            val allGridIds = intArrayOf(R.id.indices_grid_1col, R.id.indices_grid_2col, R.id.indices_grid_3col)
+            for (gridId in allGridIds) {
+                if (gridId == activeGridId && !indicesJson.isNullOrEmpty()) {
+                    views.setViewVisibility(gridId, View.VISIBLE)
+                } else {
+                    views.setViewVisibility(gridId, View.GONE)
+                }
             }
-            
-            views.setTextViewText(R.id.btn_toggle_cols, if (userCols == 0) "Auto" else "$columns Col")
-            views.setInt(R.id.indices_grid, "setNumColumns", columns)
 
-            // Set up GridView adapter
+            // Set up GridView adapter specifically on the active target grid view instance
             val serviceIntent = Intent(context, IndexWidgetService::class.java).apply {
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                 putExtra("columns", columns)
-                data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+                data = Uri.parse("custom://widget/id/$appWidgetId/cols/$columns")
             }
-            views.setRemoteAdapter(R.id.indices_grid, serviceIntent)
-            views.setEmptyView(R.id.indices_grid, R.id.empty_view)
+            views.setRemoteAdapter(activeGridId, serviceIntent)
+            views.setEmptyView(activeGridId, R.id.empty_view)
 
-            // PendingIntent template for clicks on grid items
-            val clickIntent = Intent(context, MainActivity::class.java).apply {
-                action = Intent.ACTION_VIEW
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            // Set up multi-purpose PendingIntent template
+            val templateIntent = Intent(context, IndexWidgetProvider::class.java).apply {
+                action = ACTION_GRID_ITEM_CLICK
             }
-            val clickPendingIntent = android.app.PendingIntent.getActivity(
-                context, 
-                appWidgetId + 5000, 
-                clickIntent, 
+            val templatePendingIntent = android.app.PendingIntent.getBroadcast(
+                context, appWidgetId + 5000, templateIntent,
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
             )
-            views.setPendingIntentTemplate(R.id.indices_grid, clickPendingIntent)
+            views.setPendingIntentTemplate(activeGridId, templatePendingIntent)
 
             if (indicesJson.isNullOrEmpty()) {
                 views.setViewVisibility(R.id.empty_view, View.VISIBLE)
-                views.setViewVisibility(R.id.indices_grid, View.GONE)
             } else {
                 views.setViewVisibility(R.id.empty_view, View.GONE)
-                views.setViewVisibility(R.id.indices_grid, View.VISIBLE)
-                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.indices_grid)
+                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, activeGridId)
             }
 
             appWidgetManager.updateAppWidget(appWidgetId, views)

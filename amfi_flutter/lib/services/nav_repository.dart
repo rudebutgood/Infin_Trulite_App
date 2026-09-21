@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../models/nav_item.dart';
 
 const String NAV_API_URL = 'https://www.amfiindia.com/api/nav-history?query_type=all_for_date&from_date=';
+const String SIF_API_URL = 'https://www.amfiindia.com/api/sif-nav-history?query_type=all_for_date&from_date=';
 
 class NavRepository {
   static final NavRepository _instance = NavRepository._internal();
@@ -141,13 +142,22 @@ onOpen: (d) async {
         debugPrint('Pragma error: $e');
       }
     });
+    // Ensure default API entries exist even for older DBs (in case onCreate/onUpgrade didn't add them)
+    try {
+      await _ensureDefaultApis(_db!);
+    } catch (e) {
+      debugPrint('Error ensuring default APIs: $e');
+    }
+
     return _db!;
   }
 
   Future<void> _insertDefaultApis(Database d) async {
     final apis = [
       {'name': 'daily_refresh', 'url': 'https://www.amfiindia.com/api/nav-history?query_type=all_for_date&from_date=', 'description': 'Main AMFI NAV daily refresh API'},
+      {'name': 'sif_refresh', 'url': 'https://www.amfiindia.com/api/sif-nav-history?query_type=all_for_date&from_date=', 'description': 'AMFI SIF NAV daily refresh API'},
       {'name': 'historical', 'url': 'https://www.amfiindia.com/api/nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}', 'description': 'Historical NAV data per scheme'},
+      {'name': 'sif_historical', 'url': 'https://www.amfiindia.com/api/sif-nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}', 'description': 'SIF Historical NAV data per scheme'},
       {'name': 'news', 'url': 'https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms', 'description': 'Economic Times Markets RSS feed'},
       {'name': 'fii_dii', 'url': 'https://www.nseindia.com/api/fiidiiTradeNse', 'description': 'NSE FII/DII daily trade data'},
       {'name': 'indices', 'url': 'https://www.nseindia.com/api/allIndices', 'description': 'NSE Real-time indices data'},
@@ -157,6 +167,19 @@ onOpen: (d) async {
     ];
     for (var api in apis) {
       await d.insert('app_apis', api, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+  }
+
+  Future<void> _ensureDefaultApis(Database d) async {
+    try {
+      // quick check: is app_apis populated with sif entries?
+      final check = await d.rawQuery("SELECT name FROM app_apis WHERE name IN ('sif_refresh','sif_historical') LIMIT 1");
+      if (check.isEmpty) {
+        await _insertDefaultApis(d);
+      }
+    } catch (e) {
+      // If app_apis table doesn't exist or any error, insert defaults
+      try { await _insertDefaultApis(d); } catch (_) {}
     }
   }
 
@@ -197,41 +220,44 @@ onOpen: (d) async {
       if (datesToFetch.isEmpty) return 0;
 
       final results = <List<Map<String, dynamic>>>[];
+      final sifBaseUrl = await _getApiUrl('sif_refresh', fallback: SIF_API_URL);
       for (var i = 0; i < datesToFetch.length; i += 10) {
         final chunk = datesToFetch.sublist(i, min(i + 10, datesToFetch.length));
         final chunkResults = await Future.wait(chunk.map((d) async {
-          final url = baseUrl + d;
-          lastUrlCalled = url; 
+          lastUrlCalled = baseUrl + d;
           try {
-            final resp = await ioClient.get(Uri.parse(url), headers: {
-              'User-Agent': 'Mozilla/5.0',
-              'Accept': 'application/json',
-            }).timeout(Duration(seconds: timeoutSeconds));
+            // Fetch both main and SIF endpoints in parallel and merge results
+            final futures = [
+              ioClient.get(Uri.parse(baseUrl + d), headers: {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}),
+              ioClient.get(Uri.parse(sifBaseUrl + d), headers: {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}),
+            ];
+            final responses = await Future.wait(futures.map((f) => f.timeout(Duration(seconds: timeoutSeconds))).toList());
 
-            if (resp.statusCode != 200) return <Map<String, dynamic>>[];
-            final body = resp.body;
-            if (body.isEmpty || body.trim() == "null") return <Map<String, dynamic>>[];
-            
-            final j = json.decode(body);
             final rows = <Map<String, dynamic>>[];
-            
-            if (j is List) {
-              for (final item in j) if (item is Map<String, dynamic>) rows.add(_mapFromApiJson(item, d));
-            } else if (j is Map<String, dynamic> && j.containsKey('data')) {
-              for (final mf in j['data']) {
-                if (mf is Map<String, dynamic> && mf.containsKey('schemes')) {
-                  for (final scheme in mf['schemes']) {
-                    if (scheme is Map<String, dynamic> && scheme.containsKey('navs')) {
-                      for (final nav in scheme['navs']) {
-                        if (nav is Map<String, dynamic>) {
-                          rows.add(_mapFromApiJson(
-                            nav, 
-                            d, 
-                            mfName: mf['mfName']?.toString(), 
-                            category: scheme['schemeName']?.toString(),
-                            plan: scheme['Plan']?.toString(),
-                            option: scheme['Option']?.toString() ?? scheme['Nav_Type']?.toString(),
-                          ));
+            for (final resp in responses) {
+              if (resp.statusCode != 200) continue;
+              final body = resp.body;
+              if (body.isEmpty || body.trim() == "null") continue;
+
+              final j = json.decode(body);
+              if (j is List) {
+                for (final item in j) if (item is Map<String, dynamic>) rows.add(_mapFromApiJson(item, d));
+              } else if (j is Map<String, dynamic> && j.containsKey('data')) {
+                for (final mf in j['data']) {
+                  if (mf is Map<String, dynamic> && mf.containsKey('schemes')) {
+                    for (final scheme in mf['schemes']) {
+                      if (scheme is Map<String, dynamic> && scheme.containsKey('navs')) {
+                        for (final nav in scheme['navs']) {
+                          if (nav is Map<String, dynamic>) {
+                            rows.add(_mapFromApiJson(
+                              nav,
+                              d,
+                              mfName: mf['mfName']?.toString(),
+                              category: scheme['schemeName']?.toString(),
+                              plan: scheme['Plan']?.toString(),
+                              option: scheme['Option']?.toString() ?? scheme['Nav_Type']?.toString(),
+                            ));
+                          }
                         }
                       }
                     }
@@ -239,6 +265,7 @@ onOpen: (d) async {
                 }
               }
             }
+
             if (rows.isNotEmpty) fetchedDates.add(d);
             return rows;
           } catch (e) {
@@ -525,6 +552,7 @@ onOpen: (d) async {
     try {
       final database = await db;
       final template = await _getApiUrl('historical', fallback: 'https://www.amfiindia.com/api/nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}');
+      final sifTemplate = await _getApiUrl('sif_historical', fallback: 'https://www.amfiindia.com/api/sif-nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}');
 
       final tasks = <_FetchTask>[];
       for (final code in schemeCodes) {
@@ -547,7 +575,8 @@ onOpen: (d) async {
             return <Map<String, dynamic>>[];
           }
 
-          final url = template.replaceAll('{from}', task.date).replaceAll('{to}', task.date).replaceAll('{sd_id}', task.code);
+          final tpl = (task.code != null && task.code.toString().toUpperCase().startsWith('SIF-')) ? sifTemplate : template;
+          final url = tpl.replaceAll('{from}', task.date).replaceAll('{to}', task.date).replaceAll('{sd_id}', task.code);
           lastUrlCalled = url;
           try {
             final resp = await ioClient.get(Uri.parse(url), headers: {
@@ -757,11 +786,13 @@ onOpen: (d) async {
     }
 
     // Fetch from API if not enough data
-    final baseUrl = await _getApiUrl('historical', fallback: 'https://www.amfiindia.com/api/nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}');
-    final url = baseUrl
-        .replaceAll('{from}', DateFormat('dd-MMM-yyyy').format(fromDate))
-        .replaceAll('{to}', DateFormat('dd-MMM-yyyy').format(now))
-        .replaceAll('{sd_id}', schemeCode);
+    final template = await _getApiUrl('historical', fallback: 'https://www.amfiindia.com/api/nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}');
+    final sifTemplate = await _getApiUrl('sif_historical', fallback: 'https://www.amfiindia.com/api/sif-nav-history?query_type=historical_period&from_date={from}&to_date={to}&sd_id={sd_id}');
+
+    final bool isSif = schemeCode != null && schemeCode.toString().toUpperCase().startsWith('SIF-');
+    final String url = isSif
+        ? sifTemplate.replaceAll('{from}', DateFormat('yyyy-MM-dd').format(fromDate)).replaceAll('{to}', DateFormat('yyyy-MM-dd').format(now)).replaceAll('{sd_id}', schemeCode)
+        : template.replaceAll('{from}', DateFormat('dd-MMM-yyyy').format(fromDate)).replaceAll('{to}', DateFormat('dd-MMM-yyyy').format(now)).replaceAll('{sd_id}', schemeCode);
 
     HttpClient httpClient = HttpClient();
     httpClient.badCertificateCallback = (X509Certificate cert, String host, int port) => true;

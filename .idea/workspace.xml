@@ -8,16 +8,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="323603dd-d740-4c3c-92b2-8d0c7db48402" name="Changes" comment="initial commit">
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/WidgetSettingsActivity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/activity_widget_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_widget_1col.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_widget_3col.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/AndroidManifest.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetProvider.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/IndexWidgetService.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/kotlin/com/infin/trulite/MainActivity.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_item_row.xml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_item_row.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_widget.xml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/layout/index_widget.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/indices_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/xml/index_widget_info.xml" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/android/app/src/main/res/xml/index_widget_info.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/pages/market_news_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/pages/market_news_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/services/widget_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/services/widget_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/tabs/funds_tab.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amfi_flutter/lib/widgets/common_widgets.dart" beforeDir="false" afterPath="$PROJECT_DIR$/amfi_flutter/lib/widgets/common_widgets.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,7 +41,7 @@
     </persistenceIdMap>
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="591" />
+    <option name="cachedIndexableFilesCount" value="1277" />
   </component>
   <component name="ExternalProjectsManager">
     <system id="GRADLE">
@@ -80,23 +87,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0000000009241845" />
-      <entry key="S30" value="1.0009757195035913" />
-      <entry key="S60" value="1.0330308458562647" />
-      <entry key="M2" value="1.2370210435212452" />
-      <entry key="M5" value="2.009600862758485" />
-      <entry key="M10" value="2.8827869600875355" />
-      <entry key="M15" value="3.453437533224868" />
-      <entry key="M30" value="4.375404102116965" />
-      <entry key="H1" value="5.065844551702057" />
-      <entry key="H2" value="5.496627612174367" />
-      <entry key="H4" value="5.744653104936788" />
-      <entry key="D1" value="16.76739507961686" />
-      <entry key="W1" value="44.787739671696926" />
+      <entry key="MS100" value="1.3090383128048515" />
+      <entry key="MS500" value="4.684136247615648" />
+      <entry key="S2" value="14.357485468138934" />
+      <entry key="S5" value="26.26533808393776" />
+      <entry key="S10" value="41.72931324019613" />
+      <entry key="S30" value="86.35960808568538" />
+      <entry key="S60" value="118.48472639429572" />
+      <entry key="M2" value="143.27431966279818" />
+      <entry key="M5" value="162.9339397067295" />
+      <entry key="M10" value="171.00713104248211" />
+      <entry key="M15" value="174.10593709496214" />
+      <entry key="M30" value="177.6399779795885" />
+      <entry key="H1" value="179.67846693038675" />
+      <entry key="H2" value="180.79723310743887" />
+      <entry key="H4" value="181.39338067958195" />
+      <entry key="D1" value="192.7008242689907" />
+      <entry key="W1" value="220.77533770600286" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -118,23 +125,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.2905386184426415E-56" />
-      <entry key="MS500" value="6.639787814808739E-12" />
-      <entry key="S2" value="0.0016052347408102546" />
-      <entry key="S5" value="0.07624571125937261" />
-      <entry key="S10" value="0.27612626021687037" />
-      <entry key="S30" value="0.6520193386992357" />
-      <entry key="S60" value="0.8376826529659698" />
-      <entry key="M2" value="1.1286714084592702" />
-      <entry key="M5" value="1.959976332484304" />
-      <entry key="M10" value="2.8561355306412746" />
-      <entry key="M15" value="3.435163652141299" />
-      <entry key="M30" value="4.365982166773173" />
-      <entry key="H1" value="5.061055197893373" />
-      <entry key="H2" value="5.494212303888746" />
-      <entry key="H4" value="5.743440145968834" />
-      <entry key="D1" value="16.76719041287271" />
-      <entry key="W1" value="44.78770976430104" />
+      <entry key="MS100" value="1.2636850129402482" />
+      <entry key="MS500" value="4.648241422047594" />
+      <entry key="S2" value="14.329664130448274" />
+      <entry key="S5" value="26.2448462644843" />
+      <entry key="S10" value="41.711339551226345" />
+      <entry key="S30" value="86.30361028857943" />
+      <entry key="S60" value="118.40666155380171" />
+      <entry key="M2" value="143.20424326999756" />
+      <entry key="M5" value="162.89100304587842" />
+      <entry key="M10" value="170.9817257116572" />
+      <entry key="M15" value="174.0879465085111" />
+      <entry key="M30" value="177.630398229757" />
+      <entry key="H1" value="179.6735183002758" />
+      <entry key="H2" value="180.79471730973123" />
+      <entry key="H4" value="181.39211216309818" />
+      <entry key="D1" value="192.70060959728315" />
+      <entry key="W1" value="220.77530635083698" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -531,7 +538,15 @@
       <option name="project" value="LOCAL" />
       <updated>1788991593723</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="initial commit">
+      <option name="closed" value="true" />
+      <created>1788994244699</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1788994244699</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -566,7 +581,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="Dart">
           <url>file://$PROJECT_DIR$/amfi_flutter/lib/services/nav_repository.dart</url>
-          <line>542</line>
+          <line>570</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>

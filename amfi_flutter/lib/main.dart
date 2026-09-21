@@ -445,14 +445,42 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       if (call.method == 'openIndex' && call.arguments is String) {
         final name = call.arguments as String;
         _navigateToIndices(initialIndex: name);
+      } else if (call.method == 'openIndexBrowser' && call.arguments is Map) {
+        final args = call.arguments as Map;
+        final symbol = args['symbol'] as String;
+        final name = args['name'] as String;
+        _openIndexTrackerPopup(symbol, name);
       }
     });
 
-    channel.invokeMethod<String>('getInitialIndex').then((name) {
-      if (name != null) {
-        _navigateToIndices(initialIndex: name);
+    channel.invokeMethod<Map>('getInitialIndexAction').then((args) {
+      if (args != null) {
+        final symbol = args['symbol'] as String?;
+        final name = args['name'] as String?;
+        final openBrowser = args['openBrowser'] == true;
+
+        if (openBrowser && symbol != null) {
+          _openIndexTrackerPopup(symbol, name ?? symbol);
+        } else if (name != null) {
+          _navigateToIndices(initialIndex: name);
+        }
       }
     });
+  }
+
+  void _openIndexTrackerPopup(String symbol, String name) {
+    final url = 'https://www.nseindia.com/index-tracker/${Uri.encodeComponent(symbol)}';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => CommonWebViewPopup(
+        url: url,
+        title: name,
+        selectedLanguage: _selectedLanguage,
+        translate: _translate,
+      ),
+    );
   }
 
   void _navigateToIndices({String? initialIndex}) {

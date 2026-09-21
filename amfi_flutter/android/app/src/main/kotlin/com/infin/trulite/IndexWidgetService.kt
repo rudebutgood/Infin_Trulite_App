@@ -29,14 +29,34 @@ class IndexWidgetFactory(private val context: Context, private val intent: Inten
     private val chartCache = mutableMapOf<String, Bitmap>()
 
     override fun onCreate() {
-        columns = intent.getIntExtra("columns", 2)
+        val uri = intent.data
+        val parsedWidgetId = uri?.pathSegments?.getOrNull(1)?.toIntOrNull()
+        val appWidgetId = parsedWidgetId ?: intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID)
+        
+        val widgetData = HomeWidgetPlugin.getData(context)
+        val widgetCols = if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
+            widgetData.getInt("user_columns_$appWidgetId", widgetData.getInt("user_columns", 0))
+        } else {
+            widgetData.getInt("user_columns", 0)
+        }
+        columns = if (widgetCols != 0) widgetCols else (uri?.pathSegments?.getOrNull(3)?.toIntOrNull() ?: intent.getIntExtra("columns", 2))
     }
 
     override fun onDataSetChanged() {
         val widgetData = HomeWidgetPlugin.getData(context)
         val indicesJson = widgetData.getString("indices_json", null)
         indices = if (indicesJson.isNullOrEmpty()) JSONArray() else JSONArray(indicesJson)
-        columns = intent.getIntExtra("columns", 2)
+        
+        val uri = intent.data
+        val parsedWidgetId = uri?.pathSegments?.getOrNull(1)?.toIntOrNull()
+        val appWidgetId = parsedWidgetId ?: intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID)
+        
+        val widgetCols = if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
+            widgetData.getInt("user_columns_$appWidgetId", widgetData.getInt("user_columns", 0))
+        } else {
+            widgetData.getInt("user_columns", 0)
+        }
+        columns = if (widgetCols != 0) widgetCols else (uri?.pathSegments?.getOrNull(3)?.toIntOrNull() ?: intent.getIntExtra("columns", 2))
         // Clear cache on refresh
         chartCache.clear()
     }
@@ -67,22 +87,13 @@ class IndexWidgetFactory(private val context: Context, private val intent: Inten
             val color = if (isPositive) 0xFF388E3C.toInt() else 0xFFD32F2F.toInt()
             views.setTextColor(R.id.index_change, color)
 
-            if (columns == 1 && chartPath.isNotEmpty()) {
-                views.setViewVisibility(R.id.index_chart, View.VISIBLE)
-                val bitmap = getChartBitmap(chartPath, isPositive)
-                if (bitmap != null) {
-                    views.setImageViewBitmap(R.id.index_chart, bitmap)
-                }
-            } else {
-                views.setViewVisibility(R.id.index_chart, View.GONE)
-            }
+            // Always hide chart view as pulling SVG is completely disabled
+            views.setViewVisibility(R.id.index_chart, View.GONE)
 
-            // Fill-in intent for deep linking
+            // Fill-in intent: opens browser URL handled via provider action
             val fillInIntent = Intent().apply {
-                val dataUri = Uri.parse("infin-trulite://indices?name=${Uri.encode(name)}")
-                data = dataUri
-                // Also add as extra just in case
-                putExtra("indexName", name)
+                putExtra(IndexWidgetProvider.EXTRA_INDEX_NAME, name)
+                putExtra(IndexWidgetProvider.EXTRA_INDEX_SYMBOL, item.optString("symbol", ""))
             }
             views.setOnClickFillInIntent(R.id.row_container, fillInIntent)
             
