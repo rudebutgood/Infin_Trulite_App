@@ -98,10 +98,14 @@ class _FundsTabState extends State<FundsTab> {
       _recentSearches = prefs.getStringList('recentSearches') ?? [];
       
       final amcs = await _repo.getFundCompanies();
+      // Make AMC list unique and sort alphabetically, case-insensitive
+      final distinctAmcs = amcs.toSet().toList();
+      distinctAmcs.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      final amcListOrdered = ['All Companies', ...distinctAmcs];
 
       if (mounted) {
         setState(() {
-          _amcList = ['All Companies', ...amcs].toSet().toList();
+          _amcList = amcListOrdered;
         });
       }
       

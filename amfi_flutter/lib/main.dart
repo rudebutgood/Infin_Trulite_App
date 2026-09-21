@@ -14,6 +14,7 @@ import 'services/gift_nifty_service.dart';
 import 'services/gold_rate_service.dart';
 import 'models/index_data.dart';
 import 'services/index_service.dart';
+import 'services/global_index_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:intl/intl.dart';
@@ -39,6 +40,7 @@ import 'models/market_news.dart';
 import 'pages/factor_performance_page.dart';
 import 'models/factor_performance_data.dart';
 import 'pages/calculators_page.dart';
+import 'pages/global_indices_page.dart';
 
 /**
  * INFIN TRULITE - Main Entry Point
@@ -331,6 +333,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   final PortfolioService _portfolio = PortfolioService();
   final FiiDiiService _fiiDiiService = FiiDiiService();
   final IndexService _indexService = IndexService();
+  final GlobalIndexService _globalIndexService = GlobalIndexService();
   final AmfiAumService _amfiAumService = AmfiAumService();
   final GiftNiftyService _giftNiftyService = GiftNiftyService();
   final GoldRateService _goldService = GoldRateService();
@@ -352,6 +355,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   bool _fetchingFiiDii = false;
   List<IndexData> _indicesData = [];
   bool _fetchingIndices = false;
+  // Global indices (USA, UK, Japan, China, Taiwan, Hongkong, South Korea, Europe)
+  List<GlobalIndexData> _globalIndices = [];
+  bool _fetchingGlobal = false;
+  DateTime? _globalLastFetch;
   List<GiftNiftyData> _giftNiftyData = [];
   bool _fetchingGiftNifty = false;
   List<GoldRateData> _goldRates = [];
@@ -371,7 +378,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   DateTime? _newsLastFetch;
 
   // Tile Order state
-  List<String> _tileIds = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews', 'factorPerf'];
+  List<String> _tileIds = ['globalIndices','indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews', 'factorPerf'];
 
   // Shared Portfolio State (for Synopsis)
   List<Map<String, dynamic>> _portfolioRows = [];
@@ -556,7 +563,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _setSyncTime = prefs.getString('setSyncTime') ?? "06:00";
     _setNAVDefaultSort = prefs.getString('setNAVDefaultSort') ?? 'Return \u2193';
 
-    final List<String> defaultOrder = ['indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews', 'factorPerf'];
+    final List<String> defaultOrder = ['globalIndices','indices', 'giftNifty', 'fiiDii', 'gold', 'aum', 'marketNews', 'factorPerf'];
     final savedOrder = prefs.getStringList('homeTileOrder');
     if (savedOrder == null) {
       _tileIds = defaultOrder;
@@ -587,6 +594,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     await _loadPortfolio();
     _fetchFiiDii();
     _fetchIndices();
+    _fetchGlobalIndices();
     _fetchAmfiAum();
     _fetchGiftNifty();
     _fetchGoldRates();
@@ -713,6 +721,24 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
+  Future<void> _fetchGlobalIndices({bool force = false}) async {
+    if (_fetchingGlobal && !force) return;
+    setState(() => _fetchingGlobal = true);
+    try {
+      final data = await _globalIndexService.fetchGlobalIndices();
+      if (mounted) {
+        setState(() {
+          _globalIndices = data;
+          _globalLastFetch = DateTime.now();
+        });
+      }
+    } catch (e) {
+      debugPrint('Global Indices Fetch Error: $e');
+    } finally {
+      if (mounted) setState(() => _fetchingGlobal = false);
+    }
+  }
+
   Future<void> _fetchGiftNifty({bool force = false}) async {
     if (_fetchingGiftNifty && !force) return;
     setState(() => _fetchingGiftNifty = true);
@@ -813,6 +839,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       await _loadPortfolio();
       _fetchFiiDii(force: true);
       _fetchIndices(force: true);
+      _fetchGlobalIndices(force: true);
       _fetchAmfiAum(force: true);
       _fetchGiftNifty(force: true);
       _fetchGoldRates(force: true);
@@ -1877,6 +1904,79 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     );
   }
 
+  Widget _globalIndicesTile() {
+    final theme = Theme.of(context);
+    final topRows = [..._globalIndices]
+      ..sort((a, b) => b.percentChange.compareTo(a.percentChange));
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: EdgeInsets.all(_setCompactLayout ? 8 : 10),
+        child: _fetchingGlobal
+            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.public, color: theme.colorScheme.primary, size: _setCompactLayout ? 14 : 16),
+                      const SizedBox(width: 6),
+                      CommonWidgets.txt('Global Indices', style: TextStyle(fontWeight: FontWeight.bold, fontSize: _setCompactLayout ? 12 : 13, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.indigo[900]), selectedLanguage: _selectedLanguage, translate: _translate),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (topRows.isNotEmpty)
+                    ...topRows.take(2).map((g) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 0.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              g.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                              fontSize: _setCompactLayout ? 8 : 9,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                              g.last.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: _setCompactLayout ? 10 : 11,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                              ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                              '(${g.percentChange > 0 ? '+' : ''}${g.percentChange.toStringAsFixed(2)}%)',
+                              style: TextStyle(
+                                fontSize: _setCompactLayout ? 8 : 9,
+                                fontWeight: FontWeight.w600,
+                                color: g.percentChange >= 0 ? Colors.green : Colors.red,
+                              ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ))
+                  else
+                    Text('No Data', style: TextStyle(fontSize: _setCompactLayout ? 10 : 11, color: Colors.grey)),
+                ],
+              ),
+      ),
+    );
+  }
+
   Widget _tradeValueItem(String label, double val, Color color) {
     return Column(
       children: [
@@ -1933,6 +2033,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       case 'indices':
         onRefresh = () => _fetchIndices(force: true);
         break;
+      case 'globalIndices':
+        onRefresh = () => _fetchGlobalIndices(force: true);
+        break;
       case 'aum':
         onRefresh = () => _fetchAmfiAum(force: true);
         break;
@@ -1970,6 +2073,13 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       case 'fiiDii':
         Navigator.push(context, MaterialPageRoute(builder: (context) => FiiDiiPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
         break;
+      case 'globalIndices':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => GlobalIndicesPage(
+          selectedLanguage: _selectedLanguage,
+          translate: _translate,
+          setCompactLayout: _setCompactLayout,
+        )));
+        break;
       case 'indices':
         Navigator.push(context, MaterialPageRoute(builder: (context) => IndicesPage(selectedLanguage: _selectedLanguage, translate: _translate, setCompactLayout: _setCompactLayout)));
         break;
@@ -1991,8 +2101,117 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
+  void _showGlobalIndicesDetail() {
+    final orderedCountries = ['USA', 'UK', 'Japan', 'China', 'Taiwan', 'Hongkong', 'South Korea', 'Europe'];
+    final data = orderedCountries.map((country) {
+      final items = _globalIndices.where((g) => g.country == country).toList();
+      return {'country': country, 'items': items};
+    }).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (sheetCtx, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(sheetCtx).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 48,
+                height: 5,
+                margin: const EdgeInsets.only(top: 10, bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.public, color: Colors.indigo),
+                    const SizedBox(width: 10),
+                    const Text('Global Indices', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(sheetCtx),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _globalIndices.isEmpty
+                    ? const Center(child: Text('No global index data available.'))
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        itemCount: data.length,
+                        itemBuilder: (context, index) {
+                          final group = data[index];
+                          final country = group['country'] as String;
+                          final items = group['items'] as List<GlobalIndexData>;
+                          if (items.isEmpty) return const SizedBox.shrink();
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(country, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                const SizedBox(height: 8),
+                                ...items.take(5).map((item) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item.name,
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        '${item.percentChange >= 0 ? '+' : ''}${item.percentChange.toStringAsFixed(2)}%',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: item.percentChange >= 0 ? Colors.green : Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )).toList(),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTileById(String id) {
     switch (id) {
+      case 'globalIndices': return _globalIndicesTile();
       case 'fiiDii': return _fiiDiiTile();
       case 'indices': return _indicesTile();
       case 'aum': return _aumTile();
